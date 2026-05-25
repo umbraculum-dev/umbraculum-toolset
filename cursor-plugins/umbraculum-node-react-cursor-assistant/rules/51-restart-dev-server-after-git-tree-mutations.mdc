@@ -1,0 +1,89 @@
+---
+description: After git operations that mutate many files under a containerized dev server's bind-mounted source tree (branch switches, pull-of-merge, large rebases, stash-pop, etc.), restart the affected service container. Symptom — routes return HTTP 404 that previously returned 200/401, despite the code on disk being correct and the container "running"; tsx (or other file-watching dev runners) emitted an `unlink in ./src/...` line during the git operation, restarted mid-relink, and silently registered without some imports. The fix is `docker compose restart <service>`, NOT a code edit, NOT `npm install`, NOT `prisma generate`.
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+# Restart the dev-server container after git operations that mutate its source tree
+
+`tsx watch` (the dev runner most TS/Node projects in this family use under the hood — also applies to `vite`, `next dev`, `nodemon`, and other inotify-based file-watching runners) reacts to `unlink` filesystem events the same way it reacts to a developer deleting a file in their editor: it queues a restart. Git, when it updates the working tree during `git checkout <branch>`, `git pull`, `git merge`, or `git stash pop` operations that touch many files, briefly emits `unlink` events on each file *before* writing the new content. If the runner happens to restart its node process inside that brief unlink window, one or more module imports throw because the file isn't on disk yet; the runner catches the error, logs it once at low severity, and proceeds with whatever module registrations it managed to complete before the throw.
+
+**Net effect**: the container stays up, `/health` still responds, but some routes that depend on the partially-loaded modules are not registered. Curl returns HTTP 404 for routes that the code on disk clearly defines.
+
+## Rule (hard)
+
+**Whenever** you have just performed (or just helped the user perform) one of the following git operations on a project with a containerized dev server, **restart the affected service container** before testing or declaring done:
+
+- `git checkout <branch>` when the new branch differs in files under the bind-mounted service tree.
+- `git pull` (or `git fetch && git merge`) when the incoming changes touch the bind-mounted service tree.
+- `git merge <branch>` (local merge of a feature branch into main, or vice versa).
+- `git stash pop` (or `git stash apply`) when the stash touches the bind-mounted service tree.
+- Large `git rebase` operations.
+- Any `git reset --hard <ref>` that materially changes the working tree.
+
+The restart command is:
+
+```bash
+docker compose restart <service>
+```
+
+— e.g. `docker compose restart api`, `docker compose restart web`. Use the actual service name from `docker-compose.yml`; this is *not* always literally `api` / `web` (some projects use `backend`, `frontend`, etc.). Container restart is the *full* dev-runner re-bootstrap; this fixes the watcher state, re-loads all modules cleanly against a now-stable file tree, and re-registers every route.
+
+After restart, **verify** with the smallest curl that proves the previously-missing routes are now registered. The expected response for a workspace-scoped route hit without auth is HTTP 401, not 404 — that's the success signal.
+
+## Symptom recognition (so you can attribute the bug correctly)
+
+If you see this combination, do **not** start debugging code:
+
+- Container reports as "running" via `docker compose ps`.
+- `/health` (or equivalent unprotected endpoint) returns HTTP 200.
+- A specific route or set of routes returns HTTP 404 ("not found").
+- Container logs include at least one line of the form:
+
+  ```
+  [tsx] unlink in ./src/<some-file>.ts Restarting...
+  ```
+
+  (or analogous from `vite`, `next dev`, `nodemon`) near the time the symptom first appeared.
+
+- The code on disk clearly registers the affected routes (e.g. `registerXModule(app)` is present in `app.ts` / `server.ts`, the module file exists, its routes are wired).
+
+That symptom-set is **almost always** the git-mutation-during-watcher-restart race described above. The fix is `docker compose restart <service>`, not a code edit.
+
+## Anti-patterns (do not do, in order of how appealing they look)
+
+- **Editing app.ts / server.ts to re-add the route registration** — the registration line is *already there*. Don't add a duplicate. Don't change the import path. Don't re-order the calls. The code is correct; the runtime state is stale.
+- **Re-running `npm install`** — dependencies didn't change; the workspace symlinks didn't change. `npm install` is a 60-second no-op here and doesn't trigger a runner restart (so it doesn't fix anything).
+- **Re-running `prisma generate` / `prisma migrate deploy`** — the Prisma client and the DB migration state didn't change. Migrations were applied before; client codegen was done before.
+- **Rebuilding the container image** (`docker compose build`, `docker compose up -d --build`) — the image didn't change; the dev runner runs against bind-mounted source, not against baked-in code. Rebuild is a 5-minute no-op for this symptom.
+- **`docker compose down && docker compose up -d`** — works, but it's heavier than needed (also restarts the database, redis, etc., which then need to re-establish their connections; if any of them have warm-up state, you lose it). `docker compose restart <service>` is the surgical version.
+
+## Why we can't fix this in the runner
+
+`tsx`, `vite`, `next dev`, etc. all use OS-level inotify to watch the bind-mounted source tree. There is no upstream-runner-side fix because the OS literally reports the file-state-during-git-update as "this file briefly does not exist." The runner can't tell the difference between "the developer is about to save a new version of this file" (a real edit) and "git is about to write the new version of this file" (a git operation). Both look the same at the inotify layer.
+
+A theoretical mitigation — git telling the inotify layer "ignore my unlinks; treat this whole operation as atomic" — does not exist. The bind mount goes through the host's filesystem, not through git, so git has no way to coordinate with inotify even if it wanted to.
+
+**Therefore the discipline is on the developer / the agent**: any git operation that mutates the bind-mounted source tree is a contract to follow up with a service restart.
+
+## Worked example (canonical reference for this discipline)
+
+`umbraculum-dev` PIM canonical-module build: after merging the
+`pim-canonical-build-2026-05-19` feature branch into `master` via the GitHub UI and pulling locally, `GET /pim/products` returned HTTP 404 despite `services/api/src/app.ts` containing `registerPimModule(app)`. The api container's logs showed:
+
+```
+9:47:53 AM [tsx] unlink in ./src/services/ai/tools/pim/searchProducts.ts Restarting...
+```
+
+— the smoking gun. `docker compose restart api` fixed the symptom in one command (post-restart: `GET /pim/products` → HTTP 401, as expected for the unauthed call). No code edit, no `npm install`, no Prisma operation. See the umbraculum-dev `docs/design/canonical-pim-build-log.md` for the full sequence and the lesson recorded inline.
+
+## Cross-references
+
+- `64-docker-compose-debugging-first.mdc` — the *other* "don't start by changing YAML" discipline; this rule is its sibling for git-induced runner-state drift specifically.
+- `50-runtime-commands.mdc` + `runtime-commands-containers` skill — the canonical reference for safe in-container command execution; the `docker compose restart <service>` invocation prescribed here follows the same patterns.

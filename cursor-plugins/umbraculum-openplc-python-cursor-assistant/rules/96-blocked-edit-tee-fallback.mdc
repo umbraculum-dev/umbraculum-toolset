@@ -1,0 +1,10 @@
+---
+description: Blocked edits use tee heredoc fallback
+alwaysApply: true
+---
+
+# Blocked edit fallback (tee)
+
+- If editor/ApplyPatch edits are blocked for a **text file** (e.g., filtered by `.cursorignore`, "Waiting for Review"), do **not** attempt ad-hoc shell edits.
+- Use the tee heredoc fallback to overwrite the file and **re-read/verify** it.
+- For **binary** files (e.g. compiled PDFs under `docs/reference/em-fields-pamphlet/`, generated PNGs/SVGs under `docs/hardware/visuals/`), never use the tee fallback — regenerate via the canonical build target (`make reference-pdfs`, `make electrician-pdfs`, etc.) instead.

@@ -1,0 +1,41 @@
+---
+description: Commit messages must contain the active branch's Jira-style ticket token (e.g. ABC-123) so Bitbucket / GitHub / Jira "smart commit" integrations link the commit to the matching ticket automatically. The recommended form is `<branch-name> - <subject>`. Without the token, commits are invisible in the Jira ticket's commit list and in PR-linkage panes; with the wrong token, commits link to the wrong ticket silently.
+alwaysApply: true
+globs:
+  - "**/.git/**"
+  - "**/*.md"
+---
+
+# Commit message — Jira ticket token (mandatory)
+
+Bitbucket, GitHub, and Jira's "smart commit" integrations parse a token matching `[A-Z][A-Z0-9]+-\d+` from anywhere in the commit message and link the commit to the matching Jira ticket. Without that token, the commit is invisible in the Jira ticket's commit list and in PR-linkage panes. With the **wrong** token, the commit links to the wrong ticket (or to a non-existent ticket) silently — there is no warning anywhere in the toolchain.
+
+## Rule (hard)
+
+Before writing or accepting any commit message:
+
+1. Determine the active branch: `git branch --show-current`.
+2. If the branch name contains a token matching `[A-Z][A-Z0-9]+-\d+` (e.g. `feature/ABC-123`, `bugfix/YS-9`, `hotfix/PROJ-42`), the commit message MUST contain that exact token. Verify the token matches the branch character-for-character before committing — typos here silently link to the wrong ticket.
+3. Recommended form: `<branch-name> - <subject>` (e.g. `feature/ABC-123 - <concise subject describing what changed and why>`). The bare `<TOKEN>: <subject>` form (e.g. `ABC-123: <concise subject>`) is also acceptable. Check `git log --oneline -10` for the project style if in doubt and match it.
+4. If the branch name has no ticket token (e.g. `master`, `main`, `develop`, `release/<version>`, `hotfix/<short-name-no-ticket>`), no prefix is required — write a conventional subject. Do NOT invent a ticket token that doesn't exist.
+
+## Procedure when committing
+
+When the user asks to commit:
+
+1. Run `git branch --show-current`.
+2. Extract the ticket token from the branch name. The token matches `[A-Z][A-Z0-9]+-\d+` and is typically positioned after a slash: `<type>/<TOKEN>` or `<type>/<TOKEN>-<short-description>`.
+3. Construct the message header as `<branch-name> - <subject>` (recommended) OR `<TOKEN>: <subject>` (acceptable). Match the form to the project's existing `git log --oneline` history.
+4. Before invoking `git commit`, re-read the constructed message and confirm the token in it matches the token in the branch name — character for character. This single check prevents the silent wrong-ticket linkage failure mode.
+
+## Anti-patterns (do not ship)
+
+- **Omitting the ticket token entirely.** Bitbucket/GitHub do not link the commit to any Jira ticket. The work becomes invisible in Jira's commit history for the ticket. Reviewers cannot navigate from a Jira ticket to its commits or the PR.
+- **Typo in the ticket token** — typing a different token than the branch's, e.g. `feature/YS-406 - <subject>` while actually on branch `feature/ABC-406`. Bitbucket/Jira link to the wrong ticket or to no ticket — silently, no warning anywhere. Always verify the token matches the branch name before committing.
+- **Pasting the bare branch type without the token** (e.g. `feature/ - subject` or `bugfix - subject`). No token = no Jira link.
+- **Inventing a token that doesn't exist in Jira** when the branch doesn't have one. The link will fail silently. If the branch genuinely has no Jira ticket (long-lived branches, throwaway experiments, master/main), omit the prefix entirely rather than fabricate one.
+- **Inferring the convention from `git log` alone, without verifying.** Past commits in `git log` may contain the same typo / omission failure modes. If `git log --oneline` is the only signal, you may propagate an existing mistake. Treat this rule as the source of truth; treat `git log` as a tiebreaker between the two acceptable forms (branch-name-prefix vs bare-token).
+
+## Per-project override
+
+If a specific project uses a different commit-message convention (Conventional Commits with type tags like `feat:` / `fix:`, bracketed-token style `[TOKEN] subject`, plain conventional subjects without a Jira token because the project does not use Jira, etc.), document the deviation in project-owned guidance such as repo-local `DEVELOPMENT-LOCAL.md`, project docs, or a project-local Cursor rule. This generic rule defers to documented per-project overrides.

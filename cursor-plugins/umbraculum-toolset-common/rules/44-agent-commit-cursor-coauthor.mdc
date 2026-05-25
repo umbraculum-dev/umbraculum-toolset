@@ -1,0 +1,134 @@
+---
+description: After every `git commit` made from an agent tool call, verify that BOTH `Signed-off-by:` AND `Co-authored-by: Cursor <cursoragent@cursor.com>` trailers are present via `git log -1 --format='%(trailers:only=true)'`. The Co-authored-by trailer is the project's mechanism for honest AI-assistance attribution; it is auto-injected by the project's `prepare-commit-msg` hook when `CURSOR_AGENT=1` is exported (Cursor exports this env var into the agent's tool-call shell). If either trailer is missing, surface the misconfiguration to the user rather than silently proceeding.
+alwaysApply: true
+---
+
+# Cursor co-author attribution — agent post-commit verification
+
+After every `git commit` you (the agent) invoke from a tool call, verify that the resulting commit carries BOTH expected trailers:
+
+```bash
+git log -1 --format='%(trailers:only=true)'
+```
+
+Expected output (order may vary):
+
+```text
+Signed-off-by: <committer-name> <committer-email>
+Co-authored-by: Cursor <cursoragent@cursor.com>
+```
+
+## Why both trailers matter
+
+Two distinct discipline concerns converge on the agent's commit, and **both are enforced by the same mechanism**: a project-installed `prepare-commit-msg` hook that detects `CURSOR_AGENT=1` in the env and injects the missing trailer(s).
+
+1. **DCO sign-off.** The umbraculum-class projects require a `Signed-off-by:` trailer on every commit (rule `42-dco-signoff-gate.mdc` covers the full DCO contract, mechanism comparison, and the `format.signOff` misconfiguration trap). The hook reads `GIT_COMMITTER_IDENT` and appends `Signed-off-by:` if it is missing.
+
+2. **Cursor co-authorship.** Per the umbraculum project's MANIFESTO §1.2 (the AI-orchestrated-code stance), commits made by a Cursor agent must visibly carry `Co-authored-by: Cursor <cursoragent@cursor.com>` so the AI co-authorship is recoverable from `git log` output, GitHub's commit-page "Co-authors" UI, and PR-author summary panes. This attribution is the honesty mechanism for the project's stated authoring model — *"AI assistance under enforced discipline"* is the contract, and that contract is verifiable in `git log` only if the trailer is actually there.
+
+   The same `prepare-commit-msg` hook detects `CURSOR_AGENT=1` and injects the `Co-authored-by` trailer when it is missing. (Cursor exports `CURSOR_AGENT=1`, alongside `CURSOR_EXTENSION_HOST_ROLE=agent-exec` and other markers, into the shell environment of every tool-call command the agent invokes — verifiable with `env | grep -i cursor` from any agent shell.)
+
+The hook handles BOTH trailers; the agent does not need to pass `-s` or any `--trailer` flag. The agent's job is to **verify after the fact** that the hook fired correctly, and to surface misconfigurations rather than silently produce misattributed commits.
+
+## Why post-commit verification (not post-discipline)
+
+A natural alternative would be to require agents to always pass `-s` or `--trailer 'Co-authored-by: ...'` on every commit. That approach is **inferior** to the hook+verify approach:
+
+- `-s` only governs `Signed-off-by`. It does NOT trigger any "Cursor auto-injection" of `Co-authored-by` — that's a misconception worth correcting explicitly. Cursor's git integration DOES sometimes pre-inject `Co-authored-by: Cursor` into `COMMIT_EDITMSG` before the `prepare-commit-msg` hook runs, but the pre-injection is **non-deterministic** (observed empirically: it fires on some agent-driven commits and not on others, with no documented signal for when it does or doesn't). Relying on it alone leads to silently-misattributed commits. The hook is the operational contract that ensures the trailer is consistently present; Cursor's pre-injection — when it fires — is additive and idempotent with the hook's `git interpret-trailers --if-exists addIfDifferent` semantics.
+- `--trailer "Co-authored-by: ..."` works but requires per-commit agent discipline — easy to forget, no cross-clone enforcement, lives in agent-side rules rather than version-controlled hook code.
+- Post-commit `git log` verification, in contrast, catches BOTH the "I forgot to pass the flag" AND the "the hook is missing/broken on this clone" failure modes — and the fix is hook-side, reviewable in the project repo, propagated via normal `git pull`.
+
+## Detection (self-check)
+
+After running `git commit -m "..."` (you do NOT need `-s`; the hook handles it):
+
+```bash
+git log -1 --format='%(trailers:only=true)'
+```
+
+Three possible outcomes:
+
+1. **Both trailers present.** Proceed. The hook fired correctly, both DCO and Cursor co-authorship are attached.
+
+2. **Only `Signed-off-by:` present (no `Co-authored-by: Cursor`).** The hook is partially misconfigured — it handles DCO but not Cursor co-authorship. Likely causes (in order of probability):
+
+   - The project's hook predates the `CURSOR_AGENT=1` injection logic.
+   - The project's hook uses raw `printf` appends rather than `git interpret-trailers`, and a Cursor pre-injection placed `Co-authored-by:` in the file before the hook ran. The hook's leading-blank-line append then split the file into two trailer paragraphs, of which git's trailer parser only recognizes the LAST as trailers — silently classifying the Co-authored-by line as message body. Diagnostic: run `git log -1 --format='%B' | tail` — if the `Co-authored-by:` line is visible in the body but not in `git log -1 --format='%(trailers:only=true)'`, this is the splitting bug. Fix is the `git interpret-trailers`-based hook (see "Hook reference" below).
+
+   Surface to the user with a one-line diagnostic:
+
+   > Cursor co-author trailer missing on agent commit `<sha>`. Expected `Co-authored-by: Cursor <cursoragent@cursor.com>` but `git log -1 --format='%(trailers:only=true)'` showed only `Signed-off-by:`. Project's `prepare-commit-msg` hook may be outdated — see umbraculum-toolset-common rule 44 / `scripts/git-hooks/prepare-commit-msg` upstream for the canonical hook (uses `git interpret-trailers` + `CURSOR_AGENT=1` detection).
+
+   Do NOT silently fix it by amending the commit — the user needs to know the hook needs updating.
+
+3. **Only `Co-authored-by: Cursor` present (no `Signed-off-by:`).** The DCO mechanism is missing — defer to rule 42's detection + remediation procedure.
+
+4. **Neither trailer present.** The hook is not installed or is not being invoked. Defer to rule 42's "What does NOT work" / "What DOES work — the canonical setup" guidance for the install procedure.
+
+## Hook reference (canonical content)
+
+The umbraculum-class canonical `prepare-commit-msg` hook does **two** things — DCO sign-off (rule 42) AND Cursor co-author injection (this rule). Sketch:
+
+```sh
+#!/bin/sh
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+
+case "$COMMIT_SOURCE" in
+  merge|squash) exit 0 ;;
+esac
+
+# Use `git interpret-trailers` so trailers are merged into the existing
+# trailer block (handling cases where another mechanism — e.g. Cursor's
+# git integration — pre-injects a trailer into COMMIT_EDITMSG before
+# this hook runs).
+
+SOB=$(git var GIT_COMMITTER_IDENT | sed -n 's/^\(.*>\).*$/Signed-off-by: \1/p')
+if [ -n "$SOB" ]; then
+  git interpret-trailers --in-place --if-exists addIfDifferent \
+    --trailer "$SOB" "$COMMIT_MSG_FILE"
+fi
+
+if [ "${CURSOR_AGENT:-}" = "1" ]; then
+  git interpret-trailers --in-place --if-exists addIfDifferent \
+    --trailer "Co-authored-by: Cursor <cursoragent@cursor.com>" \
+    "$COMMIT_MSG_FILE"
+fi
+```
+
+The hook is idempotent on existing trailers (no duplication, regardless of whether a previous run, a manual `--trailer`, or a Cursor pre-injection put the trailer there first), no-op on merge/squash commits, and the Cursor injection fires only when the env var is set. Human contributors typing `git commit` in their own terminal do NOT have `CURSOR_AGENT=1` exported, so they get only `Signed-off-by:` and no false-positive co-author misattribution.
+
+Why `git interpret-trailers` (not raw `printf` appends): a previous revision used raw appends and broke when Cursor pre-injected a trailer into the message file before the hook ran — the hook's leading-blank-line append separated the existing trailer from the newly-appended one, splitting the file into two trailer paragraphs, of which git's trailer parser only recognizes the LAST. `git interpret-trailers` knows the trailer-block rules and merges new trailers correctly.
+
+The umbraculum-dev reference implementation is at [`scripts/git-hooks/prepare-commit-msg`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/scripts/git-hooks/prepare-commit-msg); each clone enables it once via `git config core.hooksPath scripts/git-hooks`.
+
+## Anti-patterns
+
+- **Silently proceeding when `Co-authored-by: Cursor` is missing.** This is the failure mode this rule exists to prevent. The umbraculum project's stated AI-orchestrated-code stance requires the attribution to be visible; a commit that "passes lint and tests but is misattributed as solo-human-authored" is a defect of the attribution mechanism, not a successful outcome.
+- **Manually amending the commit to add the trailer.** If the hook didn't fire, fix the hook (or surface the misconfiguration to the user); don't paper over it commit-by-commit. Single-commit fixes are forgotten next session; hook fixes propagate.
+- **Passing `-s` AND `--trailer "Co-authored-by: Cursor ..."` "just in case".** Belt-and-suspenders is fine and the hook is idempotent so there is no harm — but it suggests the agent does not trust the hook to fire, which usually means the hook is missing or misconfigured. Investigate that root cause rather than working around it.
+- **Bypassing the hook with `--no-verify`.** The canonical hook is non-invasive (no hard checks, only trailer additions); `--no-verify` should never be necessary.
+
+## Hook absence and projects without `CURSOR_AGENT=1` injection
+
+This rule assumes the project has installed the canonical `prepare-commit-msg` hook (or equivalent) with the `CURSOR_AGENT=1`-conditional Co-authored-by injection. Projects that have NOT installed it should:
+
+- Adopt the umbraculum-dev reference hook (link above), OR
+- Document in their repo-local `DEVELOPMENT-LOCAL.md` that this rule does not apply (e.g., "this project does not use the `Co-authored-by: Cursor` attribution mechanism — verify only `Signed-off-by:` after agent commits").
+
+In the absence of a project-side hook AND in the absence of a documented opt-out, agents in the project should fall back to manually adding the trailer via `git commit --trailer 'Co-authored-by: Cursor <cursoragent@cursor.com>' --signoff -m "..."` and surface the missing-hook situation to the user as remediable infrastructure (the hook is small, reusable, and trivially adopted from the umbraculum-dev reference).
+
+## Future direction (potential simplification)
+
+If a future Cursor release adds **first-party** Co-authored-by injection (e.g., a Cursor user setting "auto-add Co-authored-by trailer to agent commits" that injects via Cursor's git integration without project-level hook involvement), this rule's verification logic remains correct as-is, but the hook-side injection becomes redundant and could be retired. The rule would still be the agent-side post-commit verification gate; only the implementation of how the trailer arrives would change.
+
+Cursor's git integration today DOES sometimes pre-inject `Co-authored-by: Cursor` into the commit-message file before the `prepare-commit-msg` hook runs, but the pre-injection is non-deterministic (it does not fire on every agent commit, with no documented signal for when it does or does not). Until that mechanism becomes deterministic and documented, the project-installed hook is the operational contract — it ensures the trailer is consistently present and, via `git interpret-trailers --in-place --if-exists addIfDifferent`, coexists idempotently with any pre-injection that does occur.
+
+## How this rule lands in non-Umbraculum projects
+
+This rule ships in `umbraculum-toolset-common`, which is installed alongside any of the umbraculum-toolset domain plugins. In non-Umbraculum projects that adopt the toolset (or any subset of it), the rule applies if:
+
+- The project uses Cursor as the agent IDE (the `CURSOR_AGENT=1` env signal is Cursor-specific; the rule is a no-op in non-Cursor agent runtimes — see `umbraculum-toolset-common`'s "Non-Cursor agents" notes).
+- The project either requires DCO (where the same hook handles both concerns) or wants honest AI-assistance attribution visible in `git log`.
+
+For projects using a different AI-assistance attribution convention (e.g., a custom `Assisted-by:` trailer instead of `Co-authored-by: Cursor`), document the deviation in the consuming repo's `AGENTS.md` or `DEVELOPMENT-LOCAL.md` and adapt the hook + verification regex accordingly. This rule defers to documented per-project overrides.

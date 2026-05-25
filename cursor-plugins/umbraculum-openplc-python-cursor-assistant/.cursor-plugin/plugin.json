@@ -1,0 +1,28 @@
+{
+  "name": "umbraculum-openplc-python-cursor-assistant",
+  "version": "0.0.1",
+  "description": "OpenPLC + Python + FastAPI + Modbus + hardware-doc Cursor assistant for the umbraculum-toolset industrial-automation sister-repo (openplc/brewery). Encodes the IEC-61131-3 source-vs-build discipline, the PI_* Modbus mailbox contract, the FastAPI/Jinja/SQLite Pi-sidecar conventions, and the hardware-doc + ASCII-diagram-pamphlet authoring rules. Does not depend on the TS/JS plugins (umbraculum-node-react-cursor-assistant / umbraculum-platform-tsjs-cursor-assistant). Install alongside umbraculum-toolset-common for the language-agnostic meta-framework rules and the generate-development-local skill.",
+  "author": {
+    "name": "umbraculum-toolset"
+  },
+  "keywords": [
+    "umbraculum",
+    "openplc",
+    "iec-61131-3",
+    "python",
+    "fastapi",
+    "jinja",
+    "sqlite",
+    "modbus",
+    "pymodbus",
+    "controllino",
+    "industrial-automation",
+    "hardware-docs",
+    "cursor",
+    "rules",
+    "skills"
+  ],
+  "rules": "./rules",
+  "skills": "./skills",
+  "agents": "./agents"
+}

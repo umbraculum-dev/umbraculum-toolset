@@ -1,0 +1,106 @@
+---
+description: When drafting a plan that will be handed to a non-frontier AI executor (e.g. composer-2.5-fast, Cursor-fast variants, future local models), OR when executing such a plan, read the repo-root `docs/NON-FRONTIER-EXECUTOR-FITNESS-TRACKER.md` first — particularly §10 (lessons for plan authors) and §6.x (per-run FAIL patterns for the executor model family at hand). This is the empirical knowledge base that calibrates the MANIFESTO §1.2 "frontier models plan, faster executors execute" operating mode against observed reality.
+alwaysApply: true
+---
+
+# Non-frontier executor fitness tracker (reading-order rule)
+
+[`MANIFESTO.md`](../MANIFESTO.md) §1.2 frames Umbraculum-family projects
+as **AI-orchestrated-code projects by design** — frontier models do the
+planning and the judgment-dense work; faster/cheaper executors should
+be able to mechanically apply the resulting plans. That's the **target**
+operating mode. The empirical question — *"how close to that target is
+today's executor X on this task family?"* — is answered by a project-owned,
+per-run, append-only artifact at
+`docs/NON-FRONTIER-EXECUTOR-FITNESS-TRACKER.md`.
+
+This rule is the reading-order discipline that connects plan authors and
+executors to that artifact.
+
+## Reading-order rule (hard)
+
+If `docs/NON-FRONTIER-EXECUTOR-FITNESS-TRACKER.md` exists at the active
+repo's docs root, you MUST consult it in the following situations:
+
+1. **Before drafting a plan** that will be handed (in whole or in part)
+   to a non-frontier AI executor:
+   - Read **§10 — What this means for plan authors**. It enumerates the
+     load-bearing extra-specifications (enumerate gate skills by name,
+     enumerate per-file artifacts not by pattern, pre-author README
+     boilerplate, specify `tsc --noEmit` not just `vitest`, document
+     cross-agent staging boundaries, escalate choice-points via
+     `AskQuestion`, require decision rationale in build-log, document
+     per-phase commit policy) that prior runs have shown non-frontier
+     executors need to land plans correctly on the first pass.
+   - Read **§7 — Conventions compliance matrix** and **§8 — Verdict
+     snapshot** to see which conventions the target executor model
+     family has historically struggled with. Promote those into
+     extra-specific plan instructions.
+
+2. **Before executing a plan** as a non-frontier executor (or before
+   simulating one for testing purposes):
+   - Read **§6.x — Per-run assessments** entries for your model family,
+     particularly the *WRONG-table rows*. Those are the known FAIL
+     patterns the model exhibited on the last assessed run; treat them
+     as traps to actively avoid, not as *"this won't happen to me."*
+
+3. **After finishing a non-frontier-executor-driven plan** (whether you
+   were the executor or the verifier):
+   - Append a new run row to §5 (Run index), a new per-run section under
+     §6, and new columns to the §7 + §8 matrices. Do NOT edit prior run
+     sections — each per-run snapshot is the as-of-that-date record.
+
+## On-demand bootstrap when the tracker is absent
+
+If `docs/NON-FRONTIER-EXECUTOR-FITNESS-TRACKER.md` is absent in the
+active repo, this rule is informational only — it does not block. The
+tracker is a project-owned artifact whose presence indicates the
+project explicitly tracks non-frontier executor performance. Absence is
+also a signal — the project either hasn't started tracking yet (early
+phase), doesn't yet use non-frontier executors on plan-driven work, or
+has decided the tracker discipline isn't worth the per-run overhead.
+
+If the user explicitly asks to set up the tracker (e.g. *"bootstrap our
+non-frontier executor fitness tracker"*, *"start tracking Composer
+runs"*), do so by:
+
+1. Creating `docs/NON-FRONTIER-EXECUTOR-FITNESS-TRACKER.md` with the
+   §1-§4 framing, an empty §5 Run index, placeholder §6/§7/§8 tables,
+   and an empty §9 Trend notes section.
+2. (Optional but recommended) appending the first run as the worked
+   example.
+
+Do NOT auto-create the tracker unprompted. Do NOT overwrite an existing
+tracker without explicit user confirmation.
+
+## File ownership (for reference)
+
+- `docs/NON-FRONTIER-EXECUTOR-FITNESS-TRACKER.md` — project-owned,
+  versioned in the project's main repo. Append-only per run.
+- This rule (`43-non-frontier-executor-fitness-tracker.mdc`) — toolset-
+  owned, applies repo-agnostically; carries the reading-order
+  discipline.
+- The repo-root [`AGENTS.md`](../AGENTS.md) interceptor (if present) may
+  also carry a project-local pointer to the tracker — that's the
+  belt-and-suspenders pattern for in-repo agents that may or may not
+  have this plugin loaded.
+
+## Companion skill (future)
+
+A future companion skill (`append-fitness-tracker-run` or similar) MAY
+land under `skills/` to mechanize the §5/§6/§7/§8 column-addition
+workflow at the end of a run. Until that skill exists, append run
+sections by hand following the structure already in §4 (*How to use
+this document*) of the tracker itself.
+
+## Why this is a toolset-common rule, not domain-specific
+
+Non-frontier executor fitness is **language- and stack-agnostic**. The
+WRONG-patterns observed on a TypeScript/Node project (gate-skill
+skipping, partial coverage on multi-file plan lines, README structural
+FAILs, cross-agent commit contamination) are the same WRONG-patterns
+that will surface on a Python/PLC project or a PHP/Magento project,
+because they're properties of the *executor* — not the codebase. This
+rule therefore lives in `umbraculum-toolset-common` alongside the other
+language-agnostic discipline rules (DCO sign-off gate, commit-message
+ticket prefix, public-endpoint verification).

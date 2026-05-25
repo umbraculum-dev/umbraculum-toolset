@@ -1,0 +1,58 @@
+---
+description: PI_* Modbus mailbox is the external contract layer; tools/prepare_openplc_runtime_upload.py is the canonical runtime-upload transform; main.ld is NOT uploaded
+alwaysApply: true
+---
+
+# `PI_*` Modbus mailbox contract + runtime upload (mandatory)
+
+The `PI_*` located-coil and located-register surface is the **stable external integration layer** for the Pi sidecar, OpenPLC Runtime's `Monitoring` view, and any future service tools. Treat it as an API. Internal PLC variables remain implementation details and MUST NOT leak.
+
+## The two-file runtime upload model
+
+The OpenPLC editor compiles to:
+
+```
+build/<target>/src/program.st
+```
+
+The Pi-sidecar-ready upload artifact is produced by a separate post-process step:
+
+```
+python3 tools/prepare_openplc_runtime_upload.py
+```
+
+…which writes:
+
+```
+build/<target>/src/program.runtime-upload.st
+```
+
+This `program.runtime-upload.st` is what gets uploaded to the OpenPLC Runtime web UI's `Programs` page. Do **not** upload `program.st` (raw editor output) or `main.ld` (ladder-editor source) — the runtime expects flat Structured Text and chokes on serialized ladder graph data.
+
+## The contract layer
+
+- `pi-sidecar/openplc-modbus-map.example.json` (or equivalent) is the canonical machine-readable Modbus map. It documents every `PI_*` coil and holding-register address plus its semantic name.
+- A `contract_version` field (e.g. `"v2"`) gates compatibility between PLC and sidecar. Bumping this is a coordinated change: the PLC project, the sidecar code, the docs (`docs/runtime/OPENPLC-RUNTIME-UPLOAD-AND-PI-MODBUS-INTERFACE.md`), and the integrated release tag must all advance together (see `47-integrated-release-versioning-baseline.mdc`).
+- `PI_SVC_*` bench-only simulation hooks injected by `tools/prepare_openplc_runtime_upload.py` belong **only** to the runtime-upload artifact layer. They MUST NOT be treated as authored production/controller logic. Do not promote them into `main.ld`, the function blocks, or any contract doc.
+
+## Hard rules
+
+- Adding a new `PI_*` mailbox entry is an **API change**. It requires:
+  1. Adding the variable on the PLC source side (`main.ld` or a function block).
+  2. Adding the entry to the Modbus map JSON.
+  3. Adding the consumer code in the sidecar (`pi-sidecar/app/bridge/...`).
+  4. Bumping `contract_version` if the change is non-additive.
+  5. Updating `docs/runtime/OPENPLC-RUNTIME-UPLOAD-AND-PI-MODBUS-INTERFACE.md`.
+- Removing or renaming a `PI_*` entry is a **breaking change**. Same checklist, plus `contract_version` bump is required regardless.
+- Never short-circuit the `prepare_openplc_runtime_upload.py` step by uploading `program.st` directly: the script's transforms are not optional for the bench profile.
+- After the upload, confirm the OpenPLC Runtime dashboard reports `Status: Running` AND `Issued start_modbus() command to start on port: 502` (bench profile). If the second line is missing, the sidecar will appear to connect but read all-zero coils.
+
+## Canonical runbook
+
+The `openplc-runtime-upload` skill (`skills/openplc-runtime-upload/SKILL.md` in this plugin) is the canonical step-by-step. Use it; do not re-invent.
+
+## See also
+
+- `06-bench-vs-field-profile.mdc` — the upload story is bench-profile-specific; the field profile uses `OpenPLC Editor` upload to the CONTROLLINO directly.
+- `25-pi-sidecar-fastapi-jinja-sqlite-conventions.mdc` — the sidecar side of the contract.
+- `47-integrated-release-versioning-baseline.mdc` — coordinated version bumps when the contract changes.

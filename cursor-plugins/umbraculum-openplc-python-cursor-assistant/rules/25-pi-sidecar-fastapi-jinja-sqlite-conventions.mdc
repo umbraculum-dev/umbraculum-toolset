@@ -1,0 +1,88 @@
+---
+description: Pi-sidecar FastAPI/Jinja/SQLite layering — app/* subpackages, vendor-adapter pattern, pyproject.toml as version source, 127.0.0.1-only listener + login + SSH-tunnel remote access
+alwaysApply: false
+globs:
+  - "pi-sidecar/**/*.py"
+  - "pi-sidecar/**/*.html"
+  - "pi-sidecar/**/*.j2"
+  - "pi-sidecar/**/*.toml"
+  - "pi-sidecar/**/*.yml"
+  - "pi-sidecar/**/*.yaml"
+  - "pi-sidecar/**/Dockerfile"
+  - "pi-sidecar/**/Makefile"
+---
+
+# Pi-sidecar layering & conventions (mandatory under `pi-sidecar/**`)
+
+The sidecar is a `Python 3` + `FastAPI` + `Jinja` + `SQLite` + `pymodbus` service. It has a stable internal layering that reflects the boundaries between the PLC bridge, domain model, persistence, and the web/CLI surfaces.
+
+## Subpackage layering (do not collapse)
+
+| Path | Role |
+|---|---|
+| `app/main.py` | FastAPI entrypoint (Uvicorn target: `app.main:app`) |
+| `app/config.py` | Environment-driven configuration (`PI_SIDECAR_*` env vars; the source of truth for runtime knobs) |
+| `app/cli.py` | Sidecar CLI (`python -m app.cli ...`) — admin operations like `disable-user`, seeding, diagnostics |
+| `app/domain/` | Alarm channels, actions, typed domain models. **Pure** Python — no I/O, no DB, no Modbus |
+| `app/bridge/` | PLC bridge interface plus adapters. Includes `OpenPlcBridge`; mock variants live alongside for dev |
+| `app/supervision/` | Controller/thermostat adapter protocols + mock software-only helpers |
+| `app/fermentation_program/` | SQLite-backed Fermentation Program metadata, schedule lines, scheduler |
+| `app/history/` | SQLite bootstrap + repository (alarm/bypass transition history) |
+| `app/services/` | Central application service composing the above (the orchestrator) |
+| `app/web/` | FastAPI routes + Jinja HTML templates |
+| `app/auth/` | Authentication (argon2-cffi hashing, itsdangerous session cookies) |
+| `app/i18n.py`, `app/strings.py` | Internationalization layer |
+| `app/docs/` | Sidecar's internal docs registry / discovery surfaces |
+| `deploy/systemd/` | Sample systemd service unit |
+| `tests/` | `pytest` suite (FastAPI `TestClient`, conftest fixtures, `test_*.py` per surface) |
+
+## Vendor-adapter pattern (`app/bridge/`, `app/supervision/`)
+
+When integrating a vendor-specific controller, field device, or protocol client on the Pi/sidecar side:
+
+- Prefer a small adapter boundary over hardwiring vendor logic into orchestration code.
+- The preferred split is:
+  - one generic orchestration layer for polling, staging writes, fault publication, logging.
+  - one device-specific adapter implementation per controller family.
+- Adapter interfaces should describe **device facts** (live setpoint, PV, comm health) — not raw register mechanics.
+- Vendor-specific details (register numbers, scaling rules, serial defaults, protocol quirks) live inside the **concrete adapter implementation**.
+- Do NOT over-generalize this pattern into a large framework before a second real controller family exists.
+
+The removed `DRR244` adapter is historical context only — do not resurrect it.
+
+## Version source
+
+- `pyproject.toml` is the **canonical** sidecar version source (analogous to `composer.json` for PHP).
+- Runtime-visible sidecar version + API version stay aligned to that baseline unless the HTTP/API surface is deliberately versioned separately later.
+- See `47-integrated-release-versioning-baseline.mdc` for the cross-component versioning contract.
+
+## Local listener + auth + remote access (hard)
+
+- The sidecar binds to **`127.0.0.1`** only. Do NOT bind to `0.0.0.0` for production; the LAN-exposed pattern is intentionally not supported.
+- All routes (except an unauthenticated `GET /healthz`) require login. Auth uses `argon2-cffi` for password hashing and `itsdangerous` for session cookies.
+- The supported remote-access pattern is an **SSH local-port-forward tunnel** (`ssh -N -L 8088:127.0.0.1:8000 <pi-host>`), not a network-exposed HTTP listener. Do not add TLS termination or a public reverse-proxy unless the developer explicitly authorizes a new deployment shape.
+- Per-IP brute-force lockout is part of the auth layer. Do not weaken it.
+
+## CSRF + sessions
+
+- CSRF tokens are enforced on POST routes. New POST routes MUST integrate with the CSRF middleware; do not bypass it.
+- Session cookies are `HttpOnly` + `SameSite=Strict`. Do not relax these.
+
+## Docker Compose
+
+- `pi-sidecar/docker-compose.yml` is the base; `pi-sidecar/docker-compose.dev.yml` is the dev override.
+- Local development defaults to the **mock PLC bridge** (`PI_SIDECAR_PLC_BRIDGE=mock`). Switching to the real OpenPLC bridge requires the `PI_SIDECAR_OPENPLC_*` env vars (see `06-bench-vs-field-profile.mdc`).
+- The compose file publishes the web UI on host loopback only at `127.0.0.1:8000`. Do not expose it on `0.0.0.0`.
+- SQLite history is persisted in `pi-sidecar/pi-sidecar-data/` (host bind mount). Treat this directory as state; do not commit its contents.
+
+## Tests
+
+- Test files live under `pi-sidecar/tests/test_*.py`, one file per surface (`test_auth.py`, `test_csrf.py`, `test_admin_routes.py`, `test_cli.py`, `test_docs_*.py`, `test_openplc_transport.py`, etc.).
+- Use FastAPI's `TestClient` (already wired in `tests/conftest.py`).
+- New routes MUST land with a matching `test_*.py` covering: happy path + auth required + CSRF rejection (POST only) + bridge-failure behavior.
+
+## See also
+
+- `06-bench-vs-field-profile.mdc` — the `PI_SIDECAR_OPENPLC_*` env contract.
+- `08-pi-modbus-contract-and-runtime-upload.mdc` — the PLC side of the bridge.
+- `47-integrated-release-versioning-baseline.mdc` — version coordination across sidecar, PLC, contract, docs.

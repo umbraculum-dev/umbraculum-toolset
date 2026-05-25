@@ -1,0 +1,22 @@
+---
+description: Allowlist prompts: practical strategy for docker exec commands in non-interactive mode (cannot be auto-bypassed by repo rules)
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+# Allowlist prompts + `docker exec`: strategy (non-interactive)
+
+## Rule (guardrail)
+
+- Repo rules cannot force auto-allowlisting (it’s host-side Cursor policy).
+- Prefer editor-based changes; use `docker exec` only when unavoidable.
+
+## Runbook
+
+See `allowlist-docker-exec-strategy` skill.

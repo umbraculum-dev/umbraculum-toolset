@@ -1,0 +1,23 @@
+---
+description: Debugging guardrail — Docker Compose errors: verify Compose implementation (v2 vs v1) and compose file selection before YAML/env changes
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+# Docker Compose debugging: check implementation + file selection first
+
+When there are Docker Compose errors (especially confusing parse/interpolation errors), do **not** start by changing YAML. First confirm **which Compose implementation** and **which compose file** are actually in play.
+
+## Rule (guardrail)
+
+- Do not start by changing YAML. First confirm Compose implementation + compose file selection.
+
+## Runbook
+
+See `docker-compose-debugging` skill.

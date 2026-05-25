@@ -1,0 +1,39 @@
+---
+description: Bench vs Field transport profile — Modbus TCP on Linux/OpenPLC Runtime (bench) vs Modbus RTU over USB-Serial on CONTROLLINO MEGA Pure (field); what each is and is NOT proof of
+alwaysApply: true
+---
+
+# Bench vs Field profile (mandatory)
+
+The project uses **two distinct Pi-sidecar transport profiles** to talk to the PLC. The `PI_*` Modbus address map is **identical** across both; only the framing/transport changes. Confusing them is a common failure mode.
+
+## Bench profile (Modbus TCP, port `502`)
+
+- **Runtime placement**: `OpenPLC Runtime` runs as a **Linux-hosted runtime service** with its own web UI and Modbus TCP listener.
+- **Pi-sidecar transport**: `Modbus TCP` to `127.0.0.1:502` or `host.docker.internal:502`.
+- **Selection**: leave `PI_SIDECAR_OPENPLC_TRANSPORT` at its default of `tcp`.
+- **Purpose**: simulator work, local Linux/OpenPLC Runtime testing, sidecar integration verification, regression control before field commissioning.
+
+## Field profile (Modbus RTU over USB-Serial)
+
+- **Runtime placement**: `OpenPLC Runtime` is uploaded to the **`CONTROLLINO MEGA Pure`** itself via the `OpenPLC Editor`; the controller IS the runtime.
+- **Pi-sidecar transport**: `Modbus RTU` framed on USB-Serial, host-side `/dev/ttyACM0`, `115200 8N1`, slave id `1` (matches `devices/configuration.json` `modbusRTU.rtuInterface = "Serial"` / `rtuBaudRate = "115200"` / `rtuRS485ENPin = null`).
+- **Selection**: set `PI_SIDECAR_OPENPLC_TRANSPORT=rtu` and supply serial parameters via `PI_SIDECAR_OPENPLC_SERIAL_PORT`, `PI_SIDECAR_OPENPLC_SERIAL_BAUDRATE`, `PI_SIDECAR_OPENPLC_MODBUS_UNIT_ID`.
+- **Purpose**: real cabinet deployment where the PLC owns runtime logic and the Pi sidecar is an external operator/service companion.
+
+## Hard rules
+
+- The bench profile is **not** proof that the production control pillar should live on the same Linux host as the `pi-sidecar`. The intended production direction is the field profile (CONTROLLINO MEGA Pure owns runtime; USB-Serial Modbus RTU is the supported sidecar transport).
+- Do NOT reintroduce `RS485` (DRR244-style) sidecar-hosted controller ownership into active architecture docs. That direction was deliberately removed.
+- Do NOT mix transport-specific defaults: a recipe written for the bench profile (TCP `127.0.0.1:502`) MUST NOT be copied into a field-profile context without translating the transport parameters.
+- The `PI_*` Modbus map is **shared** across profiles. A new mailbox entry MUST work under both transports (TCP framing on bench, RTU framing on field); a bench-only addition is a design smell.
+
+## When in doubt
+
+- For the intended production control-pillar story, read `docs/architecture/FIELD-TARGET-PLC-DEPLOYMENT-NOTE.md` (in the project) before changing anything.
+- For the preferred direct controller upload recipe, read `docs/architecture/OPENPLC-EDITOR-TO-CONTROLLINO-DEPLOYMENT.md` (in the project).
+
+## See also
+
+- `08-pi-modbus-contract-and-runtime-upload.mdc` — the runtime upload procedure that produces the upload artifact consumed under either profile.
+- `25-pi-sidecar-fastapi-jinja-sqlite-conventions.mdc` — the sidecar layering; the `PI_SIDECAR_OPENPLC_*` env vars are the contract boundary between the two profiles.

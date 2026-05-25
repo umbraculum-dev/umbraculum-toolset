@@ -1,0 +1,76 @@
+---
+description: Pi-sidecar FastAPI - response_model declaration is required for JSON-emitting routes; Pydantic validates response shape at the framework level (mirror of TS/JS 22-* rule)
+alwaysApply: false
+globs:
+  - "pi-sidecar/app/**/*.py"
+---
+
+# FastAPI `response_model` declaration (mandatory under `pi-sidecar/app/**`)
+
+This rule is the Python expression of the same architectural principle the TS/JS plugin enforces via `22-typescript-contracts-runtime-validation.mdc`. Validation lives at the **route-declaration level**, not at the wrap-up gate. Per [`MANIFESTO.md`](MANIFESTO.md) epigraph — *defects are designed-out at the process level, not caught at QA* — wrong-shape responses are caught by Pydantic when the route handler tries to emit, not by a runbook check after the fact.
+
+## Why
+
+Pi-sidecar's FastAPI service has the same boundary-validation surface as `services/api`: request bodies need Pydantic parsing on the way in, response bodies need Pydantic validation on the way out. FastAPI provides `response_model=PydanticModel` on the route decorator; when the handler tries to return a value that doesn't match the model, FastAPI raises and the framework returns 500 (not a bad 200). The same framework-level rejection that `fastify-type-provider-zod` provides on the TS/JS side.
+
+Without `response_model=`, FastAPI cannot detect when the route's runtime output drifts from the declared Python types, and wrong-shape responses reach clients silently. This is the symmetric failure mode the TS/JS rule addresses on the Fastify side.
+
+## Rules
+
+- **Response-model declaration is REQUIRED for every FastAPI route under `pi-sidecar/app/**` whose handler returns a JSON body.** Declare `response_model=PydanticModel` on the route decorator:
+
+  ```python
+  from app.contracts.mailbox import MailboxReadResponse
+
+  @router.get("/api/v1/mailbox/{name}", response_model=MailboxReadResponse)
+  async def read_mailbox(name: str) -> MailboxReadResponse:
+      ...
+  ```
+
+  The Pydantic model is the source of truth for the response shape (`MailboxReadResponse(BaseModel)`); FastAPI rejects malformed responses at the framework level.
+
+- **The model lives in `app/contracts/` (or an equivalent dedicated module).** Do not declare the response model inline in the route file; the model is a contract artifact and lives with other contracts. This mirrors the TS/JS pattern where Zod schemas live in `packages/*-contracts/`.
+
+- **Exhaustive exception list — no `response_model` required for:**
+  - Routes returning `Response(status_code=204)` (No Content).
+  - Routes returning a redirect response (`RedirectResponse`, any 3xx).
+  - Routes returning a streaming response (`StreamingResponse`, `FileResponse`, `EventSourceResponse` / SSE, `PlainTextResponse` when used for non-JSON content).
+  - Routes proxying an external API where the upstream's shape is not under our control — in that case, declare a **wrapper model** that validates the upstream's claim before re-emitting; do not skip `response_model` "because the shape comes from elsewhere."
+
+  Anything outside this list is non-compliant.
+
+- **Prefer `response_model` over return-type annotations alone.** A Python return-type annotation (`-> MailboxReadResponse`) is a static hint; only `response_model=` enables FastAPI's runtime validation. Both together is best practice; `response_model=` alone is required.
+
+## Anti-patterns
+
+- `@router.get("/foo") async def foo(): return some_typed_dict` — handler returns a typed object but the route lacks `response_model=`. Wrong-shape responses (e.g. a refactor that changes the handler's return shape but forgets to update the consumer) reach clients silently.
+- Declaring the response model inline in the route file (e.g. `class _LocalResponse(BaseModel): ...` at the top of `app/web/routes_foo.py`) instead of in `app/contracts/`. Inline models drift away from cross-module reuse and are invisible to the rest of the contracts surface.
+- Using `response_model=Dict[str, Any]` or `response_model=dict` to "satisfy the rule" without committing to a real shape. This is equivalent to skipping the rule; the route MUST commit to a structural shape, or use one of the exhaustive exceptions above.
+- Mixing JSON-emitting and non-JSON behavior in the same route to bypass `response_model=` (e.g. branching on a query param between JSON and a 204). Split into two routes; each route has one response contract.
+
+## Symmetry with the TS/JS rule
+
+The TS/JS plugin's [`22-typescript-contracts-runtime-validation.mdc`](https://github.com/umbraculum-dev/umbraculum-toolset/tree/main/cursor-plugins/umbraculum-node-react-cursor-assistant/rules/22-typescript-contracts-runtime-validation.mdc) requires `schema: { response: { 200: SomeSchema, ... } }` on every Fastify route. This rule is the Python expression of that same principle. A reader who knows one rule should be able to predict the other:
+
+| Concern | TS/JS (Fastify + Zod) | Pi-sidecar (FastAPI + Pydantic) |
+|---|---|---|
+| Where the schema lives | `packages/*-contracts/src/**/*.ts` | `pi-sidecar/app/contracts/**.py` |
+| How the route declares it | `app.post(path, { schema: { response: { 200: FooSchema } } }, handler)` | `@router.post(path, response_model=FooResponse)` |
+| What enforces it at runtime | `fastify-type-provider-zod` serializer | FastAPI's `response_model` validator |
+| What happens on shape mismatch | Server returns 500 (not bad 200) | Server returns 500 (not bad 200) |
+| Exception list (no schema required) | 204, redirect, streaming, external-proxy with wrapper | 204, redirect, streaming, external-proxy with wrapper |
+
+The architectural through-line is the same: **validate at the source; trust the framework; the wrap-up verification gate stays HTTP-level**.
+
+## See also
+
+- TS/JS counterpart: [`umbraculum-node-react-cursor-assistant/rules/22-typescript-contracts-runtime-validation.mdc`](https://github.com/umbraculum-dev/umbraculum-toolset/tree/main/cursor-plugins/umbraculum-node-react-cursor-assistant/rules/22-typescript-contracts-runtime-validation.mdc).
+- Architectural decision record: F10 in [`docs/CONTRACTS-VALIDATION-STRATEGY.md`](docs/CONTRACTS-VALIDATION-STRATEGY.md) (Path β; 2026-05-19).
+- The wrap-up gate that stays HTTP-level: [`umbraculum-toolset-common/rules/45-public-endpoint-verification.mdc`](https://github.com/umbraculum-dev/umbraculum-toolset/tree/main/cursor-plugins/umbraculum-toolset-common/rules/45-public-endpoint-verification.mdc).
+- Pi-sidecar broader layering (subpackages, vendor-adapter pattern, version source, auth/CSRF): `25-pi-sidecar-fastapi-jinja-sqlite-conventions.mdc`. This rule (22-*) is narrowly about response-shape validation; the 25-* rule covers everything else.
+- RFC-0003 Decision C `ValidatedSchema` interface — the library-agnostic boundary for third-party module SDKs; Pydantic models satisfy this contract by construction via `Model.model_validate(unknown)`.
+
+## Fits the system
+
+- **Frontier now**: an always-on glob-scoped rule the agent applies whenever editing Python under `pi-sidecar/app/**`. A future `pisidecar-pydantic-auditor` subagent (tracked separately if rule enforcement gaps emerge in practice) would automate the audit-side check; until then, the rule itself is the enforcement layer.
+- **Local subagents (future)**: the read-first list for a hypothetical `pisidecar-pydantic-auditor` is small — route files under `pi-sidecar/app/web/` plus the contracts module — making it a clean candidate when one is opened.

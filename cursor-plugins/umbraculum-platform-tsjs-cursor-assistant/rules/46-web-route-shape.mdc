@@ -1,0 +1,179 @@
+---
+description: Web route shape — filesystem-axis route groups with module-owned static sub-segments, no group-root page, no group-root dynamic; URL-segment ownership via @umbraculum/module-sdk
+alwaysApply: false
+globs:
+  - "apps/web/app/**/*.tsx"
+  - "apps/web/app/**/*.ts"
+  - "services/api/src/modules/*/index.ts"
+  - "packages/module-sdk/**/*.ts"
+  - "scripts/check-web-url-segments.ts"
+---
+
+# Web route shape — Umbraculum β disciplines
+
+Authored 2026-05-21 as part of the Week-1 web-route audit (see umbraculum-dev
+`docs/design/web-route-group-audit.md` + `docs/rfcs/0006-amend-rfc-0002-brewery-file-move-acceleration.md`).
+Codifies the two physical-layout disciplines and the URL-segment ownership
+contract that the audit ratified.
+
+## The shape (β filesystem-axis)
+
+```
+apps/web/app/[locale]/
+├─ page.tsx                      ← Dashboard ONLY (the locale-root home)
+├─ (auth)/                       ← Platform grouping route group
+│  ├─ login/page.tsx             ← /en/login
+│  ├─ signup/page.tsx            ← /en/signup
+│  └─ select-workspace/page.tsx  ← /en/select-workspace
+├─ (automation)/                 ← Canonical-module route group (code: "automation")
+│  └─ vessels/                   ← Owned static sub-segment (registered via registerWebModule)
+│     ├─ page.tsx                ← /en/vessels
+│     └─ [vesselCode]/page.tsx   ← /en/vessels/<code>
+├─ (pim)/                        ← Canonical-module route group (code: "pim")
+│  ├─ products/page.tsx          ← /en/products
+│  ├─ products/[productId]/page.tsx
+│  ├─ categories/page.tsx
+│  ├─ attribute-sets/page.tsx
+│  └─ attribute-sets/[setId]/page.tsx
+└─ (brewery)/                    ← Canonical-module route group (code: "brewery")
+   ├─ recipes/...
+   ├─ inventory/page.tsx
+   └─ ...
+```
+
+Route groups (`(name)/`) **do not** contribute a URL segment per Next.js App
+Router semantics. URLs are flat under `[locale]/` regardless of which group
+the page lives under.
+
+## The two β disciplines (hard rules)
+
+### Discipline 1 — No `(code)/page.tsx` at the route-group root
+
+A `page.tsx` file directly inside any route group at the `[locale]/` level
+**collides** with `[locale]/page.tsx` (the locale-root home / Dashboard).
+Both files resolve to the URL `/en` — Next.js picks one at build time
+("Conflicting public file and page file") and the other vanishes from the
+routing table without warning at runtime, depending on bundler resolution
+order.
+
+**Bad** (was deployed pre-audit; broke `/en` for some sessions):
+
+```
+apps/web/app/[locale]/(automation)/page.tsx   ← ❌ collides with [locale]/page.tsx
+```
+
+**Good**:
+
+```
+apps/web/app/[locale]/(automation)/vessels/page.tsx   ← /en/vessels
+apps/web/app/[locale]/page.tsx                        ← /en (Dashboard, sole owner)
+```
+
+### Discipline 2 — No `(code)/[dynamicSegment]/page.tsx` at the route-group root
+
+A dynamic segment file (`[foo]/page.tsx`) directly inside a route group at
+the `[locale]/` level **shadows** every other module's static segments.
+Next.js routes `/en/anything` to that dynamic page because dynamic
+segments match anything that isn't a literal static-segment match — and
+the locale-root has no static-segment competitors at the route-group-root
+level.
+
+**Bad** (was deployed pre-audit; `/en/login`, `/en/recipes`, `/en/FAKE-CODE`
+all rendered the Vessel-Detail page silently):
+
+```
+apps/web/app/[locale]/(automation)/[vesselCode]/page.tsx   ← ❌ shadows everything
+```
+
+**Good**:
+
+```
+apps/web/app/[locale]/(automation)/vessels/[vesselCode]/page.tsx   ← only matches /en/vessels/*
+```
+
+## URL-segment ownership (D2 — full reservation)
+
+Every canonical module declares the top-level URL segments it owns via
+`@umbraculum/module-sdk`'s `registerWebModule()`:
+
+```typescript
+// services/api/src/modules/pim/index.ts (example)
+registerWebModule({
+  code: "pim",
+  ownedUrlSegments: ["products", "categories", "attribute-sets"],
+  navEntry: { primarySegment: "products", labelKey: "nav.pim" },
+});
+```
+
+Rules:
+
+- Every static sub-segment under `apps/web/app/[locale]/(<code>)/<segment>/`
+  must appear in the module's `ownedUrlSegments` array.
+- Every segment must match `/^[a-z][a-z0-9-]*$/` (kebab-case, leading letter).
+- A segment cannot be claimed by two modules — `UrlSegmentAlreadyOwnedError`
+  is thrown at registration time.
+- `navEntry.primarySegment` (if provided) must be one of `ownedUrlSegments`.
+
+The platform itself registers the residual non-canonical-module segments
+(`login`, `signup`, `select-account`, `select-workspace`, `ai`, `platform`,
+`about`, `contact`, `accessibility`, `contributing`, `i18n-contributing`)
+via `apps/web/app/_lib/registerPlatformSegments.ts` under the pseudo-code
+`"platform"`. Auth segments live under the platform-grouping route group
+`(auth)/`; the rest are flat folders under `[locale]/`.
+
+## CI gate
+
+`scripts/check-web-url-segments.ts` enforces all of the above at build
+time. The script is wired into `.github/workflows/check-web-url-segments.yml`
+and reports four issue classes:
+
+1. `discipline-1-group-root-page` — group has a `page.tsx` at the route-group root
+2. `discipline-2-group-root-dynamic` — group has `[<segment>]/page.tsx` at the route-group root
+3. `static-segment-not-registered` — folder exists under `(<code>)/<segment>/` but `<segment>` is not in `KNOWN_MODULE_OWNERSHIP[<code>]`
+4. `flat-module-folder` — module folder exists flat under `[locale]/` (instead of inside a `(<code>)/` route group), AND the folder name is not in `PLATFORM_RESERVED_SEGMENTS`
+
+The script does NOT auto-fix; it reports. Fixes are mechanical (move files
+into the correct route group + update the module's `registerWebModule` call).
+
+## When this rule fires
+
+Authoring or reviewing any of:
+
+- `apps/web/app/[locale]/(*)/page.tsx` — STOP, this is Discipline 1 violation
+- `apps/web/app/[locale]/(*)/[<dyn>]/page.tsx` — STOP, this is Discipline 2 violation
+- A new flat folder `apps/web/app/[locale]/<X>/` for a canonical-module concern — STOP, move under `(<code>)/<X>/`
+- A new `registerWebModule()` call — verify `ownedUrlSegments` matches the
+  folder structure and that the segments are not collision-prone
+- A new RouteId in `packages/navigation/src/index.ts` — verify the path in
+  `routeToPath` matches the owned segment, not the module code
+
+## Forward-looking note
+
+The Week-1 audit grew `packages/navigation`'s `RouteId` enum + `routeToPath`
+with seven module-specific entries (`vessels`, `vesselDetail`, `products`,
+`productDetail`, `categories`, `attributeSets`, `attributeSetDetail`). A
+follow-on RFC ("module-driven navigation registry", to be authored after
+Week 1 lands) will refactor `packages/navigation` to derive these from
+`@umbraculum/module-sdk`'s `listRegisteredWebModules()` so the navigation
+package no longer ships per-module branches. Until that RFC lands, every
+new canonical-module route requires:
+
+1. Adding the segment to the module's `registerWebModule({ ownedUrlSegments })`
+2. Adding the RouteId + RouteParamsById + routeToPath branch in `packages/navigation/src/index.ts`
+3. Adding (or extending) the corresponding case in `packages/navigation/src/native.ts` (throw "web-only" if native has no screen yet)
+
+## Why this fits the system (per umbraculum-toolset authoring gate)
+
+**Frontier-now**: keeps the AI agent from re-introducing the two specific
+anti-patterns the Week-1 audit fixed. Both anti-patterns produce silent
+runtime breakage that browser smoke-tests would have to catch — they
+don't surface in unit tests. The rule is the cheap front-door defense;
+`scripts/check-web-url-segments.ts` is the CI fallback when the rule is
+ignored.
+
+**Local-subagent-future**: paired with the (to-be-authored) `web-route-shape-checker`
+subagent that runs `npm run check-web-url-segments` and returns a bounded
+OK/FAIL summary — same shape as `types-baseline-verifier` and
+`module-readme-checker` already in this plugin. The subagent shell exists
+in `scripts/check-web-url-segments.ts`; the subagent wrapper is deferred to
+the post-Week-1 lessons-addendum pass.

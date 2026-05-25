@@ -1,0 +1,28 @@
+---
+description: Runtime command safety (containers)
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+# Runtime command safety (containers)
+
+## Rule (guardrail)
+
+This repo is containerized and many runtime commands are environment-specific.
+
+- Do NOT run Node/npm commands automatically (e.g. `node`, `npm`, `npx`).
+- Do NOT run PHP/Composer commands automatically (e.g. `php`, `composer`, `php bin/magento`, `vendor/bin/phpunit`).
+- Do NOT run Docker commands automatically (e.g. `docker`, `docker compose`).
+
+Instead:
+- Ask which container/service to use and the working directory.
+- Prefer stable, repeatable command shapes.
+
+## Runbook
+
+See `runtime-commands-containers` skill.

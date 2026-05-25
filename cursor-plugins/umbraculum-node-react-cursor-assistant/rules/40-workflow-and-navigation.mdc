@@ -1,0 +1,81 @@
+---
+description: Workflow + codebase navigation rules (git/PR + theme override lookup)
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+# Workflow & navigation rules
+
+## Git / PR workflow
+
+### Default policy
+- NEVER include git commit, push, or pull request steps in any build plan unless the user explicitly asks for them.
+- By default, only **read-only** git commands are allowed: `git diff`, `git status`, `git log`, `git show`, `git remote -v`, `git rev-parse`, `git branch --show-current`. Write operations (commit, push, tag, merge, PR) require an explicit user request.
+- Never run history-rewriting or destructive operations (`git push --force`, `git push --force-with-lease`, `git reset --hard`, `git rebase -i`, `git filter-*`, `git config`, branch deletion on `origin`) unless the user explicitly says "yes, do `<exact command>`" naming the operation.
+- For unattended/nightly workflows, avoid git write commands entirely unless there is no alternative.
+
+### Standing guardrails (apply even after an explicit user override)
+
+1. **Pull requests are off by default.** PR creation requires an explicit request that names the **target base branch**. PRs whose base branch matches the sensitive list (see #2) additionally require the named-branch confirmation in #2.
+2. **Sensitive branches — never push or merge without a named confirmation.** Sensitive branches are at least: `master`, `main`, `production`, `prod`, `prod-*`, `release/*`, plus any branch the project documents as protected in `DEVELOPMENT.md` / `DEVELOPMENT-LOCAL.md`. Required procedure:
+   - Detect the target branch before pushing (`git rev-parse --abbrev-ref HEAD` for the current branch; the explicit refspec for `git push <remote> <ref>`).
+   - If it matches the sensitive list, **pause** and ask the user to confirm by **naming the branch** (e.g. "push to `master`" — not just "push", not just "ok").
+   - On a named confirmation, proceed; otherwise stop.
+3. **Production is the hardest guardrail — never push or merge to it.** `production`, `prod`, `prod-*` are off-limits even with a generic explicit override. Refuse the action and recommend the project's deployment process (CI / human-driven PR / release tooling). The only exception is when the developer (a) types the exact branch name in their confirmation **and** (b) explicitly states they accept responsibility for bypassing CI/PR for this push. Warn before executing.
+
+### When the user explicitly requests a commit / push (operational)
+- Show `git status` and `git diff` (or `git diff --staged`) before committing.
+- Follow the project's commit-message convention (see the `umbraculum-toolset-common` plugin's `41-commit-message-ticket-prefix.mdc` rule, and recent `git log`).
+- Stage only the files that are part of the requested change — avoid `git add .` / `git add -A` unless explicitly asked.
+- Push to the already-configured upstream; do not change `git config`, do not retarget remotes.
+- Do not amend a commit unless the user explicitly says so (and only when the amend rules in the system prompt's Git Safety Protocol are satisfied).
+- After landing, show `git log -1 --stat`; for pushes also show post-push `git status -sb`. When summarizing a successful push to the user, apply the post-push reporting & PR-creation URL hygiene rules in the next subsection.
+
+### Post-push reporting & PR-creation URL hygiene
+
+After a successful `git push`, GitHub's `git-receive-pack` emits a hint line in the form `remote: Create a pull request for '<branch>' on GitHub by visiting: https://github.com/<owner>/<repo>/pull/new/<branch>`. This hint is always present when the push creates a new ref with no open PR for that head — it cannot be suppressed at the repo or org level (it is part of github.com's server-side push response). It is **not** a PR, **not** a link to an existing PR, and **not** safe to label as "the PR link": the `/pull/new/<branch>` URL opens GitHub's empty compare-and-create form with **base = the repo's default branch** (Settings → General → Default branch), which may be a production branch (`production`, `prod`, `main`, `master`). Clicking the link and submitting the form without changing the base dropdown opens a PR targeting that default branch — a real silent-production-PR risk for distracted reviewers (and for the agent that pasted the link).
+
+#### MUST NOT
+
+- Refer to the `/pull/new/<branch>` URL as "the PR link", "PR URL", "the link to the PR", or any phrasing that implies a PR already exists or that this URL is the safe one-click path to open one.
+- Echo GitHub's `remote: Create a pull request ...` block verbatim in a post-push report under a label that conflates "create-PR form" with "PR". If the block is quoted at all, label it explicitly as `GitHub's create-PR form hint (base = repo default branch; verify before submitting)`.
+- Imply the push opened, or could open, a PR. `git push` only updates refs on `origin`; opening a PR is a separate action (web form, `gh pr create`, REST API).
+- Use the GitHub repo default branch (from `git ls-remote --symref origin HEAD`) as the base when constructing a PR-creation URL. The repo's default may be a production branch; pick the safe base from the sources in MUST #2 below.
+
+#### MUST
+
+1. State explicitly what changed on `origin` in the post-push summary: branch pushed, commit SHA, upstream tracking status, and that no PR was opened and no other refs were touched. Example: "Pushed `bugfix/YS-841` → `3d0516450` on `origin/bugfix/YS-841`. Upstream tracking set. No PR opened; `refs/heads/production` and `refs/heads/main` unchanged."
+2. If — and only if — the user explicitly asks for a PR-creation URL, construct an explicit compare URL with the safe base pre-filled, of the form `https://github.com/<owner>/<repo>/compare/<safe-base>...<head>?expand=1`. Pick `<safe-base>` from the following sources, in priority order:
+   a. The base branch the user names in their request.
+   b. The PR target declared in `.github/workflows/*.yml` `pull_request: branches: [...]` triggers (typically `staging`, `develop`, `integration`, `rc-*`). If multiple workflows declare different targets, prefer the one used for the unit/integration test gate.
+   c. The base branch documented in `DEVELOPMENT.md` / `DEVELOPMENT-LOCAL.md` or a project-local rule.
+   d. Ask the user. Never silently fall back to the GitHub repo default branch.
+
+   State clearly in the message which `<safe-base>` was chosen and the source (workflow file, docs, user request).
+3. Continue to obey "Standing guardrails" #1 above: do not invoke `gh pr create` or any PR-opening API/tool without an explicit user request that names the target base branch.
+
+#### Anti-pattern (do not ship)
+
+- Post-push report of the form `Push: done. PR link: https://github.com/<owner>/<repo>/pull/new/bugfix/YS-841`. The URL is GitHub's create-PR form (base = repo default branch); labeling it "PR link" implies a PR existed and was safe to open. In a repo whose default branch is a production branch, this silently invites a production-targeted PR — the exact failure mode that motivated this rule (YS-841 chat, 2026-05-15: a consumer repo had `production` as its GitHub default branch; the agent's "PR link" label briefly read as "the PR was opened against production").
+
+#### Good pattern
+
+- "Pushed `bugfix/YS-841` → `3d0516450` on `origin/bugfix/YS-841`. Upstream tracking set. No PR opened; `refs/heads/production` and `refs/heads/main` unchanged. To open a PR against `staging` (the base declared by `.github/workflows/tests.yml`'s `pull_request` trigger): https://github.com/<owner>/<repo>/compare/staging...bugfix/YS-841?expand=1"
+
+### Project-local overrides
+- A project's `DEVELOPMENT.md` / `DEVELOPMENT-LOCAL.md` (or a project-local `plugin rules (`rules/*.mdc`)`) MAY **tighten** the rules above (e.g. forbid commits entirely in this project, expand the sensitive-branch list).
+- They MUST NOT **loosen** the sensitive-branch or production guardrails — those are part of the upstream contract.
+
+## Codebase navigation / Magento module location
+- When analyzing a theme override under `app/design/frontend/*/<Vendor_Module>/...`, ALWAYS locate the base module template first:
+  - Check `app/code/<Vendor>/<Module>/view/*/templates/...`
+  - If not present, check Composer vendor packages (e.g. `vendor/<composer-vendor>/<composer-package>/view/*/templates/...`), especially `vendor/alpenite/*`, `vendor/magento/*`, `vendor/smile/*`, etc.
+- Do NOT assume module code lives only under `app/code`.
+- When searching in `vendor/`, search by Composer path patterns (e.g. `vendor/alpenite/omnibus`) not by Magento module name (`Alpenite_Omnibus`).
+- For price templates and other renderer templates, always look for the controlling layout mapping, typically `**/view/**/layout/catalog_product_prices.xml` and confirm where it maps to.

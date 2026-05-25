@@ -1,0 +1,32 @@
+---
+description: E2E safety — avoid hardcoded navigation paths in Playwright flows
+alwaysApply: true
+globs:
+  - "e2e-app/playwright-suite/**/*"
+---
+
+# Rule: No hardcoded navigation paths in E2E workflows
+
+## Why
+- Hardcoding routes in tests can **mask real Magento routing/session/cart regressions**.
+- We want tests to **follow Magento UI navigation** (links/buttons) so failures reflect real user flows.
+
+## Requirements
+- **Do not** `page.goto()` hardcoded storefront paths like:
+  - `'/checkout/cart/'`, `'/checkout/'`, `'/customer/account/'`, etc.
+  - or relative variants like `'checkout/cart/'`
+- Allowed navigation sources (in priority order):
+  - **Configured paths** from `site` metadata (`site.cartPath`, `site.checkoutPath`, `site.accountPath`, etc.)
+  - **UI navigation**:
+    - Click the cart/minicart toggle, then click "View cart / Vai al carrello"
+    - Click "Proceed to checkout" from the cart UI
+    - Follow success-message cart links after add-to-cart, etc.
+
+## Exceptions (must be explicit in code)
+- **Routing tests** whose purpose is to validate a route may use `page.goto()` with hardcoded paths.
+- **Non-storefront** pages (e.g. Playwright reporter, internal tooling) are not subject to this rule.
+
+## Review checklist (for PRs/changes)
+- If you add `page.goto('...')` in storefront tests, confirm:
+  - it comes from `site.<path>` config **or**
+  - it is a routing test with a comment stating the exception.

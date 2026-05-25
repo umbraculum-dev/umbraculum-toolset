@@ -1,0 +1,25 @@
+---
+description: Nightly E2E convention: unattended triage (no "please proceed" stalls)
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+When working on anything under `e2e/playwright/**`, treat `NIGHTLY_E2E=1` as an explicit signal that the run is **unattended/nightly**.
+
+Behavior in unattended mode:
+
+- Do **not** ask follow-up confirmations like “please proceed” when the next step is obvious (rerun a failing spec, archive artifacts, extract skip reasons, summarize failures).
+- Assume the user is **not available** to interact; always pass non-interactive flags and keep commands self-contained.
+- Continue iterating until the requested suite/run is complete and failures are triaged (including one-by-one reruns when requested).
+
+Safety invariants (still required even in unattended mode):
+
+- Do **not** place real orders unless explicitly enabled by `E2E_ALLOW_PLACE_ORDER=1`.
+- Do **not** modify `docker-compose*.yml` (or stack-defining Docker files) without explicit approval.
+- Do **not** run destructive deletes on the host OS (outside containers).

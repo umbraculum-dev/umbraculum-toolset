@@ -1,0 +1,63 @@
+---
+description: Plugin package files — edit shared rules, skills, and agents in the plugin repo
+alwaysApply: true
+globs:
+  - "rules/**/*.mdc"
+  - "skills/**/SKILL.md"
+  - "agents/**/*.md"
+  - ".cursor-plugin/*.json"
+---
+
+# Plugin package files — edit shared artifacts in the plugin repo
+
+Shared Cursor assistant behavior is packaged by this plugin repository. Files under plugin `rules/`, `skills/`, and `agents/` are distribution artifacts for every workspace that installs the plugin.
+
+> [!CAUTION]
+> The companion `umbraculum-toolset-common` plugin ships rule `01-edit-plugin-source-not-installed-mirror.mdc` which traps the specific failure mode "agent edits `~/.cursor/plugins/local/<plugin>/...`" (the installed mirror) instead of the source repo. Read that rule alongside this one before authoring or modifying any plugin artifact.
+
+## Rule (hard)
+
+When proposing to create, modify, rename, or delete shared assistant guidance:
+
+1. First decide whether the change belongs in the **plugin repo** or in a **consumer project**.
+2. If the guidance is reusable across projects, make the change in the plugin repo.
+3. If the guidance is specific to one project, keep it project-owned (for example in repo-local `DEVELOPMENT-LOCAL.md`, project docs, or a project-local Cursor rule when the project intentionally uses one).
+4. If the target is unclear, stop and ask whether the change should be shared through the plugin or kept local to the consumer project.
+
+## Plugin-owned artifacts
+
+Treat these as plugin-owned when working in this repository:
+
+- `rules/*.mdc`
+- `skills/<name>/SKILL.md`
+- `agents/*.md`
+- `.cursor-plugin/plugin.json`
+- `.cursor-plugin/marketplace.json`
+- plugin docs that explain shared behavior
+
+## Consumer project guidance
+
+Consumer projects should not need to copy or edit plugin-owned files. For project-specific context, prefer:
+
+- repo-root `DEVELOPMENT-LOCAL.md` for local runtime facts and conventions
+- project documentation for domain-specific behavior
+- project-local Cursor rules only when the project deliberately owns extra guidance outside this plugin
+
+## Authoring workflow in this plugin repo
+
+When adding or changing shared guidance:
+
+1. Identify whether the artifact is a Rule, Skill, or Agent.
+2. Keep rules short and guardrail-oriented.
+3. Keep skills bounded, input-driven, and output-constrained.
+4. Keep agents focused and tied to canonical Skills when they run procedures.
+5. Update plugin docs when install/update behavior, Skill/Agent inventory, or marketplace readiness changes.
+6. Bump plugin manifest versions when preparing a release.
+
+## Stop conditions
+
+Stop and ask before editing if:
+
+- the requested guidance is clearly project-specific but the user asked to change the shared plugin
+- the change would introduce hardcoded local paths, private credentials, or organization-private package URLs
+- the change would make public marketplace submission harder without a deliberate reason

@@ -1,0 +1,18 @@
+---
+description: Development policies (high-signal defaults)
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+# Development policies (apply by default)
+
+- **Prefer fixing regressions over weakening tests**: if a refactor breaks rendering (JS errors, missing payload fields, broken routing), fix the app wiring/config first. Only adjust tests for determinism when the UX requirement did not change.
+- **Safety**: run destructive commands (e.g. `rm -rf ...`) only in the correct container/runtime context and keep paths explicit and reviewed.
+- **Frontend verification**: when a task touches UI behavior, prefer Browser Automation / connected browser tools for verification.
+

@@ -1,0 +1,37 @@
+---
+description: Guardrail — plans must state canonical absolute paths (avoid Cursor worktree drift)
+alwaysApply: true
+---
+
+# Guardrail: plans must include canonical absolute paths
+
+## Problem this prevents
+This repo is often edited through a **Cursor worktree** (example: `/path/to/cursor-worktrees/...`) while Docker bind mounts and local dev workflows typically use the **canonical repo path** (example below; your machine will differ):
+
+- Example canonical repo root: `/path/to/openplc-brewery-project`
+
+If a plan or instruction omits absolute paths, it's easy to apply changes in the wrong place and then sync/run stale code.
+
+## Requirements (hard)
+- Any plan or operational instructions MUST explicitly state **absolute paths** for:
+  - **Repo root** where changes must land (canonical path).
+  - Any script that must be run (e.g. `./tools/check_connections_consistency.py`, `./tools/prepare_openplc_runtime_upload.py`, `./docs/reference/em-fields-pamphlet/build_em_fields_pamphlet.py`).
+  - Any Docker-mounted source directory (seed/bind mount) referenced in the plan — notably `pi-sidecar/pi-sidecar-data/` (SQLite history bind mount).
+- If the user did not provide the canonical repo root, **ask for it** and then use the user-provided path in the plan.
+- When talking about "run from repo root", you MUST write it as:
+  - Example: `cd /path/to/openplc-brewery-project`
+
+## Special rule for OpenPLC + Pi-sidecar plans
+
+When a plan includes both PLC-side and sidecar-side steps, it MUST explicitly distinguish:
+
+- the **PLC project repo root** (where `pous/`, `project.json`, `build/`, `tools/` live)
+- the **Pi-sidecar working directory** (typically `<repo-root>/pi-sidecar/`, which is where `docker compose up` should be run from)
+- the **OpenPLC Runtime web UI URL** (typically `http://127.0.0.1:8080` on the Linux bench, or the CONTROLLINO MEGA Pure's IP on the field cabinet)
+- the **Pi-sidecar web UI URL** (`http://127.0.0.1:8000` locally; `http://127.0.0.1:<forwarded-port>` over SSH tunnel)
+
+Each is reached via a different command from a different directory; conflating them is the common failure mode.
+
+## Safety / non-goal
+- This rule is **about plans and instructions only**.
+- It does **not** allow hardcoding absolute filesystem paths inside code (sidecar code, PLC source, build scripts).

@@ -1,0 +1,59 @@
+---
+description: Always-on guardrail — never edit Cursor plugin files under the installed mirror (~/.cursor/plugins/local/); switch to the plugin source repo first.
+alwaysApply: true
+---
+
+# STOP — Do not edit Cursor plugin files in the installed mirror
+
+The path `~/.cursor/plugins/local/<plugin-name>/...` is the **installed mirror** maintained by the Cursor plugin installer. It is **not** the plugin source repo. Edits applied there are lost on the next plugin install/sync, are not version-controlled, are not reviewable, and never reach other workspaces that install the plugin.
+
+## Detection (apply BEFORE any read-then-edit on a plugin artifact)
+
+Before reading, creating, or modifying any of the following file types — `rules/**/*.mdc`, `skills/**/SKILL.md` (and siblings), `agents/**/*.md`, `.cursor-plugin/plugin.json`, `.cursor-plugin/marketplace.json`, plugin `README.md` — check whether the absolute path contains the substring:
+
+```
+/.cursor/plugins/local/
+```
+
+If it does, **stop**. You are about to edit the installed mirror, not the source repo.
+
+## Required recovery action
+
+1. Identify the plugin name. It is the directory segment immediately following `/.cursor/plugins/local/`. If unclear, read `~/.cursor/plugins/local/<plugin>/.cursor-plugin/plugin.json` to confirm.
+2. Resolve the plugin source repo. For umbraculum's own plugins the source path is `/path/to/umbraculum-toolset/cursor-plugins/<plugin>/`. For third-party plugins, ask the user for the upstream repo path — **do not guess**.
+3. Apply the edit in the source repo.
+4. Mirror back to the installed location so the active session sees the new behavior immediately (avoid waiting for the next plugin install):
+
+```bash
+SRC=/path/to/umbraculum-toolset/cursor-plugins/<plugin>
+INST=~/.cursor/plugins/local/<plugin>
+cp "$SRC/<relative/path/to/touched/file>" "$INST/<relative/path/to/touched/file>"
+```
+
+5. Commit the change from the source repo (the mirror is not a git working tree).
+
+## Anti-pattern
+
+```text
+StrReplace path=/home/<user>/.cursor/plugins/local/umbraculum-node-react-cursor-assistant/rules/22-typescript-contracts-runtime-validation.mdc ...
+```
+
+Why bad: the substring `/.cursor/plugins/local/` appears in the path → this is the installed mirror, not the source. The next `cursor` plugin sync will silently overwrite it.
+
+## Correct pattern
+
+```text
+StrReplace path=/path/to/umbraculum-toolset/cursor-plugins/umbraculum-node-react-cursor-assistant/rules/22-typescript-contracts-runtime-validation.mdc ...
+# then cp the file to ~/.cursor/plugins/local/<same-relative-path> so the active session sees it
+# then git add + commit in /path/to/umbraculum-toolset
+```
+
+## Related rules
+
+- `umbraculum-node-react-cursor-assistant/rules/11-cursor-package-files-edit-in-source-repo.mdc` — companion rule scoping where each plugin artifact type lives.
+- `umbraculum-toolset-common/rules/12-skill-contract.mdc` — Skill Contract enforced on plugin skill files.
+
+## Fits the system
+
+- **Frontier now**: an always-applied guardrail every umbraculum session sees; catches the agent before it commits work to a non-tracked location.
+- **Local subagents (future)**: a deterministic path-substring check (`/.cursor/plugins/local/`) that a local subagent can execute as a precondition gate on any plugin-artifact edit tool call.

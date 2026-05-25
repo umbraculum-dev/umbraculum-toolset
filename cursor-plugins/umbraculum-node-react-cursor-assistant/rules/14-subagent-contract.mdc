@@ -1,0 +1,41 @@
+---
+description: Subagent Contract — required structure for files under plugin Agents (`agents/`)
+alwaysApply: true
+globs:
+  - "agents/**/*.md"
+  - "plugin Agents (`agents/`)**/*.md"
+---
+
+# Subagent Contract (guardrail — required for plugin Agents (`agents/*.md`))
+
+Subagents are specialized AI assistants Cursor's main agent can delegate to. Each subagent runs in its own context window and returns a result to the parent. To keep them maintainable and Ollama-portable, every shipped subagent MUST follow this contract.
+
+## Required YAML frontmatter
+
+- `name`: lowercase-hyphenated identifier (e.g. `verifier`, `magento-debugger`).
+- `description`: one sentence with a delegation trigger phrase ("use proactively", "use after", "use when …"). This drives Cursor's automatic delegation.
+- `model`: one of `fast`, `inherit`, or a specific model id.
+
+## Recommended frontmatter
+
+- `readonly: true` for validators / verifiers (no edits, no state-changing shell).
+- `is_background: true` for long-running jobs (E2E, large test suites).
+
+## Body rules
+
+- Body ≤30 lines.
+- Body must reference its **canonical skill** under `skills/<name>/SKILL.md` rather than duplicating procedure (single source of truth).
+- Body must instruct the subagent to read repo-root `DEVELOPMENT-LOCAL.md` when present to resolve placeholders, and to ask when required inputs remain missing.
+- Output format must be bounded — counts / OK-FAIL summaries / one-line-per-failure — never full HTML, full JSON, or full stack-trace dumps.
+- Stop conditions: missing required input, allowlist-blocked command, output would be unbounded.
+
+## Local-model (Ollama) variants
+
+A project can drop a sibling file with a different model id and the same body, named `<name>.local.md`. The package sync overwrites by name only, so `*.local.md` siblings are preserved. See `DEVELOPMENT-LOCAL-OLLAMA.md`.
+
+## Anti-patterns (do not ship)
+
+- Vague descriptions ("Use for general tasks") — Cursor's auto-delegation needs specificity.
+- Overly long prompts (>1000 words) — slower, harder to maintain, no smarter.
+- Duplicating an existing slash command or skill — use the existing artifact.
+- More than ~5 generic subagents — start with 2–3 focused, distinct use cases.

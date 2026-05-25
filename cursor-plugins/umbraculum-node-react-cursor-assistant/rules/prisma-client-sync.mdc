@@ -1,0 +1,32 @@
+---
+description: Prisma guardrail — after schema changes, sync migrations + regenerate Prisma Client + restart the API (to avoid Unknown argument / stale client errors)
+alwaysApply: false
+globs:
+  - "**/schema.prisma"
+  - "**/prisma/**"
+---
+
+# Prisma Client sync after schema changes (guardrail)
+
+If you edit Prisma schema (`prisma/schema.prisma`) or add/rename model fields and you see errors like **`Unknown argument "..."`** or select-field mismatches, assume the **Prisma Client is stale** until proven otherwise.
+
+## Rule (do this before debugging code)
+
+- Run Prisma sync steps (migrate/generate) in the correct container/environment.
+- Restart the service after regeneration so it loads the new generated client.
+
+## Runbook (Docker Compose)
+
+- Apply migrations:
+  - `docker compose exec -T api npx prisma migrate dev`
+    - (Production/CI environments typically use `npx prisma migrate deploy` instead.)
+- Regenerate Prisma Client:
+  - `docker compose exec -T api npx prisma generate`
+- Restart API:
+  - `docker compose restart api`
+
+## Notes
+
+- Avoid `docker compose down -v` unless you intentionally want to wipe DB volumes.
+- If errors persist after restart, rebuild the API image as a last resort:
+  - `docker compose up -d --build api`

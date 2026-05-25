@@ -1,0 +1,44 @@
+---
+description: Local checks can lie — three documented divergence mechanisms; reproduce CI in a clean snapshot before claiming green
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+  - "**/*.md"
+  - "**/.github/workflows/**"
+---
+
+# CI parity — local checks can lie
+
+When a developer reports "my local check passes but CI failed", do NOT default to "must be a CI flake" or "must be a stale CI cache". There are **three documented mechanisms** by which local static-analysis checks (lint, typecheck, README/link checkers) silently disagree with CI. They were isolated 2026-05-19 during sub-plan #9 slot 7 (umbraculum-dev `docs/design/brewery-scope-migration-plan.md` §6.7); the lesson applies to every TS/JS monorepo.
+
+## Rule (hard)
+
+When CI fails on a check that you (or the developer) ran locally and saw green:
+
+1. **Do not push another commit hoping to "see what CI says" again.** That treats CI as a remote test runner and burns ~3–5 min per round-trip per job.
+2. **Reproduce the CI job in a clean `git archive HEAD` snapshot** — not in the live workspace — and confirm the failure locally. Then fix locally. Then re-verify in the snapshot. Then push.
+3. The runbook for this is **`ci-parity-local-reproduction`** skill (in this plugin).
+4. If the repo ships a `scripts/ci-parity-check.sh` (canonical implementation for `umbraculum-dev`), prefer it — one command, ~2 min, all three static-analysis jobs in one shot.
+
+## The three divergence mechanisms — check each one when local and CI disagree
+
+| # | Mechanism | Symptom in CI | Root-cause check |
+|---|---|---|---|
+| 1 | **Gitignored cross-references** | Tracked README's relative link 404s in CI; resolves locally. | `git check-ignore -v <relative-link-target>` — if non-empty, the file is .gitignored. CI's `actions/checkout@v5` brings tracked files only; your host has the local copy. **Fix:** point the link at a tracked alternative (root `README.md`, `DEVELOPMENT-LOCAL.md`, etc.) or remove. |
+| 2 | **Nested-workspace install drift** | TS2307 "Cannot find module 'X'" for a workspace's devDep; locally resolves. | `grep workspaces <repo>/package.json` — if root `workspaces:` is a one-level glob (`apps/*`, `services/*`, `packages/*`), nested workspaces TWO levels deep (e.g. `apps/web/e2e`) are NOT installed by `npm install --workspaces`. Locally hidden by stale `<workspace>/node_modules` from prior manual installs (bind-mounted into your docker reproduction). **Fix:** add an explicit `cd <nested-ws> && npm install` step to every CI workflow that touches it. |
+| 3 | **Stale `<workspace>/node_modules` bind-mount shadowing** | Lint rule fires in CI but is silent locally; or type-aware rule behavior diverges. | Run `ls <workspace>/node_modules/` on your host — if non-empty, your docker reproductions see it via bind-mount. Type-aware ESLint rules (notably `@typescript-eslint/require-await`, `@typescript-eslint/no-floating-promises`) can fire differently depending on whether transitive types resolve. **Fix:** reproduce in a clean `git archive HEAD` snapshot under `/tmp/`, not in the live workspace. |
+
+## Authoring-time guardrails (apply when writing READMEs / CI workflows / lint configs)
+
+- **README links** — never link from a tracked file to a `.gitignored` path. Specifically forbidden in this repo: `[DEVELOPMENT.md](...)` from any tracked README (the file is per-developer, gitignored). Use the root `README.md` or `DEVELOPMENT-LOCAL.md` (tracked template) instead.
+- **CI workflows** — for every workspace not matched by the root `workspaces:` glob (today: only `apps/web/e2e`, but future nested workspaces are analogous), every CI workflow that depends on it must `cd <ws> && npm install` explicitly after the root `npm install --workspaces`. Add an inline comment so the next maintainer understands the gap.
+- **Pre-push** — for slot work in sub-plan #9 and any commit with non-trivial CI surface, run `bash scripts/ci-parity-check.sh` (umbraculum-dev) as the last step before `git push`. It is the operational answer to "catch them locally".
+
+## Runbook
+
+See `ci-parity-local-reproduction` skill in this plugin for the bounded 5-command reproduction recipe (covers both the `ci-parity-check.sh` short-circuit and the manual `node:20-slim` fallback for repos that don't ship the script yet).

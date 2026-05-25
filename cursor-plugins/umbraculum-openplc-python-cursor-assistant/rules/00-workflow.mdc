@@ -1,0 +1,33 @@
+---
+description: Workflow — read DEVELOPMENT.md first; prefer shell ls for directory listings
+alwaysApply: true
+---
+
+# Workflow (mandatory)
+
+## Hard gate: ALWAYS read DEVELOPMENT.md first (no exceptions)
+
+This rule is a **workflow gate**.
+
+- Before starting **any** work in this repo (PLC source edits, Pi-sidecar code, docs, runtime commands, debugging), you MUST first read `DEVELOPMENT.md` at repo root.
+- **Do not** run any commands, search files, or apply changes before reading it.
+- If you cannot read it (missing file, path mismatch, tooling issue), **stop immediately** and ask the developer to confirm the correct repo root / file location.
+- If guidance there conflicts with other rules or assumptions, **DEVELOPMENT.md wins**.
+
+## Optional local addendum: read DEVELOPMENT-LOCAL.md next (if it exists)
+
+- At the start of a task, check whether `DEVELOPMENT-LOCAL.md` exists at repo root.
+  - If it exists: you MUST read it next.
+  - If it does not exist: proceed normally.
+- `DEVELOPMENT-LOCAL.md` is project-specific. If it conflicts with generic guidance, prefer `DEVELOPMENT-LOCAL.md` for this repo (while still following system/tool safety constraints).
+
+### Required explicit acknowledgement
+
+After reading `DEVELOPMENT-LOCAL.md` (when present), explicitly confirm it was read in the first update message of the task. If it is absent, proceed normally and ask only for values required by the requested task.
+
+## Directory listings
+- Prefer using the Linux shell via terminal commands:
+  - `ls` for quick checks
+  - `ls -las` when details matter (sizes, permissions, timestamps)
+- Avoid relying on editor-index directory listing tools for correctness (they can be stale/incomplete).
+- For Python-side scripts that enumerate files programmatically, see `98-python-dir-listing-over-glob.mdc`.

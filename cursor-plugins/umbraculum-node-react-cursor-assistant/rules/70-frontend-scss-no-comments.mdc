@@ -1,0 +1,38 @@
+---
+description: Frontend styles — never use /* */ comments in css/scss/less; use // only (scss/less)
+alwaysApply: false
+globs:
+  - "**/*.css"
+  - "**/*.scss"
+  - "**/*.less"
+---
+
+# Frontend styles: no multi-line comments in source (`/* ... */`)
+
+## Rule
+
+When modifying frontend style sources (`.css`, `.scss`, `.less`), **never** use multi-line comments in the `/* ... */` form.
+
+## Why
+
+Sass/Less can emit `/* ... */` comments into the compiled CSS output, which can:
+- ship internal notes in production assets
+- interfere with expected minification output during gulp compilation
+
+## Requirements
+
+- Never use multi-line / block comments (including `/*! ... */`) in `.css`, `.scss`, or `.less`.
+  - Disallowed example: `/* Cursor: keep payment method wrapper transparent for flex/order layout */`
+- Prefer communicating rationale in:
+  - an issue/ticket comment, or
+  - module/theme documentation (`README.md`, `DEVELOPMENT.md`), or
+  - the PR/commit description (when applicable).
+
+## Allowed comment format (source-only, keep minimal)
+
+- If you must leave a short note while iterating, use single-line comments only in this format:
+  - `// ...`
+
+Notes:
+- `// ...` is valid in SCSS and LESS, but **not** in plain CSS.
+- Therefore, in `.css` files: do not add comments at all.

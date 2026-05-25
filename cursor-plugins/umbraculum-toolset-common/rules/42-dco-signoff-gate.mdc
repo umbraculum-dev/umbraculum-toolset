@@ -1,0 +1,129 @@
+---
+description: Before any commit in a DCO-required project, verify a Signed-off-by auto-append mechanism is in place (per-clone `.git/hooks/prepare-commit-msg`, OR `core.hooksPath` + committed hook, OR sustained manual `git commit -s`). If missing, stop and instruct the developer with the canonical install command; do NOT silently produce unsigned commits. Critically, `format.signOff = true` is a common misconfiguration — it applies only to `git format-patch`, NOT to `git commit`; do not recommend it as the fix.
+alwaysApply: true
+globs:
+  - "**/.git/**"
+  - "**/CONTRIBUTING.md"
+  - "**/COMMIT_EDITMSG"
+---
+
+# DCO sign-off gate (mandatory when project requires DCO)
+
+The [Developer Certificate of Origin 1.1](https://developercertificate.org/) is a per-commit `Signed-off-by:` trailer that certifies the contribution's licensing posture. Many projects (Linux kernel, Docker, GitLab CE, the entire umbraculum-toolset / umbraculum-dev family, and most AGPLv3 projects) require it on every commit. Without the trailer:
+
+- The contribution has not actually been DCO-certified — the legal posture the project claims is not real in the git history.
+- GitHub DCO bots / DCO Actions block the PR until the contributor force-pushes a re-signed history.
+- The project's stated rule (in `CONTRIBUTING.md`) diverges from its actual history, which is the kind of "value without mechanism" gap that erodes contributor trust at the first public-flip moment.
+
+## The misconfiguration trap (read this first)
+
+A misleading detail trips up developers and AI agents alike: the git config
+
+```bash
+git config --global format.signOff true
+```
+
+is **almost always recommended** in OSS DCO documentation. **It is wrong** for the `git commit` use case. The `format.signOff` config applies **only to `git format-patch`** (the patch-by-email workflow used by e.g. the Linux kernel). It does **nothing** for `git commit -m "..."`. Many blog posts, Stack Overflow answers, and even some official-looking docs propagate this misunderstanding. Empirically verifying with a tiny commit demonstrates the gap immediately.
+
+There is **no built-in git config** that makes `git commit` auto-append the trailer. The only reliable mechanisms are:
+
+1. A `prepare-commit-msg` hook in `<repo>/.git/hooks/` (per-clone; standard and simplest).
+2. A `core.hooksPath` config pointing at a committed hook directory in the repo (shared across all clones, including fresh Cursor worktrees — the "permanent fix").
+3. The developer's sustained habit of typing `git commit -s` every time (error-prone; one missed `-s` and the commit is unsigned).
+4. A `git ci` shell alias mapping to `git commit -s` (works, but escapes when other tools — IDE commit panels, AI agents, CI scripts — invoke `git commit` directly).
+
+Mechanisms 1 and 2 are recommended; 3 and 4 are acceptable when the developer is the sole committer and aware of the trade-off.
+
+## Related rule — agent-driven commits
+
+The canonical `prepare-commit-msg` hook above handles **two** trailer-injection concerns at once on Cursor-agent-driven commits: the DCO `Signed-off-by:` trailer (this rule) AND a `Co-authored-by: Cursor <cursoragent@cursor.com>` trailer that surfaces AI co-authorship in `git log` per the umbraculum project's MANIFESTO §1.2 (the AI-orchestrated-code stance). The Cursor co-author injection fires only when the hook detects `CURSOR_AGENT=1` in the shell env (which Cursor exports into every agent tool-call shell, verifiable with `env | grep -i cursor`), so human contributors typing `git commit` in their own terminal are not over-attributed.
+
+Cursor's git integration DOES sometimes pre-inject `Co-authored-by: Cursor` into the commit-message file before the `prepare-commit-msg` hook runs, but the pre-injection is **non-deterministic** (observed empirically: it fires on some agent-driven commits and not on others, with no documented signal for when it does or does not). Relying on it alone leads to silently-misattributed commits. The hook is the operational contract that ensures the trailer is consistently present; Cursor's pre-injection — when it fires — is additive and idempotent with the hook's `git interpret-trailers --if-exists addIfDifferent` semantics. The hook is the contract.
+
+See [`44-agent-commit-cursor-coauthor.mdc`](./44-agent-commit-cursor-coauthor.mdc) for the agent-side post-commit verification rule (catches the case where the hook is partially or fully missing) and the canonical hook reference.
+
+## Rule (hard)
+
+When asked to commit in a project where DCO is required (signals: `CONTRIBUTING.md` mentions a `Signed-off-by` requirement, a `.github/workflows/dco.yml` exists, the DCO GitHub App is installed, or the project explicitly declares it in `DEVELOPMENT-LOCAL.md`):
+
+1. **Detect the mechanism.** Run, in order:
+   - `ls -la <repo>/.git/hooks/prepare-commit-msg 2>/dev/null` — check the hook file exists and is executable.
+   - `grep -qi 'Signed-off-by' <repo>/.git/hooks/prepare-commit-msg 2>/dev/null && echo OK` — confirm the hook actually appends the trailer (don't trust file presence alone; the hook could be a sample from `git init` template that does nothing).
+   - `git -C <repo> config --get core.hooksPath` — if set, repeat the two checks above against `<value>/prepare-commit-msg`.
+   - `git -C <repo> log -3 --format='%(trailers:only=true,key=Signed-off-by,valueonly=true)' | grep -v '^$' | wc -l` — if the last 3 commits all carry the trailer, the developer is reliably signing manually; that is acceptable as the mechanism.
+
+2. **If NO mechanism is detected, STOP before producing any commit.** Tell the developer:
+   - Explicitly which check failed (hook file missing, hook file present but doesn't append the trailer, `core.hooksPath` empty, recent commits unsigned).
+   - That `git config format.signOff = true` does NOT solve this — call out the format-patch-only trap by name so they do not waste a cycle on it.
+   - The canonical install command (see the script below) with the correct repo path substituted.
+   - That after install, the next commit will automatically carry the trailer with their identity (read from `user.name` + `user.email`).
+
+3. **After install confirmation, verify before the real commit.** Make a deliberately-empty test commit on a throwaway branch, inspect the trailer, then delete the branch. CRITICAL: use `git stash -u` BEFORE the throwaway commit and `git stash pop` after, OR ensure the working tree and index are both empty — otherwise `git commit --allow-empty -m "..."` will sweep up any staged / unstaged work into the throwaway commit. This is a known sharp edge.
+
+4. **Never `--no-verify` to bypass the hook.** Use only when the developer explicitly requests it; bypassing the DCO gate without a paper-trail is exactly the failure mode this rule exists to prevent.
+
+## Canonical install (provide verbatim when remediation is needed)
+
+```bash
+# Replace <REPO> with the absolute path to the target clone.
+# Common targets: the canonical clone, OR a fresh Cursor worktree clone
+# (Cursor worktrees do NOT inherit hooks from the source clone).
+
+cat > <REPO>/.git/hooks/prepare-commit-msg <<'HOOK'
+#!/bin/sh
+# Auto-append Signed-off-by trailer if missing (DCO sign-off gate).
+# Reads GIT_COMMITTER_IDENT (= user.name + user.email) for the signer identity.
+# No-op on merge / squash commits.
+
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+
+case "$COMMIT_SOURCE" in
+  merge|squash) exit 0 ;;
+esac
+
+if grep -qiE "^Signed-off-by: " "$COMMIT_MSG_FILE"; then
+  exit 0
+fi
+
+SOB=$(git var GIT_COMMITTER_IDENT | sed -n 's/^\(.*>\).*$/Signed-off-by: \1/p')
+[ -z "$SOB" ] && exit 0
+
+if [ -s "$COMMIT_MSG_FILE" ] && [ -n "$(tail -c 1 "$COMMIT_MSG_FILE")" ]; then
+  printf '\n' >> "$COMMIT_MSG_FILE"
+fi
+printf '\n%s\n' "$SOB" >> "$COMMIT_MSG_FILE"
+HOOK
+
+chmod +x <REPO>/.git/hooks/prepare-commit-msg
+```
+
+## Cursor worktree caveat (explicitly call this out)
+
+`.git/hooks/` is **per-clone**. Cursor agent worktrees are separate clones under `~/.cursor/worktrees/<hash>/<repo>/`, and they do **NOT** inherit hooks from the developer's canonical clone. Every Cursor worktree starts with empty `.git/hooks/`.
+
+If you (the agent) are operating in a Cursor worktree and the detection in step 1 fails, the most likely cause is exactly this — the developer's canonical clone has the hook, but the Cursor worktree is a fresh clone that doesn't. Instruct the developer accordingly: either run the canonical install command in the worktree path, or — better — adopt the `core.hooksPath` + committed-hook pattern (see "Future" below) so every clone (including future Cursor worktrees) inherits the mechanism automatically.
+
+## Anti-patterns (do not ship)
+
+- **Recommending `git config format.signOff = true`** as the fix. Format-patch-only. Silently does nothing for `commit`. Propagating this is the most common DCO misconfiguration in the wild; the umbraculum-toolset rules explicitly correct it.
+- **`git commit --no-verify`** to skip the hook in a DCO-required project. Bypasses the gate without paper-trail. Only acceptable when the developer explicitly asks for it.
+- **Producing the commit anyway and letting CI catch the gap.** Pushes a 10-second at-author fix to a multi-minute PR-feedback round-trip. Strictly worse.
+- **`git commit --allow-empty -m "..."` as a "test commit"** when the index or working tree is non-empty. Sweeps up staged / unstaged work into the throwaway commit. Always stash first, OR confirm both index and worktree are clean.
+- **Recommending only the global `git config` route** when the developer has stated they want per-repo control. Offer per-repo (`.git/hooks/`) AND shared (`core.hooksPath` + committed hook) variants; let the developer choose based on their preference.
+
+## Per-project override
+
+Projects that do NOT require DCO (no `Signed-off-by` mention in `CONTRIBUTING.md`, no DCO CI check, no DCO GitHub App) are out of scope for this rule. Honor any explicit per-project guidance in repo-local `DEVELOPMENT-LOCAL.md` ("this project uses a CLA, not DCO" / "this project relies on AGPLv3 inbound-equals-outbound") and skip the check for those projects.
+
+## Future: `core.hooksPath` + committed hook (the permanent fix)
+
+The per-clone `.git/hooks/prepare-commit-msg` install is the minimum-viable fix. The durable mechanism is to commit the hook script at `scripts/git-hooks/prepare-commit-msg` (or similar) and set `git config core.hooksPath scripts/git-hooks` once per clone. With this pattern:
+
+- The hook is version-controlled — single source of truth, reviewable in PR diffs.
+- Every fresh clone (developer machines + Cursor worktrees + CI runners that need it) inherits the hook automatically after running the one-time `core.hooksPath` config.
+- Updates to the hook script propagate via normal `git pull` — no per-clone re-install needed.
+
+The `core.hooksPath` config IS still per-clone, so the gate still has to instruct the developer to set it once per clone. The advantage is that the *hook content* travels with the repo; only the path config has to be set locally.
+
+Projects that adopt this pattern should update their `CONTRIBUTING.md` / `GETTING-STARTED.md` to recommend the `core.hooksPath` route over the bare `.git/hooks/` install, and this rule should detect both and treat them as equivalent.

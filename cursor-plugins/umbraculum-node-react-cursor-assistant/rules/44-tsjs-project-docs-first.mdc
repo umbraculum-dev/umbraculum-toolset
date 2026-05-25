@@ -1,0 +1,40 @@
+---
+description: TS/JS project docs first - read local testing, linting, contracts, accessibility, and architecture docs before broad changes
+alwaysApply: false
+globs:
+  - "apps/**/*.{ts,tsx,js,jsx}"
+  - "services/**/*.{ts,tsx,js,jsx}"
+  - "packages/**/*.{ts,tsx,js,jsx}"
+  - "eslint.config.{js,mjs,cjs,ts,mts,cts}"
+  - "package.json"
+---
+
+# TS/JS Project Docs First
+
+Shared rules cannot know every project's exact package names, test layers, schema library, or UI framework. Before broad TS/JS work, read the local docs that define those choices.
+
+## Read first when relevant
+
+- Foundation-hardening synthesis: `docs/FOUNDATION-HARDENING.md` or equivalent. (When the project has run a foundation-hardening pass, this is the single entry point that ties together lint + types + tests + docs.)
+- Testing strategy: `docs/TESTING.md`, `TESTING.md`, or equivalent.
+- Linting strategy: `docs/LINTING.md`, `eslint.config.*` comments, or equivalent.
+- Typing strategy (TypeScript strict-flag rollout, per-workspace `tsc --noEmit` baseline): `docs/TYPING.md`, or equivalent.
+- Coding standards: `docs/CODING-STANDARDS.md`, `CONTRIBUTING.md`, or equivalent.
+- Runtime validation/contracts: `docs/CONTRACTS-VALIDATION-STRATEGY.md` (project-canonical validation strategy; this repo's v2.0 commits to Zod v4 per `docs/rfcs/0003-validation-library-adoption.md`), package README files, or equivalent.
+- Module-README standard: `docs/DOCS-README-STANDARDS.md`, or equivalent.
+- Accessibility/UI rules: `docs/DEVELOPMENT-ACCESSIBILITY.md`, design-system docs, or equivalent.
+- Architecture direction: `docs/PLATFORM-ARCHITECTURE.md`, architecture decision records, or equivalent.
+
+## Rules
+
+- Prefer project-local docs over generic assumptions when they conflict with this shared package.
+- If a referenced doc is absent, proceed with the generic rule and ask only for values that are necessary for the task.
+- Do not invent package names, container names, validation libraries, test commands, route conventions, or design-system primitives.
+- When a local doc says a convention is mandatory, treat it as a guardrail for the session.
+
+## Anti-patterns
+
+- adding a route without checking the project's test-layer mapping
+- changing lint strictness without reading lint docs
+- introducing or switching schema libraries (Zod, Valibot, TypeBox, Fastify schemas, hand-rolled) without checking the project-local validation strategy doc — this repo's choice is recorded in `docs/CONTRACTS-VALIDATION-STRATEGY.md` v2.0 (Zod v4) + `docs/rfcs/0003-validation-library-adoption.md`; mixing libraries inside the same codebase is explicitly forbidden by RFC-0003 Decision A
+- building UI without checking accessibility and design-system guidance

@@ -1,0 +1,65 @@
+---
+description: Integrated release versioning — integrated_release_tag + PLC version + sidecar version + contract_version + API version move together; pyproject.toml is the canonical sidecar source; Document Metadata header repeats baseline
+alwaysApply: true
+---
+
+# Integrated release versioning baseline (mandatory)
+
+This project has **multiple components that ship together** (the PLC program, the Pi sidecar, the `PI_*` Modbus contract, the OpenPLC Runtime upload artifact, the HTTP/API surface). Independent version bumps create silent incompatibility windows. The discipline below keeps them coupled.
+
+## The five things that move together
+
+| Component | Where it lives |
+|---|---|
+| **`integrated_release_tag`** | The git tag for a coordinated release (e.g. `2.0.1-dev`). Recorded in the Modbus map JSON's top-level `integrated_release_tag`. |
+| **PLC version** | The PLC project version (matches `integrated_release_tag`). Referenced in `Document Metadata` blocks across docs. |
+| **Sidecar version** | The `version = "..."` field in `pi-sidecar/pyproject.toml`. **Canonical** source of truth (like `composer.json` for PHP). |
+| **`contract_version`** | The Modbus map JSON's top-level `contract_version` (e.g. `"v2"`). Bumps only on **non-additive** `PI_*` mailbox changes. |
+| **API version** | The HTTP/API surface version (matches `integrated_release_tag` unless the API surface is deliberately versioned separately later). |
+
+## Hard rules
+
+- A coordinated release bump touches: `pyproject.toml` (sidecar version), the Modbus map JSON (`integrated_release_tag`), every doc with a `Document Metadata` block (see below), and produces a single git tag.
+- `contract_version` is **separate** from `integrated_release_tag`. Many integrated releases can share the same `contract_version`. Bump `contract_version` ONLY for non-additive `PI_*` changes (renames, removals, semantic redefinitions). Pure additions do not bump `contract_version`.
+- `pyproject.toml` is the **canonical** sidecar version source. Any other sidecar-version mention (HTTP `/version` route, README headers, doc metadata) is derived; do not let the derived copies become canonical.
+- A new `Document Metadata` block at the top of any normative or contract document MUST repeat the active baseline. Inconsistency between the metadata block and the body is a documentation bug.
+
+## `Document Metadata` block (canonical template)
+
+Normative and contract documents start with a metadata block. Use this exact shape:
+
+```markdown
+## Document Metadata
+
+- Document status: Live baseline reference
+- Applies to: Integrated system baseline `<integrated_release_tag>`
+- PLC version: `<integrated_release_tag>`
+- Sidecar version: `<integrated_release_tag>`
+- Contract version: `<contract_version>`
+- API version: `<integrated_release_tag>`
+```
+
+When the integrated release bumps, sweep every document carrying a `Document Metadata` block and update it. Stale metadata is worse than no metadata.
+
+## Coordinated bump procedure
+
+1. Decide the new `integrated_release_tag` (semver-ish; e.g. `2.0.1-dev` → `2.1.0`).
+2. Update `pi-sidecar/pyproject.toml` `version` to match.
+3. Update the Modbus map JSON's `integrated_release_tag` (and, if applicable, `contract_version`).
+4. Sweep every doc carrying a `Document Metadata` block — there are typically several across `docs/runtime/`, `docs/architecture/`, `docs/plc-project/`, `pi-sidecar/README.md`. Use ripgrep (`rg -l 'Document Metadata' docs/ pi-sidecar/`) to find them all.
+5. Update `README.md` and `PROJECT-NEXT-STEPS-CHECKLIST.md` if the bump completes or supersedes any planned step.
+6. Commit per the `umbraculum-toolset-common` plugin's `41-commit-message-ticket-prefix.mdc`.
+7. Tag the commit with the `integrated_release_tag`.
+
+## Anti-patterns (do not ship)
+
+- Bumping `pyproject.toml` in isolation without touching the Modbus map JSON or the doc metadata blocks. Creates a sidecar that reports a version newer than the contract it speaks.
+- Bumping `contract_version` for a pure addition. Pure additions are backward-compatible; reserving the bump for non-additive changes preserves the contract-version's signal value.
+- Inferring the active baseline from one doc's metadata block. Multiple stale metadata blocks coexist; `pi-sidecar/pyproject.toml` is the tiebreaker.
+- Leaving documents with `Document status: Draft` after the integrated release has shipped — promote to `Live baseline reference` (or remove the doc) as part of the bump.
+
+## See also
+
+- `08-pi-modbus-contract-and-runtime-upload.mdc` — `contract_version` bump triggers.
+- `25-pi-sidecar-fastapi-jinja-sqlite-conventions.mdc` — `pyproject.toml`-as-canonical-source rule.
+- `45-hardware-doc-naming-and-scope-tags.mdc` — the broader doc discipline (suffix convention, scope tags).

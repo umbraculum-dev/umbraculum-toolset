@@ -1,0 +1,24 @@
+---
+description: When a URL is provided with a visible exception, verify fix by curling the page from the PHP container
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+# Verify browser exceptions via curl (required)
+
+When the developer provides a **URL** and reports a **clear exception visible in the browser** (PHP fatal, stack trace, error banner), do not claim a fix is working until it is verified.
+
+## Rule (guardrail)
+
+- For non-doc changes, run `setup:di:compile` at the end of the task.
+- Do not claim a fix works until it is verified.
+
+## Runbook
+
+See `curl-exception-verification` skill.

@@ -1,0 +1,83 @@
+---
+description: Subagent delegation guardrails — when (and when NOT) to use the Task tool
+alwaysApply: true
+globs:
+  - "**/*.md"
+  - "**/*.mdc"
+---
+
+# Subagent delegation guardrails (mandatory)
+
+Subagents (invoked via the Task tool, including all `subagent_type` values: stock `generalPurpose`, `explore`, `shell`, and project-defined ones such as `pi-modbus-mailbox-inspector`, `hardware-doc-checker`, `plc-vars-prefix-verifier`, etc.) run in their **own context window** and cannot observe parent-side feedback mid-flight. The most common failure mode is a subagent locked onto a premise the parent has already begun to doubt: each new piece of evidence gets patched into the existing wrong model instead of triggering a step-back. This rule constrains delegation to the shapes of work where that failure mode is unlikely.
+
+This rule is the **operational runtime guardrail**. It complements:
+
+- `14-subagent-contract.mdc` — how to **author** subagent definition files under plugin Agents (`agents/`).
+- `DEVELOPMENT-LOCAL-MODELS-DELEGATION.md` — the high-level "frontier planning + bounded executor" policy (when present in the consuming project).
+
+## Default: foreground execution
+
+The default is to do the work in the foreground. Delegation must be a **deliberate choice with a stated reason**, not a productivity reflex. Reasoning like "this will take a while, I'll spin up a worker so the user isn't blocked" is **not** sufficient — the work shape must also match the appropriate-use criteria below.
+
+## Appropriate-use criteria (all three must hold)
+
+Delegate ONLY when the work is:
+
+1. **Parallelizable OR truly fire-and-forget** — either multiple independent reads/searches/lookups that can run concurrently, OR a single well-specified job with a deterministic shape and a hard time budget.
+2. **Low-context-evolution** — the success criterion can be fully stated upfront. The parent does not need to observe intermediate state to decide what to do next.
+3. **Non-iterative** — the work does not require reframing as evidence accumulates. If "the right next step depends on what we learn from the previous step", the work is iterative and must stay in the foreground.
+
+## Hard prohibitions
+
+Do **not** delegate:
+
+- **Iterative debugging loops** — "make this failing test green", "chase this PLC misbehavior to root cause", "iterate on this Modbus mailbox until the sidecar sees the right value". These require parent-level reframing as evidence accumulates; a subagent will patch symptoms and compound wrong premises.
+- **Work the parent has not first attempted in the foreground**. If the parent has not run the work itself at least once, the parent does not know the work's actual shape and cannot write a sufficient spawn prompt.
+- **Tasks whose spawn prompt pre-commits the subagent to a specific solution path** ("write the new PI_* coil at address 9XX without reading the existing mailbox first"). The subagent's narrower context window cannot re-question the premise.
+- **Anything that touches PLC source files (`pous/**`, `project.json`, `devices/configuration.json`)** without explicit authorization in the spawn prompt. PLC source is brittle; the OpenPLC editor's reload behavior amplifies any accidental edit (see `02-openplc-project-structure.mdc`). Read-only inspection is fine; writes are not.
+- **Modbus writes** — any Modbus `write_coil` / `write_register` against the live PLC, especially in the bench profile where the sidecar may be polling concurrently. Default subagent posture is read-only Modbus.
+- **Generated-artifact regeneration** under `build/` from inside a subagent. The OpenPLC editor compile step is the canonical regeneration path; a subagent running it can race the developer's editor.
+- **Commits, pushes, `git --amend`, force-pushes, branch creation/deletion** — unless the parent's spawn prompt explicitly authorizes the exact operation. The default is "report; let the parent commit".
+
+## Prefer project subagents over `generalPurpose`
+
+When delegation IS appropriate, pick the registered specialist from plugin Agents (`agents/`) whose `description` matches the work shape, not the catch-all `generalPurpose`. Specialists shipped by this package:
+
+| Subagent | Use for |
+|---|---|
+| `pi-modbus-mailbox-inspector` | Read a bounded set of `PI_*` coils/registers from outside the sidecar to triage "sidecar shows X, PLC shows Y" mismatches |
+| `hardware-doc-checker` | `make check-connections` + bounded OK/FAIL summary of `tools/check_connections_consistency.py` |
+| `em-fields-pamphlet-builder` | Run the pamphlet PDF build + remind about the two visual checks (no page-split, no margin-clip) |
+| `openplc-runtime-uploader` | Drive the editor-compile → `prepare_openplc_runtime_upload.py` → upload step; readonly until the human-mediated upload itself |
+| `plc-vars-prefix-verifier` | Scan ST/LD/`project.json` for variable-prefix-convention violations (rule `04`); bounded one-line-per-violation summary |
+
+Consumer projects may register additional plugin Agents (`agents/*.md`) files; the same preference rule applies — match the work to the specialist's `description` field. Falling back to `generalPurpose` is acceptable **only** when no specialist matches the work shape.
+
+## Spawn prompt contract (mandatory when delegation is allowed)
+
+Every spawn prompt MUST state:
+
+- **Success condition** — what "done" looks like, in observable terms. NOT a solution path.
+- **Stop trigger** — at least one of: a time budget ("if not done in 10 min, stop and report"), an output threshold ("if N retries fail, stop"), or an error class ("if you hit a Modbus timeout, stop and ask the parent").
+- **Output format** — bounded shape (counts, OK/FAIL summaries, one-line-per-failure). Never request full Modbus map dumps, full POU listings, or full pamphlet PDFs in textual form.
+- **Authorization scope** — explicit statement of what the subagent is and is not allowed to do. By default: no Modbus writes, no edits under `pous/**` or `project.json`, no commits, no pushes, no `git --amend`, no edits outside the scoped paths.
+
+## Parent's responsibility: interrupt triggers
+
+The parent must `interrupt: true` and `resume` the subagent (or kill the underlying shell) when any of the following are observed:
+
+- Subagent has made >3 attempts at the same step without producing new evidence.
+- Subagent is editing files outside its scoped paths.
+- Subagent is performing Modbus writes that were not explicitly authorized.
+- Subagent is regenerating files under `build/` (the developer's OpenPLC editor is the canonical regenerator).
+- User signals frustration ("stop", "going nuts", "take over", "subagent is stuck"). **Interrupt immediately**; do not finish the current iteration.
+- Subagent has been running for >5 minutes without observable progress signals (file writes, log lines, status updates).
+
+When interrupting, ask the subagent to **report** before exiting (list of touched files, last command run, any commits/pushes, any Modbus writes, processes still alive in containers), so cleanup can be scoped. Never assume a wedged subagent did nothing.
+
+## Anti-patterns (do not ship)
+
+- "I'll spin this up as a background worker so the user isn't blocked" — alone, this is not a valid delegation reason. Verify all three appropriate-use criteria first.
+- Delegating a multi-step task that includes both a deterministic part (running the PDF build) AND an iterative part (chasing why a diagram overflows the margin). Split: run the deterministic part in foreground OR delegate ONLY the deterministic part.
+- Spawning a subagent on the same `subagent_type` immediately after interrupting a wedged one with the same problem framing. The framing is the bug; a fresh subagent will recreate it. Reframe in the foreground first.
+- Using `generalPurpose` for work that a registered specialist already covers, because the specialist requires more upfront input. The specialist's constraints exist for a reason; bypassing them recreates the failure modes the specialist was added to prevent.

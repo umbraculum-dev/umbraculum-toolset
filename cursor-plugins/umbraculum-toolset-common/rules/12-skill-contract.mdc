@@ -1,0 +1,27 @@
+---
+description: Skills must follow the Skill Contract (input-driven, output-constrained, bounded) for future local subagents
+alwaysApply: true
+---
+
+# Skill Contract (guardrail — required for plugin Skills (`skills/<name>/SKILL.md`))
+
+We are explicitly preparing for **future local subagents**. Skills must be executable without guesswork.
+
+## Rule (hard)
+
+When creating or updating any plugin Skills (`skills/<name>/SKILL.md`), you MUST enforce this contract:
+
+- **Input-driven**: include `## Inputs required (do not assume)` and list every required placeholder explicitly (e.g. `<CONTAINER_NAME>`, `<SERVICE_URL>`, `<WORKDIR>`, `<DEVICE_PATH>` — whatever the skill actually needs). The skill MUST stop and ask if any required placeholder is unresolved at invocation time.
+- **Output-constrained**: include `## Output format (return exactly)` and require exactly these headings:
+  - `Prerequisites`
+  - `Commands`
+  - `Stop conditions`
+- **Bounded**: include `## Bounds (hard)` and enforce:
+  - max **5** commands
+  - no loops / polling
+  - no speculative file paths, container names, URLs, port numbers, or device/coil/register addresses
+  - bounded output — no full HTML / JSON / log / Modbus-map / large-document dumps
+
+## Source of truth
+
+See the plugin Skills documentation → "Skill Contract (required for new/updated skills)" in the consuming plugin's README. The consuming domain plugin MAY layer additional ecosystem-specific bounds (e.g. "no Modbus write coils with single-shot pulses", "no destructive PLC source edits") on top of this contract — those are additions, not replacements.

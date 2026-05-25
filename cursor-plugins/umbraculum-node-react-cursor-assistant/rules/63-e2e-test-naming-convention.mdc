@@ -1,0 +1,26 @@
+---
+description: E2E test naming convention (b2c/b2b + guest/registered + action)
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+For new or renamed specs under `e2e/playwright/tests/**`, use this filename convention:
+
+- `b2c-guest-<action>.spec.ts`
+- `b2c-registered-<action>.spec.ts`
+- `b2b-guest-<action>.spec.ts`
+- `b2b-registered-<action>.spec.ts`
+
+Where `<action>` is a short, hyphenated description, for example:
+
+- `checkout-place-order-braintree-paypal`
+- `checkout-place-order-braintree-card`
+- `pdp-add-to-cart`
+
+Keep names stable and descriptive; avoid embedding store codes (siteId) in filenames.

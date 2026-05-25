@@ -1,0 +1,31 @@
+---
+description: Safety rule — no destructive rm on host (outside containers)
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+# Safety: forbid destructive deletes on the host
+
+## Rule
+- Do **not** run destructive delete commands on the host OS (outside Docker containers), especially:
+  - `rm -rf ...`
+  - `rm -r ...`
+  - `rm ...` on directories or wildcard paths
+- If deletion is required, perform it **inside the appropriate container** (example: `<PHP_CONTAINER>`) via `docker exec ...`.
+
+## Allowed alternatives (preferred)
+- Prefer non-destructive approaches on host:
+  - Write into a new directory and switch references
+  - Use `rsync`/copy into an empty target (created ahead of time) without `--delete`
+  - Create a fresh path (timestamped) and leave old content in place until verified
+
+## Exception (must be explicit)
+- If a host-side deletion is truly required, the assistant must:
+  - Explain exactly what will be deleted (absolute paths)
+  - Ask for explicit approval before running the command
