@@ -1,0 +1,67 @@
+---
+description: Reference-pamphlet ASCII-diagram convention — pandoc + xelatex/tectonic A5, asciidiagram tcolorbox wrap, 6.0pt/7.2pt verbatim, shrink-diagram-not-raise-font
+alwaysApply: false
+globs:
+  - "docs/reference/em-fields-pamphlet/**/*.md"
+  - "docs/reference/em-fields-pamphlet/**/*.py"
+  - "docs/reference/em-fields-pamphlet/**/README.md"
+---
+
+# EM-fields pamphlet ASCII-diagram convention (mandatory in `docs/reference/em-fields-pamphlet/`)
+
+The pamphlet at `docs/reference/em-fields-pamphlet/AC-DC-AND-EM-FIELDS-PAMPHLET.md` is built with `pandoc` + Unicode LaTeX (`xelatex` / `tectonic`) at **A5, 15 mm margins**. Editing it without understanding the diagram-wrapping rule produces silently-broken PDFs (split diagrams, clipped labels at the right margin).
+
+## The hard rule (every ASCII figure)
+
+Every ASCII-art figure in the pamphlet MUST be wrapped in the `asciidiagram` `tcolorbox` environment — raw LaTeX, inside a `{=latex}` block. **Plain Markdown ```` ``` ```` code fences fail** in this pamphlet for two reasons:
+
+1. Pandoc's default fenced-code rendering ignores the `\verbatimfontsize` override set in the Markdown's YAML `header-includes`. Wide diagrams (≥ ~50 chars) overflow the A5 right margin and their labels get clipped.
+2. Default code blocks are willing to **split across pages**, which mangles multi-line diagrams (the stator/rotor, ceiling-lamp loop, `E` / `B` field-line pictures, etc.).
+
+The `asciidiagram` environment fixes both: `breakable=false` forces the whole diagram onto a single page, and the nested `\begin{Verbatim}` inherits the document-wide `\verbatimfontsize` (set to **6.0 pt / 7.2 pt** monospace in the YAML `header-includes`).
+
+## When to wrap vs leave plain
+
+| Content | Wrap in `asciidiagram`? |
+|---|---|
+| ASCII figure with box-drawing / arrow glyphs (`═ ╪ ─ → ● ≈`) | **Yes — required** |
+| Multi-line diagram (≥ 3 lines, even narrow) | **Yes — required** (page-split risk) |
+| Wide single line (≥ ~50 chars) | **Yes — required** (margin-clip risk) |
+| Short equation: `F = q · E`, `v(t) = Vpeak · sin(2π·f·t)`, `∮ E · dA = Q / ε₀` | **No** — plain ```` ``` ``` ```` is correct (narrow, body-flow context) |
+
+The canonical authoring pattern, worked examples, and the "when to wrap / when to leave plain" rule-of-thumb live in `docs/reference/em-fields-pamphlet/README.md` under **Authoring conventions**. Read that before touching any pamphlet diagram.
+
+## Font size discipline (hard)
+
+`\verbatimfontsize` is **6.0 pt / 7.2 pt**. That size is the tuned sweet spot:
+
+- Large enough to stay readable when the PDF is printed A5.
+- Small enough that the widest current diagrams (~70-char lines with Unicode box-drawing) fit inside the grey box at 15 mm margins.
+
+**If a future edit adds an even wider diagram, shrink the diagram — do NOT raise the font size back up.** Anything `≥ 6.5 pt` causes the known overflow.
+
+## Build + visual verification
+
+After any diagram-touching edit:
+
+1. Rebuild:
+   ```bash
+   python3 docs/reference/em-fields-pamphlet/build_em_fields_pamphlet.py --skip-figures
+   ```
+   (Use `--skip-figures` to avoid regenerating the Matplotlib figures when only the diagrams changed; for a full rebuild from cold, drop the flag.)
+2. Visually scan the resulting PDF for:
+   - **No ASCII picture split across two pages.**
+   - **No label clipped at the right margin.**
+
+Neither is allowed. If either occurs, fix the diagram (shrink it) before considering the edit complete.
+
+## Build orchestration
+
+- `make reference-pdfs` (from project root) rebuilds the reference pamphlet via `build_em_fields_pamphlet.py`.
+- `make clean-reference` removes the generated PDF.
+- The reference pamphlet is **not** gated by `make check-connections` (it is independent reference content, not brewery SoT).
+
+## See also
+
+- `45-hardware-doc-naming-and-scope-tags.mdc` — the broader hardware-doc discipline (different surface; pamphlet is reference, not SoT).
+- The canonical skill: `em-fields-pamphlet-pdf-build/SKILL.md` (in this plugin) — bounded build + verification runbook.

@@ -1,0 +1,48 @@
+---
+description: ESLint editor config discipline - keep source.fixAll.eslint at "explicit", point editors at the editor-only ESLint config, never at the production type-aware config
+alwaysApply: false
+globs:
+  - "**/.vscode/settings.json*"
+  - "**/.cursor/settings.json*"
+  - "**/.editorconfig"
+  - "**/eslint.config.{js,mjs,cjs,ts,mts,cts}"
+  - "**/eslint.config.editor.{js,mjs,cjs}"
+---
+
+# ESLint Editor Discipline (`source.fixAll.eslint` + editor-config split)
+
+Type-aware ESLint rules (`@typescript-eslint/no-floating-promises`,
+`no-misused-promises`, `no-unsafe-*`, `await-thenable`, etc.) are CI-safe
+but editor-hostile: they force the parser to load the full TypeScript
+program for each lint pass, costing ~3-5x inline-feedback latency and
+several hundred MB extra ESLint-server RAM. Worse, when a project also
+has `source.fixAll.eslint: true` in `.vscode/settings.json` or its
+Cursor equivalent, the typescript-eslint auto-fixer is allowed to:
+
+- silently strip `eslint-disable` directives that look "unused" against
+  a transient rule state,
+- rewrite type assertions in ways that break `tsc --noEmit`.
+
+This rule fires when the AI is configuring editor settings or editing
+ESLint config. It does **not** apply to source files.
+
+## Rules
+
+- When configuring or modifying any editor-settings file (`.vscode/settings.json`, `.cursor/settings.json`, equivalent host configs), `source.fixAll.eslint` MUST be `"explicit"`. Never `true`. Never `"always"`. Any change that introduces `true` is a bug.
+- When a project ships an `eslint.config.editor.{js,mjs,cjs}` (a thinner editor-only config that strips type-aware rules), the editor's ESLint extension MUST point at that file via `eslint.options.overrideConfigFile`. CI keeps using the production `eslint.config.{js,mjs,cjs}`. Do not silently flip the override back to the production config "to see all warnings" in the editor.
+- Do NOT add type-aware rules to `eslint.config.editor.*`. The whole point of an editor-only config is to skip them. If a future Phase adds a new type-aware rule to production, append the rule name to the editor config's filter list (e.g. `TYPE_AWARE_RULES`), do not duplicate the rule into the editor config.
+- Do NOT recommend `eslint --fix` as a routine workflow. Use focused fixes. For bulk auto-fix passes, gate behind explicit user confirmation per `23-eslint-flat-config-hygiene.mdc`.
+- When a contributor reports IDE lag / high RAM / "ESLint server unresponsive" in a project that has type-aware rules, first check whether the project ships a `.vscode/settings.json.example` (or equivalent) the contributor needs to copy. The default extension behavior (no override) loads the production config and triggers the cost.
+
+## Anti-patterns (do not ship)
+
+- `"source.fixAll.eslint": true` in any committed settings file.
+- `"source.fixAll.eslint": "always"` (same effect as `true`).
+- Adding type-aware rules directly to `eslint.config.editor.*`.
+- Removing a `linterOptions.reportUnusedDisableDirectives: "off"` block from `eslint.config.editor.*` — that block typically exists precisely so editors don't flag (and `source.fixAll` doesn't auto-strip) `eslint-disable` directives that target rules the editor config has stripped.
+- Suggesting contributors run `eslint --fix` to "clean up the warnings the editor shows" without first checking whether those warnings come from the production config (legitimate) or the editor config (which intentionally hides them).
+
+## See also
+
+- `23-eslint-flat-config-hygiene.mdc` — production-config hygiene rules (rule promotion stages, flat-config block ordering, inline-disable reasons).
+- The consuming project's `docs/LINTING.md` (or equivalent) — the project-specific story for rule rollout, editor config, and recommended settings.

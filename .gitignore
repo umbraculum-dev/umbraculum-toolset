@@ -1,0 +1,78 @@
+# OS junk
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+*~
+.*.un~
+.netrwhist
+
+# Cursor editor — keep .cursor-plugin/ (manifests), ignore per-machine state
+.cursor/state/
+.cursor/local/
+
+# Python (in case any tooling lands here later)
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# Node (in case any tooling lands here later)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.npm/
+.yarn/
+.parcel-cache/
+.next/
+.nuxt/
+out/
+dist/
+build/
+
+# TypeScript build output
+*.tsbuildinfo
+
+# Test / coverage artifacts
+coverage/
+.nyc_output/
+
+# Local environment overrides
+.env
+.env.local
+.env.*.local
+DEVELOPMENT-LOCAL.md
+# ...but DO track plugin-shipped DEVELOPMENT-LOCAL.md templates (these are docs, not per-developer files)
+!cursor-plugins/*/docs/templates/DEVELOPMENT-LOCAL.md
+!cursor-plugins/*/docs/templates/DEVELOPMENT-LOCAL.*.md
+
+# Logs
+*.log
+logs/

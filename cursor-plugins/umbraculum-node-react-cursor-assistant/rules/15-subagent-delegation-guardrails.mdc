@@ -1,0 +1,80 @@
+---
+description: Subagent delegation guardrails — when (and when NOT) to use the Task tool
+alwaysApply: true
+globs:
+  - "**/*.md"
+  - "**/*.mdc"
+---
+
+# Subagent delegation guardrails (mandatory)
+
+Subagents (invoked via the Task tool, including all `subagent_type` values: stock `generalPurpose`, `explore`, `shell`, and project-defined ones such as `magento-debugger`, `phpunit-runner`, `verifier`, etc.) run in their **own context window** and cannot observe parent-side feedback mid-flight. The most common failure mode is a subagent locked onto a premise the parent has already begun to doubt: each new piece of evidence gets patched into the existing wrong model instead of triggering a step-back. This rule constrains delegation to the shapes of work where that failure mode is unlikely.
+
+This rule is the **operational runtime guardrail**. It complements:
+
+- ``14-subagent-contract.mdc` rule` — how to **author** subagent definition files under plugin Agents (`agents/`).
+- `DEVELOPMENT-LOCAL-MODELS-DELEGATION.md` — the high-level "frontier planning + bounded executor" policy.
+
+## Default: foreground execution
+
+The default is to do the work in the foreground. Delegation must be a **deliberate choice with a stated reason**, not a productivity reflex. Reasoning like "this will take a while, I'll spin up a worker so the user isn't blocked" is **not** sufficient — the work shape must also match the appropriate-use criteria below.
+
+## Appropriate-use criteria (all three must hold)
+
+Delegate ONLY when the work is:
+
+1. **Parallelizable OR truly fire-and-forget** — either multiple independent reads/searches/lookups that can run concurrently, OR a single well-specified job with a deterministic shape and a hard time budget.
+2. **Low-context-evolution** — the success criterion can be fully stated upfront. The parent does not need to observe intermediate state to decide what to do next.
+3. **Non-iterative** — the work does not require reframing as evidence accumulates. If "the right next step depends on what we learn from the previous step", the work is iterative and must stay in the foreground.
+
+## Hard prohibitions
+
+Do **not** delegate:
+
+- **Iterative debugging loops** — "make this failing test green", "chase this error to root cause", "iterate on this approach until it works". These require parent-level reframing as evidence accumulates; a subagent will patch symptoms and compound wrong premises. Empirical failure modes observed in real sessions include orphan test fixture directories left in host-owned paths (`app/code/Magento/TestModule*/`), raw SQL `INSERT`s into integrity-sensitive tables (`store_website`, `store_group`, `store`), and `@unlink` of host-generated DI artifacts (`generated/code/Magento/.../Interceptor.php`, `ProductExtension.php`) from inside test methods — each step locally rational, the whole chain wrong because the premise was wrong.
+- **Work the parent has not first attempted in the foreground**. If the parent has not run the work itself at least once, the parent does not know the work's actual shape and cannot write a sufficient spawn prompt.
+- **Tasks whose spawn prompt pre-commits the subagent to a specific solution path** ("create the second website inline, no fixture dependency"). The subagent's narrower context window cannot re-question the premise. If the parent has chosen the approach, the parent must execute it.
+- **Work that touches host-owned directories** (`app/code/Magento/`, `generated/code/`, `vendor/`, `app/etc/env.php` and similar boot config). Subagents accumulating workarounds against host state can corrupt the dev environment.
+- **Commits, pushes, `git --amend`, force-pushes, branch creation/deletion** — unless the parent's spawn prompt explicitly authorizes the exact operation. The default is "report; let the parent commit". See `DEVELOPMENT-LOCAL-MODELS-DELEGATION.md` § "Subagents MUST NOT".
+
+## Prefer project subagents over `generalPurpose`
+
+When delegation IS appropriate, pick the registered specialist from plugin Agents (`agents/`) whose `description` matches the work shape, not the catch-all `generalPurpose`. Specialists shipped by this package:
+
+| Subagent | Use for |
+|---|---|
+| `magento-debugger` | Stack traces, DI/area boot failures, `setup:install` failures, template ParseErrors |
+| `phpunit-runner` | Unit test runs scoped to changed `app/code/*` modules (unit-only; integration is out of scope per `92-ci-safe-unit-tests.mdc`) |
+| `template-refactor-verifier` | Post-`.phtml` edit sanity (no JS errors, no KO binding failures) |
+| `verifier` | Skeptical post-hoc validation of "is the fix really done" claims |
+| `e2e-smoke` | Bounded storefront E2E smoke after risky storefront changes |
+
+Consumer projects may register additional plugin Agents (`agents/*.md`) files; the same preference rule applies — match the work to the specialist's `description` field. Falling back to `generalPurpose` is acceptable **only** when no specialist matches the work shape. If the same `generalPurpose` shape recurs across sessions, that is a signal to add a new specialist under plugin Agents (`agents/`) (per `14-subagent-contract.mdc`), not a signal to keep using `generalPurpose`.
+
+## Spawn prompt contract (mandatory when delegation is allowed)
+
+Every spawn prompt MUST state:
+
+- **Success condition** — what "done" looks like, in observable terms. NOT a solution path.
+- **Stop trigger** — at least one of: a time budget (e.g. "if not done in 10 min, stop and report"), an output threshold (e.g. "if N retries fail, stop"), or an error class ("if you hit a DI compile error, stop and ask the parent").
+- **Output format** — bounded shape (counts, OK/FAIL summaries, one-line-per-failure). Never request full HTML/JSON/stack-trace dumps.
+- **Authorization scope** — explicit statement of what the subagent is and is not allowed to do. By default: no commits, no pushes, no `git --amend`, no edits outside the scoped paths.
+
+## Parent's responsibility: interrupt triggers
+
+The parent must `interrupt: true` and `resume` the subagent (or kill the underlying shell) when any of the following are observed:
+
+- Subagent has made >3 attempts at the same step without producing new evidence.
+- Subagent is editing files outside its scoped paths.
+- Subagent is regenerating, copying, or `@unlink`ing files in host-owned directories (see hard prohibitions above).
+- User signals frustration ("stop", "going nuts", "take over", "subagent is stuck"). **Interrupt immediately**; do not finish the current iteration.
+- Subagent has been running for >5 minutes without observable progress signals (file writes, log lines, status updates).
+
+When interrupting, ask the subagent to **report** before exiting (list of touched files, last command run, any commits/pushes, processes still alive in containers), so cleanup can be scoped. Never assume a wedged subagent did nothing.
+
+## Anti-patterns (do not ship)
+
+- "I'll spin this up as a background worker so the user isn't blocked" — alone, this is not a valid delegation reason. Verify all three appropriate-use criteria first.
+- Delegating a multi-step task that includes both a deterministic part (running tests) AND an iterative part (fixing what they reveal). Split: run the deterministic part in foreground OR delegate ONLY the deterministic part, with the iterative part reserved for the foreground.
+- Spawning a subagent on the same `subagent_type` immediately after interrupting a wedged one with the same problem framing. The framing is the bug; a fresh subagent will recreate it. Reframe in the foreground first.
+- Using `generalPurpose` for work that a registered specialist already covers, because the specialist requires more upfront input. The specialist's constraints exist for a reason; bypassing them recreates the failure modes the specialist was added to prevent.

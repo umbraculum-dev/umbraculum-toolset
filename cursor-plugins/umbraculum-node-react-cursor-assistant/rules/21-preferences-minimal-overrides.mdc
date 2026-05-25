@@ -1,0 +1,23 @@
+---
+description: Preferences: minimal overrides only
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+# Preferences: minimal overrides only
+
+## Rule
+- A DI `<preference>` replaces the **entire class type** in the object manager.
+- When a preference is required (for example to alter private/protected behavior), the preference class must **extend the original** and **override only the minimal methods needed**.
+- **Do not copy/paste the full original class** into `app/code/`. This makes upgrades harder and diverges from upstream fixes.
+- **Only remove “identical” methods if the preference class extends the original.** If it does **not** extend the original, removing identical methods can break required behavior or interface/contract expectations.
+
+## Guidance
+- Prefer plugins (`before/after/around`) when possible.
+- If a preference is unavoidable, keep the constructor aligned and call `parent::__construct(...)`.
+- If a preference cannot extend the original (rare), treat it as a full replacement and keep all required methods, even if identical.

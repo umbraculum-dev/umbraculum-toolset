@@ -1,0 +1,25 @@
+---
+description: Experimental agentic E2E checks (control panel CLI) — non-blocking signal during development
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+# Experimental agentic E2E checks (non-blocking)
+
+This repo may use an **experimental** agentic E2E system (separate from the legacy `html/e2e/**` suite).
+
+## Rule (guardrail)
+
+- Treat agentic E2E as **signal-only** unless your team makes it gating.
+- Do not modify the E2E suite codebase as part of Magento work unless explicitly requested.
+- Do not assume org/site/persona defaults; read `DEVELOPMENT-LOCAL.md` and/or ask the developer.
+
+## Runbook
+
+See `agentic-e2e-runbook` skill.

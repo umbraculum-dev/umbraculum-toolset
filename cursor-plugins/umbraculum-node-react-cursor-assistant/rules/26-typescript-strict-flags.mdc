@@ -1,0 +1,49 @@
+---
+description: TypeScript strict flags floor — the 6 candidate strict flags should be on for any new TS workspace; fix patterns must follow the canonical 4-pattern playbook.
+alwaysApply: false
+globs:
+  - "**/tsconfig*.json"
+  - "apps/**/*.{ts,tsx}"
+  - "services/**/*.{ts,tsx}"
+  - "packages/**/*.{ts,tsx}"
+---
+
+# TypeScript strict flags
+
+When a project has run (or is running) a TypeScript types-hardening pass, the 6 candidate strict flags are the **floor** for any new TS workspace and any new TS code in an existing gated workspace.
+
+If the project ships a `docs/TYPING.md` (or equivalent strict-flag rollout record), defer to it for project-specific overrides; otherwise use this rule as the default.
+
+## The 6 strict flags
+
+A new `tsconfig.json` SHOULD inherit or set all six (in addition to `strict: true`):
+
+- `noImplicitOverride` — requires the `override` keyword on subclass methods.
+- `noPropertyAccessFromIndexSignature` — forces `obj['key']` for index-signature properties.
+- `noUncheckedIndexedAccess` — `T[]` index access returns `T | undefined`.
+- `exactOptionalPropertyTypes` — pins `foo?: T` vs `foo: T | undefined` distinction.
+- `verbatimModuleSyntax` — forces explicit `import type` for type-only imports.
+- `isolatedModules` — every file must be transpilable independently.
+
+## Fix patterns when these flags surface errors
+
+Four canonical fix patterns cover ~95% of cases:
+
+1. **Type-widening** — add `| undefined` to optional fields at the type-declaration site (preferred when many call sites pass `undefined`).
+2. **Conditional spread** — `...(value !== undefined ? { field: value } : {})` at call sites (use when the target type is owned by a 3rd-party generator like Prisma).
+3. **Non-null assertion** — `arr[N]!` after a length guard, or destructure to a local `const m = found[0]!` (use when surrounding logic proves definedness).
+4. **Optional-chain with fallback** — `obj?.field ?? null` when the field is genuinely optional in the consumer.
+
+Do NOT use `as any`, `as unknown as T`, or `// @ts-expect-error` without a comment explaining the *specific reason* the suppression is correct. If the project's lint slice has `no-explicit-any: error`, the first is already blocked; `@ts-expect-error` should pin a specific upstream issue (e.g. a Tamagui shorthand-prop bug, a Prisma generated-type bug) per the project's accepted-cost convention.
+
+## Anti-patterns
+
+- Adding a new TS workspace whose `tsconfig.json` does not inherit the 6 flags from the project's base tsconfig.
+- Suppressing a strict-flag error with `as any` instead of applying one of the 4 fix patterns.
+- Adding `// @ts-expect-error` without a one-line reason comment.
+- Disabling a strict flag in a leaf tsconfig "temporarily" without recording the decision in `docs/TYPING.md` (or an equivalent project log).
+
+## See also
+
+- `docs/TYPING.md` (or equivalent) — canonical baseline + methodology + the per-flag rollout phase log when the project has one.
+- `docs/FOUNDATION-HARDENING.md` (or equivalent) — synthesis-layer view when the project has run a multi-slice foundation-hardening pass.

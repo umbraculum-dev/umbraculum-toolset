@@ -1,0 +1,32 @@
+---
+description: ESLint flat-config hygiene - document intent, stage strictness, and require disable reasons
+alwaysApply: false
+globs:
+  - "eslint.config.{js,mjs,cjs,ts,mts,cts}"
+  - "**/*.{ts,tsx,js,jsx,mjs,cjs}"
+---
+
+# ESLint Flat Config Hygiene
+
+ESLint rules are part of the codebase's safety net. Treat lint config changes as product-quality changes, not formatting noise.
+
+## Rules
+
+- When changing `eslint.config.*`, read the project's linting documentation first if it exists (`docs/LINTING.md`, `CONTRIBUTING.md`, or equivalent).
+- In flat config, remember that later matching blocks override earlier matching blocks. Put broad rule defaults before narrower file-glob overrides unless the project documents a different order.
+- Add or preserve short comments explaining non-obvious lint rules, especially `no-restricted-imports`, accessibility rules, React Hooks rules, type-safety rules, and generated-file ignores.
+- Introduce strictness in stages:
+  - start new broad rules as `warn` if pre-existing violations exist,
+  - promote to `error` only after the covered scope is clean,
+  - use path/package-specific strict gates before repo-wide `--max-warnings 0`.
+- Do not weaken a rule to make an unrelated change pass. Fix the code, scope the exception, or ask the user before changing policy.
+- Inline disables must include a reason after `--` or an equivalent explanatory comment.
+- Prefer narrow disables (`eslint-disable-next-line <rule>`) over file-wide or global disables.
+- Do not lint generated artifacts, build outputs, vendored files, lockfile-generated folders, or framework-generated type files unless the project explicitly does so.
+
+## Anti-patterns
+
+- silent `// eslint-disable-next-line`
+- changing `error` to `warn` to unblock an unrelated feature
+- moving a broad flat-config block after file-specific overrides and accidentally re-enabling disabled rules
+- adding type-aware lint rules repo-wide without checking performance and existing violation count

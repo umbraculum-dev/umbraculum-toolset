@@ -1,0 +1,27 @@
+---
+description: Prefer Python directory listing over Glob for file presence checks
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+# Prefer Python directory listing for file checks
+
+When verifying whether files exist in a directory, do **not** rely on Glob. Glob may return incomplete results.
+
+Use a direct Python directory listing instead (e.g. `Path.iterdir()` or `os.listdir()`), especially for test artifacts.
+
+Example:
+
+```bash
+python3 - <<'PY'
+from pathlib import Path
+p = Path("/absolute/path/to/dir")
+print(sorted([x.name for x in p.iterdir()]))
+PY
+```

@@ -1,0 +1,38 @@
+---
+description: React accessibility-first UI - semantic controls, keyboard support, labels, focus, and a11y tests
+alwaysApply: false
+globs:
+  - "apps/**/*.{tsx,jsx}"
+  - "packages/**/*.{tsx,jsx}"
+---
+
+# React Accessibility-First UI
+
+When creating or changing user-facing UI, accessibility is part of the feature, not a follow-up polish pass.
+
+## Rules
+
+- Prefer semantic HTML and platform-native controls: `button`, `a`, `input`, `label`, `fieldset`, `legend`, headings, lists, tables, `Pressable`, `TextInput`, and equivalent native primitives.
+- Do not create clickable `div`/`span` controls when a native element or accessible primitive is available.
+- Every interactive control needs an accessible name:
+  - visible label where practical,
+  - `aria-label` / `aria-labelledby` for web icon-only controls,
+  - `accessibilityLabel` / `accessibilityRole` for native controls.
+- Keyboard users must be able to reach and operate web UI flows. Preserve visible focus and avoid keyboard traps.
+- Dialogs, popovers, menus, and drawers must manage focus intentionally: focus enters, escape/close behavior is clear, and focus returns when appropriate.
+- Form errors must be perceivable and associated with fields (`aria-describedby`, summaries, live regions, or native equivalents).
+- Do not rely on color alone for meaning. Preserve contrast and respect reduced-motion preferences.
+- Prefer role/label-based test locators for user flows. Use `data-testid` for workflow-critical custom widgets only when semantic locators are unstable.
+- If the project has accessibility docs or E2E/axe coverage, update or run the relevant checks for changed flows.
+
+## Framework and UI-library adapters
+
+For cross-platform UI libraries, use project-approved wrapper primitives when raw library components leak platform-specific props or semantics. Do not bypass wrappers in shared UI packages unless the project docs explicitly allow it.
+
+## Anti-patterns
+
+- clickable non-interactive elements with only `onClick`
+- icon-only buttons without names
+- hiding focus outlines without a replacement
+- introducing a modal that traps keyboard or screen-reader users
+- skipping accessibility checks because the visual UI looks correct

@@ -1,0 +1,42 @@
+---
+description: OpenPLC project layout — source-of-truth files, generated build artifacts, OpenPLC-editor reload behavior, backups discipline
+alwaysApply: true
+---
+
+# OpenPLC project structure (mandatory)
+
+This rule applies to any project that follows the openplc/brewery layout (a stand-alone OpenPLC project rooted at a single folder containing `pous/`, `project.json`, `build/`, and optionally `pi-sidecar/`, `docs/`, `tools/`, `devices/`, `backups/`).
+
+## Source-of-truth files
+
+- **`pous/programs/main.ld`** — the editor-source ladder program. Authoritative for control flow.
+- **`pous/function-blocks/*.st`** — Structured Text function-block POUs (`FB_*` convention). Authoritative for reusable logic.
+- **`pous/functions/*.st`** — Structured Text function POUs. Distinct from function blocks; see `03-openplc-function-vs-function-block.mdc`.
+- **`project.json`** — OpenPLC editor project file. Authoritative for `debugVariables.pous.main` (the editor's pre-selected watch list) and task/instance configuration.
+- **`devices/configuration.json`** (when present) — frozen device/transport configuration (e.g. RTU baud rate, slave id, RS-485 pin).
+
+## Generated / non-authoritative files
+
+- **`build/...`** — generated. Do NOT edit. Do NOT assume current unless intentionally regenerated.
+  - `build/<target>/src/program.st` is the raw editor compile output.
+  - `build/<target>/src/program.runtime-upload.st` is the prepared upload artifact (see `08-pi-modbus-contract-and-runtime-upload.mdc`).
+- **`backups/...`** — dated snapshots. Do NOT rewrite. Use git history or a dedicated legacy branch for older context.
+
+## Hard rules
+
+- Do **not** edit anything under `build/`. Treat it as cache.
+- Do **not** rewrite anything under `backups/`. They are historical artifacts.
+- Do **not** upload `main.ld` to the OpenPLC Runtime web UI. The runtime expects flat Structured Text (see `08-pi-modbus-contract-and-runtime-upload.mdc`).
+- Ladder-structure changes should preferably go through the OpenPLC graphical editor, not direct `main.ld` edits. The exceptions (allowed direct-edit cases) are: declaration changes and `project.json` debug-visibility tweaks.
+- After any direct edit to `main.ld` or `project.json`, **reopening OpenPLC is the current expected way to force a reload from disk**. Communicate this step explicitly to the developer rather than assuming a hot reload.
+
+## Editor watch-list (`project.json` `debugVariables`)
+
+- `data.debugVariables.pous.main` is the authoritative pre-selection. Editing it is preferred over clicking variables one-by-one in the OpenPLC UI.
+- When preparing a watch list for a test, include the **full mutually exclusive state** you intend to verify — not only the variable expected to be `TRUE`. Adjacent state variables matter; omitting them is the common failure mode.
+
+## See also
+
+- `03-openplc-function-vs-function-block.mdc` — POU-kind discipline.
+- `04-plc-variable-naming-prefix-convention.mdc` — variable naming.
+- `08-pi-modbus-contract-and-runtime-upload.mdc` — runtime upload procedure.

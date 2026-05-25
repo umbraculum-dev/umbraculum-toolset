@@ -1,0 +1,43 @@
+---
+description: Authoring gate — every new rule/skill/subagent must explicitly state how it fits the system (frontier-now and local-subagent-future)
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+# Authoring gate: Rules vs Skills vs Subagents
+
+The time of "just adding a rule/skill" is over. Every addition must explicitly fit our **frontier agent now**, our **subagent set**, and our **future local subagents (Ollama variants)** later.
+
+## Rule (hard)
+
+Whenever you propose or add new guidance, you MUST explicitly answer:
+
+1) **Is this a Rule, a Skill, or a Subagent?**
+- **Rule** (`plugin rules (`rules/*.mdc`)`): always-on (or globbed) guardrail (`must/must not`, short, no runbook).
+- **Skill** (plugin Skills (`skills/<name>/SKILL.md`)): runnable runbook (`how-to`, command templates, troubleshooting). Must follow the Skill Contract (see the plugin Skills documentation).
+- **Subagent** (plugin Agents (`agents/*.md`)): specialized agent with its own context window, model, and (optional) `readonly` / `is_background` flags. Must follow the Subagent Contract (see `14-subagent-contract.mdc`).
+
+2) **Local-subagent / Ollama readiness decision (required)**
+- If it's a **Skill**: confirm it is **input-driven**, **output-constrained**, and **bounded** (max 5 commands, no loops, no speculative paths/names).
+- If it's a **Rule**: confirm it stays a guardrail + pointer (no procedural steps), and point to the canonical skill or subagent when procedure is needed.
+- If it's a **Subagent**: confirm description includes a delegation trigger phrase ("use proactively" / "use after"); body ≤30 lines; references a canonical skill rather than duplicating procedure.
+
+## Quick checklist (copy/paste)
+
+- [ ] Rule, Skill, or Subagent? (one)
+- [ ] If Skill: includes the 3 contract sections + stop conditions + max 5 commands.
+- [ ] If Rule: contains only guardrails + pointers (no runbook steps); prefers `globs:` over `alwaysApply: true` when scoped to file types.
+- [ ] If Subagent:
+  - YAML frontmatter has `name`, `description`, `model`.
+  - `description` triggers automatic delegation (specific, "use proactively" / "use after").
+  - Body ≤30 lines and references a canonical skill (no duplication).
+  - `readonly: true` for validators / verifiers.
+  - `is_background: true` for long jobs (E2E, large suites).
+  - Pointer to `DEVELOPMENT-LOCAL-OLLAMA.md` if a local-model variant is anticipated.
+- [ ] Any absolute path is labeled **Example:** unless truly canonical/container-internal.

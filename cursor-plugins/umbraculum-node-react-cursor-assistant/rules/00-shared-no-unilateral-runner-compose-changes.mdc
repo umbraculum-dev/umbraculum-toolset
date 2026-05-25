@@ -1,0 +1,38 @@
+---
+description: Shared guardrail — do not change runner/compose/runtime config to fix local drift without explicit approval
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+# Guardrail: runner/compose/runtime config changes require explicit approval
+
+## Rule (hard)
+- Do **not** modify runtime configuration to “fix” local environment drift without an explicit developer decision.
+  - Examples (non-exhaustive):
+    - `docker/runner/agent.mjs`
+    - `docker-compose*.yml`
+    - any `.docker/**` stack-defining files
+    - runner bootstrap scripts / entrypoints
+
+## Why this matters
+- These changes affect the **entire stack** and can surprise end users.
+- They can create hidden coupling between “developer workstation behavior” and “release behavior”.
+- They can mask real deployment/volume/seeding issues that should be fixed deliberately.
+
+## Preferred approach when host code != runner volume
+- Diagnose bind mount vs named volume behavior first.
+- Prefer an explicit **manual sync command** (documented and repeatable) rather than changing runner logic.
+- If a permanent change is needed, escalate to the developer and agree on the intended architecture.
+
+## Mandatory when editing an E2E suite
+- If you modify anything under `playwright-suite/**` (or analogous suite folders), you must:
+  - run the project’s documented **manual sync** step (seed → runner volume), or
+  - explicitly instruct the developer to do so immediately.
+
+Reason: many dev stacks run the suite from a Docker **named volume** (e.g. `/opt/playwright-suite`) that does not auto-update from host edits.

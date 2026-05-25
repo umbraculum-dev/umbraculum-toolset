@@ -1,0 +1,45 @@
+---
+description: PLC variable naming prefix convention — I_, Q_, M_, AI_, AI_RAW_, CFG_, SVC_, P_, PI_ — each prefix is a semantic contract
+alwaysApply: true
+---
+
+# PLC variable naming prefix (mandatory)
+
+Each prefix encodes a contract about where the variable comes from and what may consume it. Violating the prefix convention silently breaks the boundary between authored project state, OpenPLC toolchain artifacts, and the external Pi-sidecar integration layer.
+
+## Canonical prefixes
+
+| Prefix | Meaning |
+|---|---|
+| `I_` | PLC **input** signal (hardware input) |
+| `Q_` | PLC **output** signal (hardware output) |
+| `M_` | Internal **memory bit** or derived logic state |
+| `AI_` | **Analog input value** used by engineering logic (post-scaling) |
+| `AI_RAW_` | **Raw analog readback** before scaling/conversion |
+| `CFG_` | Internal **configuration** selection or setting (including source-layer codes like `CFG_*PriorityCode`, `CFG_*ModeCode`) |
+| `SVC_` | **Service-interface** command or status intended for Raspberry Pi / operator workflows (not hardwired field I/O) |
+| `P_` | Tunable **parameter** |
+| `PI_` | The explicit external **Raspberry Pi / API contract layer** — the located-coil/register mirror surface intentionally exposed for the Pi sidecar (see `08-pi-modbus-contract-and-runtime-upload.mdc`) |
+
+## Hard rules
+
+- A new variable MUST adopt the correct prefix based on its role. Mis-prefixing is the convention's main failure mode.
+- `PI_*` is a **contract surface**. A new `PI_*` variable is an API-shaped change: it requires a corresponding entry in the Pi-sidecar Modbus map and a contract-version bump if downstream consumers (sidecar, OpenPLC Monitoring view, external service tools) read it.
+- Internal PLC implementation variables MUST NOT be exposed directly to the sidecar — mirror them through `PI_*` instead.
+- `CFG_*PriorityCode` and `CFG_*ModeCode` are the project's source-layer inputs; downstream cooling/heating decisions should be read from the normalized resolved bits (`M_*PrioEff*`, `M_*PrioIsValid`, `M_*PrioFallbackLow`, `M_*ModeEff*`, `M_*ModeInvalid`, `M_*ModeFallbackFermentor`, final `Q_*CoolPermitted` / `Q_*HeatPermitted`), not directly from the `CFG_*` codes.
+
+## Toolchain artifacts (not authored project names)
+
+OpenPLC generates internal glue names for located addresses, e.g.:
+
+- `__QX100_0`, `__IX0_3`, `__MW100`
+
+These are **toolchain artifacts**, not part of the authored project naming convention. Do not rename them. Do not promote them into authored variable lists, docs, or watch sets — use the authored `PI_*` / `I_*` / `Q_*` symbol on the source side.
+
+## Documentation prefix (separate from variable prefix)
+
+The variable's `Documentation` field (visible in the OpenPLC editor's variable column) should additionally carry a **scope tag** prefix:
+
+- `[ALARM]`, `[COOLING]`, `[HEATING]`, `[THERMAL]` (for cross-domain mutual-exclusion diagnostics).
+
+See `45-hardware-doc-naming-and-scope-tags.mdc` for the scope-tag convention as it applies to BOM CSVs and rung comments too.

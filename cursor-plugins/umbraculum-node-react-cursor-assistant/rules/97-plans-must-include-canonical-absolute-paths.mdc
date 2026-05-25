@@ -1,0 +1,43 @@
+---
+description: Guardrail — plans must state canonical absolute paths (avoid Cursor worktree drift)
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+# Guardrail: plans must include canonical absolute paths
+
+## Problem this prevents
+This repo is often edited through a **Cursor worktree** (example: `/path/to/cursor-worktrees/...`) while Docker bind mounts and local dev workflows typically use the **canonical repo path** (example below; your machine will differ):
+
+- Example canonical repo root: `/path/to/project`
+
+If a plan or instruction omits absolute paths, it’s easy to apply changes in the wrong place and then sync/run stale code.
+
+## Requirements (hard)
+- Any plan or operational instructions MUST explicitly state **absolute paths** for:
+  - **Repo root** where changes must land (canonical path).
+  - Any script that must be run (e.g. `./scripts/sync-playwright-suite.sh`).
+  - Any Docker-mounted source directory (seed/bind mount) referenced in the plan.
+- If the user did not provide the canonical repo root, **ask for it** and then use the user-provided path in the plan.
+- When talking about “run from repo root”, you MUST write it as:
+  - Example: `cd /path/to/project`
+
+## Special rule for Playwright suite edits (dev stack)
+When a plan includes steps that edit anything under `playwright-suite/**`, it MUST include this exact note (with absolute path):
+
+- After editing `playwright-suite/**`, run:
+  - Example: `cd /path/to/project`
+  - `./scripts/sync-playwright-suite.sh`
+
+And it MUST explicitly remind that the runners execute from an absolute path (example: `/opt/playwright-suite`, volume) and seed from an absolute path (example: `/seed/playwright-suite-ro`, bind mount).
+
+## Safety / non-goal
+- This rule is **about plans and instructions only**.
+- It does **not** allow hardcoding absolute filesystem paths inside code.
+  - Storefront navigation must still follow the “no hardcoded navigation paths” rule (use `site.*Path` and UI navigation).

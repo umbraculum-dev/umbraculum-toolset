@@ -1,0 +1,25 @@
+---
+description: Monorepo boundary guardrail — apps/services must not import packages/*/src/**
+alwaysApply: false
+globs:
+  - "apps/**/*.{ts,tsx,js,jsx}"
+  - "services/**/*.{ts,tsx,js,jsx}"
+---
+
+# Monorepo package boundary (scoped)
+
+## Rule (hard)
+- In `apps/**` and `services/**`, **do not import from** `packages/*/src/**`.
+  - ✅ Import from the package name / its exported entrypoints (preferred).
+  - ✅ Import from an exported subpath (example: `@acme/foo/bar`) when the package explicitly supports it.
+  - ❌ Importing deep TS sources couples consumers to workspace internals and breaks native tooling (Metro/Expo) and clean container builds.
+
+## What to do instead
+- If you see an import like `../../packages/some-pkg/src/...` (or `packages/some-pkg/src/...`), replace it with the correct package import (root or exported subpath).
+- If the needed symbol is not exported yet:
+  - Update the package’s public API (exports/entrypoints) rather than importing from `src/**`.
+  - Rebuild package `dist/` outputs so consumers can run against runtime JS.
+
+## Runbooks
+- Build/update committed `dist/` outputs in a container: see `build-workspace-packages-dist-in-container` skill.
+- If npm workspaces installs fail with `Invalid Version` related to lockfile workspace link entries: see `npm-workspaces-package-lock-invalid-version` skill.

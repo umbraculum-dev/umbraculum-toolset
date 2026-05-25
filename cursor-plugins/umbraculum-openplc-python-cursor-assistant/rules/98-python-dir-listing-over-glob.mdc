@@ -1,0 +1,28 @@
+---
+description: Prefer Python directory listing over Glob for file presence checks
+alwaysApply: true
+---
+
+# Prefer Python directory listing for file checks
+
+When verifying whether files exist in a directory, do **not** rely on Glob. Glob may return incomplete results.
+
+Use a direct Python directory listing instead (e.g. `Path.iterdir()` or `os.listdir()`), especially for:
+
+- Test artifacts under `pi-sidecar/.tmp/` or `pi-sidecar/pi-sidecar-data/`.
+- Generated build artifacts under `build/<target>/src/`.
+- Pamphlet figures under `docs/reference/em-fields-pamphlet/images/`.
+- Generated electrician visuals under `docs/hardware/visuals/`.
+- POU file enumeration under `pous/function-blocks/` and `pous/functions/`.
+
+Example:
+
+```bash
+python3 - <<'PY'
+from pathlib import Path
+p = Path("/absolute/path/to/dir")
+print(sorted([x.name for x in p.iterdir()]))
+PY
+```
+
+This is doubly important in this project because the build pipeline is Python-based (`tools/prepare_openplc_runtime_upload.py`, `tools/check_connections_consistency.py`, the various `build_*.py` scripts under `docs/hardware/electrician/` and `docs/reference/em-fields-pamphlet/`), and several of those tools enumerate files directly. A Glob mismatch in the verification path silently disagrees with what the build tools actually see.

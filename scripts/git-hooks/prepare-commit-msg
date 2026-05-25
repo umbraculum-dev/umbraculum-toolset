@@ -1,0 +1,94 @@
+#!/bin/sh
+# Auto-append commit trailers (umbraculum DCO + Cursor co-authorship).
+#
+# Activation: this hook is the canonical commit-trailer mechanism for
+# umbraculum-toolset. Each clone enables it once via:
+#
+#     git config core.hooksPath scripts/git-hooks
+#
+# (see CONTRIBUTING.md §"Developer Certificate of Origin (DCO)" at the
+# repo root for the full procedure and rationale).
+#
+# This hook is the reference implementation of the canonical hook sketch
+# documented in `cursor-plugins/umbraculum-toolset-common/rules/44-agent-
+# commit-cursor-coauthor.mdc` — the umbraculum-toolset dogfoods the same
+# DCO + Cursor co-author discipline that the toolset's plugins ship to
+# downstream consumers (umbraculum-dev being the primary one). Keeping
+# this hook in lockstep with umbraculum-dev's
+# `scripts/git-hooks/prepare-commit-msg` is intentional.
+#
+# Behavior — handles two trailer concerns from the same hook, both via
+# `git interpret-trailers --in-place --if-exists addIfDifferent`:
+#
+#  1. DCO Signed-off-by (mandatory for umbraculum projects):
+#     - Reads GIT_COMMITTER_IDENT (= user.name + user.email) for the
+#       signer.
+#     - Idempotent: `addIfDifferent` is a no-op if the same trailer is
+#       already present (so manual `git commit -s` keeps working without
+#       producing duplicates).
+#     - No-op on merge / squash commits (those carry their own trailer
+#       aggregation rules).
+#     - See cursor-plugins/umbraculum-toolset-common/rules/42-dco-
+#       signoff-gate.mdc for the full DCO contract.
+#
+#  2. Cursor co-authorship (per umbraculum MANIFESTO §1.2):
+#     - When CURSOR_AGENT=1 is exported in the env (Cursor exports this
+#       into every agent tool-call shell, verifiable with `env | grep -i
+#       cursor`), this hook ensures Co-authored-by: Cursor
+#       <cursoragent@cursor.com> is present in the commit's trailer
+#       block.
+#     - Fires ONLY when CURSOR_AGENT=1 is set, so human contributors
+#       typing `git commit` in their own terminal are never
+#       over-attributed.
+#     - Idempotent (same `addIfDifferent` semantics).
+#     - No-op on merge / squash commits.
+#     - See cursor-plugins/umbraculum-toolset-common/rules/44-agent-
+#       commit-cursor-coauthor.mdc for the agent-side post-commit
+#       verification rule.
+#
+# Why `git interpret-trailers` instead of raw `printf` appends:
+# A previous revision of this hook appended trailers directly via
+# `printf '\n%s\n' "$TRAILER" >> "$COMMIT_MSG_FILE"`. That approach
+# broke when the commit-message file already ended with a trailer (e.g.
+# Cursor's git integration does sometimes pre-inject `Co-authored-by:
+# Cursor` into COMMIT_EDITMSG before this hook runs — non-
+# deterministically; observed empirically). The unconditional leading
+# blank line in the raw append separated the existing trailer from the
+# newly-appended one, splitting the file into two trailer paragraphs,
+# of which git's trailer parser (`%(trailers)`, GitHub's commit-page
+# "Co-authors" UI, PR-author summary panes) only recognizes the LAST
+# as trailers — silently classifying the pre-existing trailer as
+# message body. `git interpret-trailers` knows the trailer-block rules
+# and correctly merges new trailers into the existing block, regardless
+# of whether the file already has trailers from another source.
+#
+# Cursor's pre-injection behavior is opaque and non-deterministic, so
+# this hook does NOT depend on it firing — it adds the Co-authored-by
+# trailer when CURSOR_AGENT=1 regardless, and `addIfDifferent` makes
+# the operation idempotent whether or not Cursor pre-injected. The hook
+# is the project's operational contract; any Cursor-side pre-injection
+# (when it fires) is additive but not load-bearing.
+
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+
+case "$COMMIT_SOURCE" in
+  merge|squash) exit 0 ;;
+esac
+
+# 1. DCO Signed-off-by injection.
+SOB=$(git var GIT_COMMITTER_IDENT | sed -n 's/^\(.*>\).*$/Signed-off-by: \1/p')
+if [ -n "$SOB" ]; then
+  git interpret-trailers --in-place \
+    --if-exists addIfDifferent \
+    --trailer "$SOB" \
+    "$COMMIT_MSG_FILE"
+fi
+
+# 2. Cursor co-author injection (only when running inside a Cursor agent shell).
+if [ "${CURSOR_AGENT:-}" = "1" ]; then
+  git interpret-trailers --in-place \
+    --if-exists addIfDifferent \
+    --trailer "Co-authored-by: Cursor <cursoragent@cursor.com>" \
+    "$COMMIT_MSG_FILE"
+fi

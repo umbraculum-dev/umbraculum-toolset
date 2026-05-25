@@ -1,0 +1,33 @@
+---
+description: Avoid bash `read` loops when possible (Cursor allowlist friendliness)
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+## Rule
+
+Avoid bash `read` usage (especially `while read -r ...; do ...`) when an alternative is practical.
+
+## Why
+
+In this repository/workflow, Cursor can block allowlisting on commands that include `read` with parameters.
+This can stall unattended work even for read-only operations.
+
+## Preferred alternatives (choose the simplest)
+
+- **Python heredoc** (preferred for small parsing/transforms):
+  - `python3 - <<'PY' ... PY`
+- **Single-purpose tools** without shell loops:
+  - `grep`, `sed`, `awk`, `find`, `xargs` (bounded with `head -n <N>`)
+- **Multiple explicit commands** instead of a loop when the list is short (≤10 items).
+
+## Notes
+
+- Keep outputs bounded (`head`, `tail`) to avoid tool timeouts.
+- This rule is about command-shape robustness; it does not change the existing refactoring guardrails.

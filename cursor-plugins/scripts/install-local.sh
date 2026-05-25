@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+# Install / refresh the four umbraculum-toolset Cursor plugins into Cursor's
+# user-local plugins folder.
+#
+# Background: Cursor's user-local plugin loader rejects symlinks (its
+# `Dirent.isDirectory()` check excludes them — symlinks come back as
+# `isSymbolicLink(): true, isDirectory(): false`), so the documented
+# `ln -s ... ~/.cursor/plugins/local/...` install method does NOT actually
+# work today. This script rsyncs each plugin folder as a REAL directory.
+#
+# The four plugins:
+#   1) umbraculum-toolset-common               — language-agnostic meta-framework rules
+#                                                + generate-development-local skill;
+#                                                install alongside any of the others.
+#   2) umbraculum-node-react-cursor-assistant  — generic TS/JS/React/E2E.
+#   3) umbraculum-platform-tsjs-cursor-assistant
+#                                              — umbraculum-platform-specific TS/JS.
+#   4) umbraculum-openplc-python-cursor-assistant
+#                                              — OpenPLC + Python + Modbus + hardware-doc.
+#
+# `umbraculum-toolset-common` is installed FIRST so the loader sees it before
+# the domain plugins reference its rules/skills by name in their READMEs (the
+# load order does not matter to Cursor's loader itself — there are no manifest
+# dependencies — but installing common first makes the install log easier to
+# reason about during refresh).
+#
+# Usage: after a `git pull` in this repo, run:
+#     bash cursor-plugins/scripts/install-local.sh
+# then `Ctrl+Shift+P -> Developer: Reload Window` in Cursor.
+#
+# Optional `--prune` flag: after installing the four current plugins, remove
+# any other subdirectory of ~/.cursor/plugins/local/ whose name is not in the
+# PLUGINS array. Use this after renames (e.g. v0.3.0 renamed the TS/JS plugin
+# pair) to clean up the now-orphan folder from the previous name, otherwise
+# Cursor would load BOTH the old and the new copy and surface duplicate rules.
+# Off by default because the local plugins folder may host other user-installed
+# plugins unrelated to this toolset.
+#     bash cursor-plugins/scripts/install-local.sh --prune
+
+set -euo pipefail
+
+PRUNE=0
+for arg in "$@"; do
+  case "${arg}" in
+    --prune) PRUNE=1 ;;
+    *)
+      echo "ERROR: unknown argument: ${arg}" >&2
+      echo "Usage: $0 [--prune]" >&2
+      exit 2
+      ;;
+  esac
+done
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SRC_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
+DEST_ROOT="${HOME}/.cursor/plugins/local"
+
+PLUGINS=(
+  umbraculum-toolset-common
+  umbraculum-node-react-cursor-assistant
+  umbraculum-platform-tsjs-cursor-assistant
+  umbraculum-openplc-python-cursor-assistant
+)
+
+mkdir -p "${DEST_ROOT}"
+
+for plugin in "${PLUGINS[@]}"; do
+  src="${SRC_ROOT}/${plugin}"
+  dest="${DEST_ROOT}/${plugin}"
+
+  if [[ ! -d "${src}" ]]; then
+    echo "ERROR: source plugin folder not found: ${src}" >&2
+    exit 1
+  fi
+
+  if [[ ! -f "${src}/.cursor-plugin/plugin.json" ]]; then
+    echo "ERROR: ${src}/.cursor-plugin/plugin.json missing — refusing to install" >&2
+    exit 1
+  fi
+
+  if [[ -L "${dest}" ]]; then
+    echo "Removing stale symlink: ${dest}"
+    rm "${dest}"
+  fi
+
+  echo "Installing: ${plugin}"
+  rsync -a --delete \
+    --exclude='.git/' \
+    --exclude='node_modules/' \
+    "${src}/" "${dest}/"
+done
+
+if [[ "${PRUNE}" -eq 1 ]]; then
+  echo ""
+  echo "Pruning orphan entries under ${DEST_ROOT} ..."
+  shopt -s nullglob
+  for entry in "${DEST_ROOT}"/*; do
+    name="$(basename "${entry}")"
+    keep=0
+    for plugin in "${PLUGINS[@]}"; do
+      if [[ "${name}" == "${plugin}" ]]; then
+        keep=1
+        break
+      fi
+    done
+    if [[ "${keep}" -eq 0 ]]; then
+      if [[ -d "${entry}" || -L "${entry}" ]]; then
+        echo "  Removing orphan: ${entry}"
+        rm -rf -- "${entry}"
+      fi
+    fi
+  done
+  shopt -u nullglob
+fi
+
+echo ""
+echo "Done. In Cursor: Ctrl+Shift+P -> Developer: Reload Window."
+echo ""
+echo "Installed plugins:"
+ls -1 "${DEST_ROOT}"

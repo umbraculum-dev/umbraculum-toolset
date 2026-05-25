@@ -1,0 +1,22 @@
+---
+description: Shared guardrail — never run npm on host; run npm inside the correct container
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+# Node/npm commands: container-only (shared)
+
+## Rule (hard)
+- **Never run `node`, `npm`, or `npx` on the host machine** when assisting with containerized projects.
+  - Host Node/npm may be missing or a different version than the container image.
+  - Running on host can lead to non-reproducible behavior, flaky CI parity, and accidental dependency drift.
+
+## Runbook
+
+See `node-npm-container-only` skill.

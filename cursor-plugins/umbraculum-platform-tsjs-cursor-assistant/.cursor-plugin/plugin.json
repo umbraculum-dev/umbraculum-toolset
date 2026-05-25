@@ -1,0 +1,21 @@
+{
+  "name": "umbraculum-platform-tsjs-cursor-assistant",
+  "version": "0.0.1",
+  "description": "Umbraculum-platform-specific Cursor assistant for the TS/JS half of the platform: encodes the four-slice foundation-hardening discipline (lint + types + tests + docs) and multi-tenant workspace-scoped architectural patterns. Pair with umbraculum-node-react-cursor-assistant for full ecosystem coverage, and with umbraculum-toolset-common for the language-agnostic meta-framework rules.",
+  "author": {
+    "name": "umbraculum-toolset"
+  },
+  "keywords": [
+    "umbraculum",
+    "typescript",
+    "foundation-hardening",
+    "multi-tenant",
+    "workspace-scoped",
+    "cursor",
+    "rules",
+    "skills"
+  ],
+  "rules": "./rules",
+  "skills": "./skills",
+  "agents": "./agents"
+}

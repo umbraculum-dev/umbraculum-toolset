@@ -1,0 +1,43 @@
+---
+description: Foundation-hardening pass — single entry point. Read the synthesis doc + slice docs before broad TS/JS work.
+alwaysApply: true
+---
+
+# Foundation hardening (single entry point)
+
+This project closed a **five-slice** foundation-hardening pass: lint, types, tests, docs, and validation. (The validation slice was tracked as an orthogonal axis through 2026-05-18 and promoted to a landed slice on 2026-05-19 per `docs/rfcs/0003-validation-library-adoption.md` — committed to Zod v4.) The synthesis layer is the canonical entry point; the per-slice docs are the sources of truth.
+
+## Read first when relevant
+
+Project-local synthesis + per-slice docs (paths relative to repo root):
+
+- `docs/FOUNDATION-HARDENING.md` — synthesis layer, the four slices at a glance, the cross-slice findings, the plugin-pack handoff manifest.
+- `docs/LINTING.md` — ESLint slice (HIGH-light → HIGH-staged → HIGH-full; the `npm run lint` strict gate).
+- `docs/TYPING.md` — TypeScript slice (`tsc --noEmit` baseline + the 6 candidate strict flags + the per-workspace CI gate).
+- `docs/TESTING.md` — testing slice (L1 unit through L5 Playwright layers + the layered test-mapping discipline).
+- `docs/DOCS-README-STANDARDS.md` — docs slice (module-README template + audit checklist + the structural CI gate).
+- `docs/CONTRACTS-VALIDATION-STRATEGY.md` v2.0 — validation slice (decision: Zod v4; library-agnostic `ValidatedSchema<T>` boundary in `@brewery/module-sdk` for third parties).
+- `docs/rfcs/0003-validation-library-adoption.md` — RFC committing the validation slice to Zod v4 (Decisions A–G, spike evidence, migration plan).
+
+If a referenced doc is absent in this project, proceed with the generic guidance in this rule's body and ask only for values that are necessary for the task.
+
+## Why this exists
+
+The foundation hardening pass invested in *bug-prevention foundations* (lint + types + tests) plus *contributor-experience foundation* (docs) over a multi-week period. CI gates enforce the floor, but every gate fails *after* the violation reaches the codebase. The plugin pack (this rule + its siblings under `45-tsjs-module-readme-standard.mdc` here, plus `22-`, `23-`, `23a-`, `26-`, `44-` in the companion `umbraculum-node-react-cursor-assistant` plugin) prevents violations at authoring time, before the gate fires. Both layers compound; neither substitutes for the other.
+
+## See also (companion `umbraculum-node-react-cursor-assistant` plugin)
+
+- `22-typescript-contracts-runtime-validation.mdc` — boundary payload validation discipline (validation slice; Zod v4 standard since v2.0).
+- `23-eslint-flat-config-hygiene.mdc` and `23a-eslint-fixall-discipline.mdc` — lint slice.
+- `26-typescript-strict-flags.mdc` — types slice (the 6 strict flags as the floor for new TS workspaces).
+- `44-tsjs-project-docs-first.mdc` — docs-first reading discipline.
+- `zod-schema-scaffold` skill — canonical Zod v4 schema + paired test template emitter for new contracts.
+- `contracts-zod-auditor` subagent — read-only validation-slice auditor for `packages/*-contracts/src/**` + `services/api/src/routes/**`.
+
+## See also (this plugin)
+
+- `45-tsjs-module-readme-standard.mdc` — module-README authoring standard.
+- `types-baseline-verifier` subagent — confirms `tsc --noEmit` is green and the 6 flags are set.
+- `module-readme-checker` subagent — wraps `scripts/docs/check-readmes.py` for a bounded structural OK/FAIL.
+- `l2-cross-workspace-isolation-test` skill — scaffolds the canonical 6-axis L2 test pattern for workspace-scoped routes.
+- `package-scope-migration-preflight` skill — per-slot file inventory + hard-stop flags for the `@brewery/*` → `@umbraculum/*` package-scope rename (codified after slots 1 + 2 of umbraculum-dev sub-plan #9; reused for slots 3–14).

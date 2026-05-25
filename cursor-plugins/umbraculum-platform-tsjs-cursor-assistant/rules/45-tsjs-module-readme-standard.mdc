@@ -1,0 +1,44 @@
+---
+description: TS/JS module README standard — when creating or editing a module README, follow the canonical template + audit checklist.
+alwaysApply: false
+globs:
+  - "apps/*/README.md"
+  - "services/*/README.md"
+  - "packages/*/README.md"
+---
+
+# Module README standard
+
+When the project has a `docs/DOCS-README-STANDARDS.md` doc (typical signal: a `scripts/docs/check-readmes.py` structural checker + a `.github/workflows/docs-readmes.yml` CI gate), follow the canonical template + audit checklist for any module README under `apps/*/README.md`, `services/*/README.md`, or `packages/*/README.md`.
+
+## Authoring rules
+
+- **Title** must match the package name in `package.json` (e.g. `# @brewery/foo` if the package is `"name": "@brewery/foo"`). For non-npm-workspace targets, use the canonical name in `docs/DOCS-README-STANDARDS.md` brand-token cheat-sheet.
+- **Tagline** — one sentence after the title summarizing what the module is.
+- **Brand callout** — the standard quoted block (see `docs/DOCS-README-STANDARDS.md` §Template).
+- **Required `##` headings** — at minimum: `What this is`, `Scope`, `Build / test / lint (local)`, `How it fits in`, `Status`, `Further reading` (sub-component READMEs follow a lighter scope; see the standard for which sections become optional).
+- **Cross-references** — the README must link out to at least 2-3 sibling docs from `docs/` or `packages/` (typed surface, contracts, design docs as relevant). The `Further reading` section is the canonical place.
+- **No placeholders** — `<PLATFORM_NAME>`, `<TBD>`, `<XXX>` etc. must not appear in the published README.
+- **Use the current package scope** — code blocks in the README must reference the package scope that matches the *current* `package.json` `name` field. Do not hand-edit code blocks to anticipate a future package-scope rename (for umbraculum-platform projects: the prose brand `Umbraculum` is resolved, but the npm package-scope rename `@brewery/*` → `@umbraculum/*` is parked behind a separate sub-plan; until that lands, use `@brewery/*` in code blocks). The CI gate enforces self-consistency with `package.json`; this rule fires at authoring time.
+
+## When creating a new module README
+
+Scaffold from the template in `docs/DOCS-README-STANDARDS.md` §Template. Do NOT re-invent the structure.
+
+## When editing an existing module README
+
+Run the audit checklist in `docs/DOCS-README-STANDARDS.md` §Audit checklist mentally before saving. Optionally, after the edit, delegate to the `module-readme-checker` subagent for a structural pass (it wraps `scripts/docs/check-readmes.py`).
+
+## Anti-patterns
+
+- Adding a new module without a README.
+- Copying an existing README's title and forgetting to update it.
+- Adding a `## Build` heading that is a sub-heading of `## Build / test / lint (local)` — that's not the canonical hierarchy; the canonical heading is the combined `## Build / test / lint (local)`.
+- Linking to absent docs in `Further reading` (the CI gate's link checker will catch this; do not push hoping the link will materialize).
+- Hand-editing code blocks to use a package scope that diverges from `package.json`'s `name` field (anticipating a future rename, or holding onto an old scope after a rename).
+
+## See also
+
+- `docs/DOCS-README-STANDARDS.md` — canonical template + audit checklist.
+- `docs/FOUNDATION-HARDENING.md` §4.4 — synthesis-layer view of the docs slice.
+- `module-readme-checker` subagent (this plugin) — structural-validator subagent.

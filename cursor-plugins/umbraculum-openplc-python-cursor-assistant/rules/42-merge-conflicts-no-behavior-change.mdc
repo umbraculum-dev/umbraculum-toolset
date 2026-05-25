@@ -1,0 +1,20 @@
+---
+description: Git merge conflicts - resolve only the conflict, never change behavior opportunistically
+alwaysApply: true
+---
+
+# Merge Conflicts: No Behavioral Changes
+
+When fixing git merge conflicts, the hardest guardrail is: **no behavioral change beyond conflict resolution**.
+
+- Treat conflict resolution as preservation work, not a feature, bug fix, refactor, cleanup, or formatting pass.
+- Only choose between, combine, or minimally reconcile the already-conflicting sides.
+- Do not introduce new logic, dependency changes, test expectation changes, formatting churn, or opportunistic fixes while resolving conflicts.
+- If the sides are incompatible and resolving them requires a product, architecture, or behavioral decision, stop and ask the user instead of inventing a third behavior.
+- After resolving, report which conflicts were resolved and call out any behavioral decisions that remain unresolved.
+
+## Domain-specific cautions (this plugin)
+
+- Merge conflicts in **`pous/programs/main.ld`** are especially risky: the file is serialized ladder-graph data, and a hand-merge can produce a structurally valid but behaviorally wrong ladder. Prefer to redo one side's edits in the OpenPLC editor over hand-merging the XML.
+- Merge conflicts in **`pi-sidecar/openplc-modbus-map.example.json`** can silently break the `PI_*` contract. After any merge here, verify the resulting file against rule `08-pi-modbus-contract-and-runtime-upload.mdc` (and bump `contract_version` if the merge produced a non-additive change).
+- Merge conflicts in **`pi-sidecar/pyproject.toml`** `version =` line require explicit coordination with the integrated release tag — see `47-integrated-release-versioning-baseline.mdc`.

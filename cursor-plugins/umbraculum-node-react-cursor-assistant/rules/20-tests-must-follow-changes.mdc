@@ -1,0 +1,47 @@
+---
+description: Workflow — always verify/update tests when changing code (Magento + TS/JS monorepos)
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+# Tests must follow code changes (mandatory)
+
+This rule applies to both stack families covered by this package:
+- **Magento / PHP** projects (`app/code/*/*`, `vendor/*/*/Test/**`, etc.).
+- **TS/JS monorepos** (typically `apps/**`, `services/**`, `packages/**`, but the same idea applies to any layout).
+
+## When implementing/fixing features in `app/code/*/*`
+- Always consider whether existing unit tests should be **updated** (or new ones added) to reflect the change.
+- If a change affects observable behavior (return values, exceptions, logging, payload shape, DI wiring), update tests accordingly.
+- Prefer **unit tests** (fast, mocked-only) for pure logic and small plugins.
+- Use **integration tests** only when validating Magento wiring/DI/area configs or DB behavior is the purpose.
+
+## When implementing/fixing features in a TS/JS monorepo
+Map each non-trivial change to the cheapest test layer that catches its regression.
+
+- **Non-trivial** means: new route, new parser/validator, new derivation, changed payload/response shape, changed auth/ACL path, changed serialization contract, changed UI flow.
+- **Trivial** means: typo/comment/version bumps with no behavior change, pure refactors guarded by existing tests.
+
+Recommended layer map (consumers tune the right column to their actual paths and package names):
+
+| Change touches                                                  | Required test layer                  | Where it lives (project-defined)             |
+|-----------------------------------------------------------------|--------------------------------------|----------------------------------------------|
+| Pure parser/validator (no I/O)                                  | L1 unit (vitest/jest, mocked)        | `<shared-pkg>/src/**/*.test.ts`              |
+| Math / unit conversion / pure utility                            | L1 unit                              | `<shared-pkg>/src/**/*.test.ts`              |
+| New/changed HTTP route, auth/ACL, tenant/workspace scoping       | L2 integration (test DB)             | `<api-service>/src/tests/*.test.ts`          |
+| External-client response shape (native/SDK/3rd-party consumers)  | L1 + L4 contract snapshot            | `<api-service>/src/tests/contracts/*`        |
+| User-visible web flow                                            | L5 Playwright (or equivalent) spec   | `<web-app>/e2e/**/*.spec.ts`                 |
+
+Each adopting project SHOULD keep its concrete mapping (exact package names, `npm` scripts, fixture identities) in a project-local `docs/TESTING.md` (or equivalent single source of truth). This rule enforces the **principle**; the project's `docs/TESTING.md` fills in the **specifics**.
+
+## Acceptance criteria
+- After a Magento change: run the relevant PHPUnit suite(s) and keep them green.
+- After a TS/JS change: run the matching layer(s) and keep them green; see the project's `docs/TESTING.md` (or equivalent) for exact commands.
+- For containerized Node/npm execution, follow `node-npm-container-only` skill.
+- If tests are skipped because the code is too legacy/entangled to test cheaply, explicitly document which module/class/path was skipped and why.

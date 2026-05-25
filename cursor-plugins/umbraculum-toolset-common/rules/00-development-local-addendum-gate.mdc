@@ -1,0 +1,39 @@
+---
+description: Read repo-local DEVELOPMENT-LOCAL.md when present; on demand, generate it from DEVELOPMENT.md
+alwaysApply: true
+---
+
+# Local project context: DEVELOPMENT-LOCAL.md
+
+## Reading order at session/task start
+
+If a repo-root `DEVELOPMENT-LOCAL.md` exists, you MUST read it immediately (use the file read tool) before planning runtime work, running commands, or making environment assumptions.
+
+Treat `DEVELOPMENT-LOCAL.md` as project-owned context for parameters such as:
+- container names, service names, working directories inside containers
+- ports, env vars, host names, serial-port paths, runtime/service URLs
+- org / env / site / project / vessel defaults for E2E or hardware-in-the-loop testing
+- explicitly allowed/forbidden commands in this project
+- local stack quirks or protected branch conventions
+
+If a repo-root `DEVELOPMENT-LOCAL-OLLAMA.md` ALSO exists, read it alongside `DEVELOPMENT-LOCAL.md`. It is a sibling, project-versioned addendum specifically for the local-model (Ollama) runtime profile — e.g. local model IDs, endpoint URL, agent/subagent `.local.md` variants in use. Same precedence as `DEVELOPMENT-LOCAL.md`.
+
+If any of `DEVELOPMENT-LOCAL.md` / `DEVELOPMENT-LOCAL-OLLAMA.md` conflicts with generic plugin guidance, prefer the repo-local file for this repo.
+
+## On-demand bootstrap when DEVELOPMENT-LOCAL.md is absent
+
+If `DEVELOPMENT-LOCAL.md` is absent, proceed normally. Ask for missing project-specific values only when they are required for the requested task.
+
+If the user explicitly asks to set up local context (e.g. "create my DEVELOPMENT-LOCAL.md", "bootstrap local context", "seed local config from DEVELOPMENT.md"), invoke the `generate-development-local` skill. The skill reads `DEVELOPMENT.md` (and `DEVELOPMENT-LOCAL-OLLAMA.md` if present) as canonical inputs, asks the user for any remaining `<fill_me>` values, and writes the new `DEVELOPMENT-LOCAL.md` at repo root.
+
+Do NOT auto-generate `DEVELOPMENT-LOCAL.md` unprompted — wait for an explicit user request. Do NOT overwrite an existing `DEVELOPMENT-LOCAL.md` without explicit user confirmation.
+
+## File ownership (for reference)
+
+- `DEVELOPMENT.md` — project-owned, versioned in the project's main repo. Canonical dev doc.
+- `DEVELOPMENT-LOCAL-OLLAMA.md` — project-owned, versioned in the project's main repo. Local-model-runtime addendum.
+- `DEVELOPMENT-LOCAL.md` — per-developer, typically gitignored. Generated on demand by the `generate-development-local` skill, or hand-written by the developer.
+
+## Domain-specific addenda
+
+For ecosystem-specific examples and additional `DEVELOPMENT*` file conventions (e.g. PLC/hardware-in-the-loop fields, framework-specific port defaults), consult the consuming domain plugin's `docs/templates/DEVELOPMENT-LOCAL.md` template and any project-local guidance.

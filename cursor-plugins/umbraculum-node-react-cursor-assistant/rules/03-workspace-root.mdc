@@ -1,0 +1,17 @@
+---
+description: Workspace root verification (required)
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+## Workspace root verification (required)
+
+- Always use the **current IDE workspace root** as the repo root.
+- Do **not** assume an internal Cursor path (example: `/path/to/cursor-worktrees/...`) is the project root.
+- At the start of a task (before searches, reads, or edits), verify the repo root with a terminal `pwd` and `ls -la` in the active workspace.
+- If the workspace root is unclear, stop and ask for the correct path before proceeding.

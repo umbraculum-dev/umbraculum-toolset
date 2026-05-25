@@ -1,0 +1,24 @@
+---
+description: Non-interactive mode: avoid allowlist prompts (prefer apply_patch edits; container exec only when unavoidable)
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+# Non-interactive mode: allowlist prompt fallback
+
+In some environments, terminal commands may be blocked by an allowlist/approval gate, which can stall unattended work.
+
+## Rule (guardrail)
+
+- Prefer workspace edits over shell-based file writes when allowlisting would block progress.
+- Use `docker exec` only when unavoidable.
+
+## Runbook
+
+See `noninteractive-allowlist-fallback` skill.

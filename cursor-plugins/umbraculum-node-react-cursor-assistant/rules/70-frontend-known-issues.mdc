@@ -1,0 +1,23 @@
+---
+description: Known frontend CSS/SCSS issues (Select2 double-scroll, etc.)
+alwaysApply: false
+globs:
+  - "**/*.css"
+  - "**/*.scss"
+  - "**/*.less"
+---
+
+# Frontend known issues (CSS / SCSS / LESS)
+
+## Select2 dropdown scrolling (avoid double scrollbars)
+
+Select2 dropdown markup typically includes:
+
+- `.select2-results` (wrapper)
+- `.select2-results__options` (scrollable list)
+
+Rules:
+
+- **Do NOT set `overflow-y: scroll` or `overflow-y: auto` on `.select2-results`** if `.select2-results__options` also scrolls; it creates a double scrollbar.
+- Preferred: keep scrolling on `.select2-results__options` only.
+- When debugging, always check the final merged CSS and DevTools computed rules (specificity / cascade order).

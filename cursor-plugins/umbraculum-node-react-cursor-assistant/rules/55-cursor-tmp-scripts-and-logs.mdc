@@ -1,0 +1,24 @@
+---
+description: Cursor temp scripts + ad-hoc logging (avoid quoting issues; run in container)
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+# Cursor temp scripts + ad-hoc logs (robust workflow)
+
+When generating small helper scripts for one-off operations (e.g. building `DISABLE_CSV`, module lists, config inspection):
+
+## Rule (guardrail)
+
+- Prefer container-friendly temp script + log workflows for non-interactive runs.
+- Avoid writing ad-hoc logs under `.cursor/` when possible.
+
+## Runbook
+
+See `cursor-tmp-scripts-and-logs` skill.

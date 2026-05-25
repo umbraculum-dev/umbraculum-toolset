@@ -1,0 +1,79 @@
+---
+description: Hardware-doc naming suffixes (-CONTRACT/-SPEC/-DIRECTION/-PLAN/-CHECKLIST) and scope tags ([ALARM]/[COOLING]/[HEATING]/[THERMAL]) across BOM CSV, rung comments, variable docs
+alwaysApply: false
+globs:
+  - "docs/**/*.md"
+  - "docs/**/*.csv"
+  - "README.md"
+  - "DEVELOPMENT.md"
+  - "PROJECT-NEXT-STEPS-CHECKLIST.md"
+  - "CHANGELOG.md"
+---
+
+# Hardware-doc naming + scope-tag convention (mandatory under `docs/**`)
+
+This project disciplines its documentation through two cross-cutting conventions: **filename suffixes** that encode the doc's commitment level, and **scope tags** that group content across the hardware BOM, rung comments, and variable documentation.
+
+## Filename suffix convention (root + `docs/`)
+
+| Suffix | Meaning | Example |
+|---|---|---|
+| `-CONTRACT.md` | Frozen behavioral contract — outward-facing commitment | `ALARM-OUTPUT-CONTRACT.md` |
+| `-SPEC.md` | Normative behavior specification | `HOT-SIDE-MINIMAL-SUPERVISION-SPEC.md`, `OPENPLC-PROJECT-STRUCTURE-SPEC.md` |
+| `-DIRECTION.md` | Active architecture direction (current best plan, not yet contract) | `PRODUCTION-ARCHITECTURE-PLC-NATIVE-VESSEL-CONTROL-DIRECTION.md`, `MEGA-INPUT-REDUCTION-DIRECTION.md` |
+| `-PLAN.md` | Unfinished execution / test plan | `STAGE-A-ANALOG-BENCH-TEST-PLAN.md`, `STAGE-B-BENCH-HIL-INTEGRATION-TEST-PLAN.md` |
+| `-CHECKLIST.md` | Actionable next-step list | `PROJECT-NEXT-STEPS-CHECKLIST.md`, `CABINET-1-HARDWARE-FREEZE-CHECKLIST-v2_0.md` |
+
+## Hard rules (filenames)
+
+- Active root docs MUST NOT keep `DRAFT`, `PROPOSAL`, or `REFACTOR` in their filenames once the idea is accepted, implemented, or superseded.
+- When a root markdown file becomes historical or is retained only for traceability, **remove it from the active branch** and rely on git history (or a dedicated legacy branch) — do not leave it mixed with active docs.
+- Choose the suffix based on commitment level, not size. A 50-line `-CONTRACT.md` is fine; a 500-line `-DIRECTION.md` is also fine. The suffix is a promise, not a measure.
+
+## Scope tags (cross-cutting)
+
+The same scope tags apply across BOM CSV, OpenPLC rung comments, and variable-documentation prefixes:
+
+- `[ALARM]` — alarm-layer concern
+- `[COOLING]` — cooling-layer concern
+- `[HEATING]` — heating-layer concern
+- `[THERMAL]` — cross-domain mutual-exclusion / thermal-conflict diagnostics
+- Explicit combinations (e.g. `[ALARM][COOLING]`) when content spans multiple concerns
+
+## Usage by surface
+
+### BOM CSV (`docs/hardware/PROCUREMENT-BOM-TRACKER-v<vMaj>_<vMin>.csv`)
+
+- Each item's `project_scope` column carries one of the tags above (or an explicit combination).
+- The CSV is the **active procurement status tracker**. Do NOT use the I/O workbook as the primary procurement tracker.
+- Treat the active-baseline CSV as the current draft while hardware validation continues; older `1.9.0` context lives in git history, not in parallel docs on the active branch.
+
+### Rung comments (OpenPLC editor)
+
+Current grouping convention:
+
+| Layer | Sub-tags |
+|---|---|
+| `[ALARM]` | `[ALARM][INPUT]`, `[ALARM][LATCH]`, `[ALARM][SUMMARY]`, `[ALARM][ACK]`, `[ALARM][OUTPUT]` |
+| `[COOLING]` | `[COOLING][FB]`, `[COOLING][OUTPUT]` |
+| `[HEATING]` | `[HEATING][FB]`, `[HEATING][OUTPUT]` |
+| `[THERMAL]` | `[THERMAL][INTERLOCK]` |
+
+Do NOT reintroduce the old repeated cooling rung sections (`[COOLING][PRIO]`, `[COOLING][MODE]`, `[COOLING][THRESH]`, `[COOLING][COLD]`, `[COOLING][REQ]`, `[COOLING][SUMMARY]`, `[COOLING][ARBITRATION]`, `[COOLING][DIAG]`) — the cooling layer was structurally simplified into `FB_CoolingVesselEval` + `FB_CoolingArbitration`, and `main.ld` now keeps thin orchestration only.
+
+### Variable `Documentation` field (OpenPLC editor)
+
+Prefix each variable's `Documentation` field with the scope tag, e.g. `[ALARM] cold-side low-level latched diagnostic`, `[COOLING] vessel F1 effective priority`, `[THERMAL] simultaneous cool+heat request conflict`.
+
+## Doc-update discipline
+
+After any substantive code or architecture change, the same work pass MUST:
+
+- Re-check the affected root-level files: at minimum `README.md`, `PROJECT-NEXT-STEPS-CHECKLIST.md`, and any directly affected `-CONTRACT.md` / `-SPEC.md` / `-DIRECTION.md` files.
+- Update stale checklist items immediately if the change completes, supersedes, or invalidates a planned step — do not leave stale future-tense instructions in active files.
+
+## See also
+
+- `04-plc-variable-naming-prefix-convention.mdc` — the `I_/Q_/M_/...` prefix convention (orthogonal to scope tags).
+- `46-em-fields-pamphlet-asciidiagram-convention.mdc` — the reference-pamphlet authoring rules (separate concern; lives under `docs/reference/em-fields-pamphlet/`).
+- `47-integrated-release-versioning-baseline.mdc` — when a doc edit needs an integrated-release version bump.

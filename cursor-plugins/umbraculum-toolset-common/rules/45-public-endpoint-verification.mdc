@@ -1,0 +1,101 @@
+---
+description: Public-endpoint verification gate — after any non-doc change to a service with a reachable URL/API, verify against the running endpoint before declaring done; passing tests are not sufficient evidence.
+alwaysApply: true
+---
+
+# Public-endpoint verification gate (required)
+
+After any non-doc change to a service that has a reachable URL or API endpoint (web app, REST/GraphQL service, sidecar, control-panel, internal HTTP listener), you MUST verify the change against the **running** service before declaring the task done. Passing unit/integration tests are not sufficient evidence.
+
+## Why this rule exists
+
+"Tests pass" ≠ "the deployed/running service serves the change." Recurring real-world failure modes that pass tests but fail in vivo:
+
+- Container not restarted after the code change; framework boot cache stale.
+- Compiled-DI / class-map / route table not refreshed (Magento `setup:di:compile`, OPcache, Fastify route registration, FastAPI router include).
+- Env var or secret missing in the dev environment but mocked in tests.
+- Migration not applied to the dev DB.
+- API contract drift: server changed shape; the test fixture is the old shape; the consumer is broken.
+- Third-party adapter (auth provider, payments, queue, KV) reachable in tests via mocks but not in dev.
+
+For APIs especially, "tests are green" silently coexisting with "endpoint returns 500/404/empty/wrong-shape" is a known recurring failure mode. This rule forces a runtime smoke check before "done."
+
+## Scope (when this rule fires)
+
+Fires for:
+
+- Any change under a service that has an `<APP_BASE_URL>` (or container-internal URL).
+- Backend changes (new route, modified controller, changed DI wiring, changed serialization, changed middleware) — not just frontend.
+- Changes that affect the service's surface area, even when no test was explicitly added/changed (e.g. config-only changes that alter routing or auth).
+
+Does NOT fire for:
+
+- Pure documentation changes (`*.md`, comments, READMEs, ADRs).
+- Plugin-package files (`rules/**`, `skills/**`, `agents/**`, `.cursor-plugin/*.json`).
+- Generator/scaffold-only output that is not yet wired to a running service.
+
+## Required behavior
+
+1. **Identify the affected endpoint(s)**, in priority order:
+   1. The route declaration in the changed code (controller, router, `etc/*.xml`, blueprint, FastAPI router, etc.).
+   2. The closest API/HTTP definition in the changed service.
+   3. The project's health endpoint (`/healthz`, `/api/health`, or equivalent) as a fallback smoke gate when the affected route is ambiguous.
+
+2. **For idempotent endpoints (GET, HEAD, OPTIONS)**: run the verification automatically as part of the wrap-up phase. No prompt required.
+
+3. **For non-idempotent endpoints (POST, PUT, PATCH, DELETE)**, or flows that touch auth, payment, or external side-effects: PROPOSE the verification command and ASK the developer to confirm before executing. Default to a safe alternative when one exists (a GET on the affected resource after the implied state change; a `/healthz` smoke; opening the page in the integrated browser).
+
+4. **Use the per-plugin `public-endpoint-verification` skill** for the actual curl/browser invocation (see "Per-ecosystem runbooks" below). The skill enforces the bounds (max 5 commands, no loops, bounded output).
+
+5. **The final summary MUST include exactly one of these lines**:
+
+   - `Endpoint verification: PASSED <url> <status>`
+   - `Endpoint verification: FAILED <url> <status> <one-line evidence>`
+   - `Endpoint verification: SKIPPED <url> (reason: <token>)`
+
+   A missing line is itself a rule violation; do not declare the task done.
+
+## Stop / skip conditions
+
+These are the only acceptable reasons to report `SKIPPED` (use the matching reason token verbatim):
+
+- `user-rejected` — the developer declined the proposed verification command.
+- `auth-required` — the endpoint requires credentials/tokens not available to the agent and not provided by the developer.
+- `container-not-running` — the local stack is down; bringing it up is out of scope for this task.
+- `endpoint-unknown` — the change does not unambiguously map to a single public route and the developer did not name one.
+- `non-idempotent-and-no-safe-alternative` — the change is on a write endpoint, no GET alternative exists, and the developer declined to authorize a destructive verification.
+
+Silent skip is the **anti-pattern this rule exists to kill**.
+
+## Anti-patterns (do not ship)
+
+- "Tests passed; task complete." with no `Endpoint verification: ...` line in the final summary.
+- Treating green unit/integration tests as proof the running endpoint serves the change.
+- Skipping verification on backend-only changes "because there's no UI."
+- Hand-waving with "the endpoint should work because the test passes" instead of running the curl.
+- Inventing a fake `<URL>` or `<CONTAINER>` to satisfy the gate when the real values are unknown — emit `SKIPPED <url> (reason: endpoint-unknown)` instead.
+
+## Per-ecosystem runbooks
+
+Each domain plugin that depends on `umbraculum-toolset-common` ships its own `public-endpoint-verification` skill, discovered by the agent via skill front-matter (each domain skill's description cites this rule by path, closing the round-trip). The rule defers to that skill for the concrete command shape.
+
+Skills shipped in the `umbraculum-toolset` marketplace:
+
+- **TS/JS (Node, Fastify, Next.js, etc.)**: `umbraculum-node-react-cursor-assistant/skills/public-endpoint-verification/SKILL.md`
+- **Pi sidecar (FastAPI / OpenPLC)**: `umbraculum-openplc-python-cursor-assistant/skills/public-endpoint-verification/SKILL.md`
+
+Domain plugins outside this marketplace follow the same pattern at `<plugin>/skills/public-endpoint-verification/SKILL.md` (canonical out-of-marketplace example: `rf-magento-cursor-assistant`).
+
+If the active plugin set does not include a matching runbook, fall back to a bounded curl-from-container smoke; ask the developer to confirm `<CONTAINER>` and `<URL>` before executing.
+
+## Composition with related rules
+
+- `20-tests-must-follow-changes` says "run/update the test layer." This rule says "and after green, hit the URL too."
+- `52-verify-url-exceptions-via-curl` is a narrower special case (URL+exception input). When that rule fires, it runs in addition to this gate (the `Endpoint verification: ...` summary line is still required).
+- `66-experimental-agentic-e2e` keeps its `signal-only` framing for the heavyweight agentic stack. The minimum required by this rule is one bounded curl; the agentic stack stays optional unless the team has gated it.
+- `71-browser-tools-preferred` keeps its preference for browser tools on UI behavior; this rule generalizes the principle to backend/API endpoints.
+
+## Fits the system
+
+- **Frontier now**: an always-applied gate every umbraculum / magento session sees; the deterministic `Endpoint verification: PASSED|FAILED|SKIPPED ...` summary line makes a missing verification visible to both developer and agent (and to a future post-task audit).
+- **Local subagents (future)**: a deterministic post-task hook that an `endpoint-verifier` subagent can execute as a precondition for declaring done; the verdict line is the agent's output contract and is trivially regex-checkable.

@@ -1,0 +1,38 @@
+---
+description: OpenPLC Function vs Function Block — not interchangeable; serialized headers differ; recovery is delete-and-reinsert
+alwaysApply: true
+---
+
+# Function vs Function Block (mandatory)
+
+OpenPLC's `Function` and `Function Block` POU categories are NOT interchangeable. Choosing the wrong category and trying to "salvage" the result by editing metadata almost always corrupts the project.
+
+## The distinction
+
+| POU created under | Stored under | Serialized ST header / footer |
+|---|---|---|
+| `Functions` | `pous/functions/` | `FUNCTION ... END_FUNCTION` |
+| `Function Blocks` | `pous/function-blocks/` | `FUNCTION_BLOCK ... END_FUNCTION_BLOCK` |
+
+The category is not a label — it changes the on-disk path AND the generated Structured Text headers. The OpenPLC compiler treats the two as different language constructs (functions are stateless and called inline; function blocks are stateful and instantiated).
+
+## Recovery rule
+
+If a comparison block, MOVE block, or any reusable construct was first inserted from the **wrong** POU category:
+
+- **Delete it from the editor** and re-insert it from the **correct** category.
+- Do NOT attempt to fix it by editing the serialized `.st` file headers, moving the file between directories, or patching `project.json` metadata. The editor's internal references will mismatch and the next reload will produce confusing errors.
+
+## Naming convention
+
+- Function-block files: `FB_<Name>.st` (e.g. `FB_CoolingVesselEval.st`, `FB_AlarmBypassSupervisor.st`).
+- Function files: `<Name>.st` (no `FB_` prefix).
+
+Mixing the prefix and the category is a common mistake to flag.
+
+## Width / layout convention
+
+When inserting function-block rungs into ladder programs:
+
+- Prefer the compact FB box width already used by `[COOLING][FB]` vessel-evaluation blocks: **`340`** by default.
+- Use a wider box only if the block genuinely needs more horizontal space (e.g. a long parameter list); do not pad gratuitously.

@@ -1,0 +1,20 @@
+---
+description: E2E/Playwright workflow: always read runner docs before changes
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+When working on anything under `e2e/playwright/**` (tests, helpers, configs, debugging, running suites):
+
+- Always read `e2e/playwright/README-maintainers.md` and `e2e/playwright/README-captcha-todos.md` first.
+- If guidance conflicts with other assumptions, these README files win for E2E-related tasks.
+
+## Runbook
+
+See `playwright-runner-docs-gate` skill.

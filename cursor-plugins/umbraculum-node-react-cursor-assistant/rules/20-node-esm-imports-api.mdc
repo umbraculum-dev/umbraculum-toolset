@@ -1,0 +1,42 @@
+---
+description: Node ESM imports (API) — explicit .js suffixes on relative imports to avoid runtime ERR_MODULE_NOT_FOUND
+alwaysApply: false
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.mjs"
+---
+
+# Node ESM imports (API): prevent `ERR_MODULE_NOT_FOUND` (e.g. `/dist/artifacts`)
+
+## Symptom (preprod / container runtime)
+The `e2e_api` service can crash at runtime with errors like:
+- `Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/dist/artifacts' imported from /app/dist/server.js`
+
+Even when `tsc` succeeds, Node ESM can fail at runtime if the emitted JS contains extensionless relative imports.
+
+## Root cause
+Node ESM requires **explicit file extensions** for relative imports.
+TypeScript can compile code that looks fine but still emits extensionless imports depending on `tsconfig` module settings.
+
+## Rules (must follow for `e2e-app/react-app/apps/api`)
+- **TypeScript config** must be:
+  - `"module": "NodeNext"`
+  - `"moduleResolution": "NodeNext"`
+- **All relative imports in API TS source** must include explicit `.js` extensions:
+  - ✅ `import { x } from './artifacts.js'`
+  - ✅ `import { y } from './db/pool.js'`
+  - ❌ `import { x } from './artifacts'`
+  - ❌ `import { y } from './db/pool'`
+
+## Do NOT paper over with runtime flags
+Do not rely on:
+- `NODE_OPTIONS=--experimental-specifier-resolution=node`
+
+Use the proper NodeNext + `.js`-extension approach instead.
+
+## Quick checklist when debugging preprod API crashes
+- Verify `apps/api/tsconfig.json` is NodeNext/NodeNext
+- Grep `apps/api/src` for `from './` or `from '../` and ensure imports end with `.js`
+- Rebuild + restart `e2e_api`

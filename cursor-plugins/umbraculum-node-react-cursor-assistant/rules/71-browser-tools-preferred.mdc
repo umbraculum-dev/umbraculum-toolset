@@ -1,0 +1,24 @@
+---
+description: Browser tools preferred for frontend checks
+alwaysApply: true
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+---
+
+# Browser tools (preferred for frontend verification)
+
+When a task touches frontend/UI behavior, prefer using Cursor browser tools to inspect and verify changes.
+
+## If browser tools are unavailable
+- Ask the developer to enable Browser Automation in Cursor settings.
+- Suggested path: **Settings → Tools & MCP → Browser Automation**.
+- Select the active Chrome tab that shows the target page.
+- Start a new chat/session so the tools attach.
+
+## Reloading pages (browser tools)
+- Use the browser tool to send **Ctrl+Shift+R** for a hard reload in the connected tab.
