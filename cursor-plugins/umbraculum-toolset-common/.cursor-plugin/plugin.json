@@ -1,6 +1,6 @@
 {
   "name": "umbraculum-toolset-common",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Common meta-framework rules + skills shared by the umbraculum-toolset Cursor plugins. Install alongside any of umbraculum-node-react-cursor-assistant / umbraculum-platform-tsjs-cursor-assistant / umbraculum-openplc-python-cursor-assistant.",
   "author": {
     "name": "umbraculum-toolset"
