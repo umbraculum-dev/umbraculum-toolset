@@ -37,7 +37,13 @@ repo's docs root, you MUST consult it in the following situations:
      family has historically struggled with. Promote those into
      extra-specific plan instructions.
 
-2. **Before executing a plan** as a non-frontier executor (or before
+2. **Before drafting any multi-phase plan** (frontier or not): include a
+   **Documentation context** section per rule `49-plan-documentation-context.mdc`
+   and [`docs/design/plan-documentation-context-template.md`](docs/design/plan-documentation-context-template.md)
+   when the consuming repo provides it. Executors use that table to find RFC
+   and surface docs without inferring from code alone.
+
+3. **Before executing a plan** as a non-frontier executor (or before
    simulating one for testing purposes):
    - Read **§6.x — Per-run assessments** entries for your model family,
      particularly the *WRONG-table rows*. Those are the known FAIL
