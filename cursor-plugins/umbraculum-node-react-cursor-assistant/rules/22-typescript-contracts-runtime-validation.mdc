@@ -21,7 +21,7 @@ The Umbraculum project's runtime-validation discipline is **Zod v4 schemas**, co
   - **Contracts packages (`packages/*-contracts/`)**: declare a Zod schema (`FooSchema = z.object({...})`), infer the type (`type Foo = z.infer<typeof FooSchema>`), expose `parseFoo(v: unknown): Foo` as a thin wrapper around `FooSchema.parse(v)` for call-site stability.
   - **Fastify routes (`services/api/src/routes/`)**: declare `schema: { body, query, params, response }` on the route declaration. Use `fastify-type-provider-zod` so `req.body` is auto-typed.
   - **Response-schema declaration is REQUIRED for any Fastify route that emits a JSON body.** Declare `schema: { response: { 200: SomeSchema, ... } }` (one entry per emitted status code) so `fastify-type-provider-zod` rejects malformed responses at the source — server returns 500 (not a bad 200) when the route handler tries to emit a shape that doesn't match. **Exhaustive exception list** (no response schema required): routes returning `204 No Content`; routes returning a redirect (`3xx`); routes streaming non-JSON (file downloads, SSE `text/event-stream`). For external-API proxy routes, declare a wrapper schema that validates the upstream's claim before re-emitting; do not skip the schema "because the shape comes from elsewhere." This mandate mirrors the existing request-body rule (`schema: { body }`) and is the symmetric response-side half of the same boundary-validation discipline. **Manifesto coherence**: defects are designed-out at route-declaration level (process-level defect prevention per [`MANIFESTO.md`](MANIFESTO.md) epigraph), not caught at QA — see [F10 in `docs/CONTRACTS-VALIDATION-STRATEGY.md`](docs/CONTRACTS-VALIDATION-STRATEGY.md) for the architectural decision (Path β; 2026-05-19).
-  - **AI tools (`packages/*-contracts/src/<area>/aiTool.ts`)**: declare input/output schemas via Zod; the tool's `inputSchema` / `outputSchema` properties accept Zod schemas directly.
+  - **AI tools (`@umbraculum/ai-tool-sdk` + module `registerAiTools`)**: declare input/output schemas via Zod on each `AiTool`; `inputSchema` / `outputSchema` accept Zod schemas (or any `ValidatedSchema<T>` from `@umbraculum/module-sdk`). Do not re-home `AiTool` types in `packages/*-contracts/`.
   - **Adapters / sister-repo artifacts**: the artifact loader function (e.g. `loadMailboxSpec(raw: unknown): MailboxSpec`) is a thin wrapper around `Schema.parse(raw)`. Cross-entry drift detection (duplicate-name, address-collision) uses `superRefine`.
 - Prefer the inferred type from the schema (`type Foo = z.infer<typeof FooSchema>`) as the canonical type. Avoid declaring a parallel `interface Foo { ... }` that the parser then validates against — that's the drift class the migration was designed to eliminate.
 - Use `interface` for plain non-validated types (component props, internal service inputs that aren't boundary-crossing).
@@ -31,7 +31,11 @@ The Umbraculum project's runtime-validation discipline is **Zod v4 schemas**, co
 
 ## Library-agnostic SDK interface (third-party module developers)
 
-For `packages/module-sdk/` (the public-facing artifact for third-party canonical-module developers — see [RFC-0002](docs/rfcs/0002-canonical-module-physical-layout.md) and RFC-0003 Decision C), the boundary contract is:
+Published MIT SDK packages define third-party-facing contracts **without** coupling to Zod, Fastify, React, or locale JSON. The internal Umbraculum codebase commits to Zod v4 at wire/contract boundaries ([RFC-0003](docs/rfcs/0003-validation-library-adoption.md) Decision B); third parties retain library autonomy at the SDK layer.
+
+### `ValidatedSchema<T>` (`@umbraculum/module-sdk`)
+
+For `packages/module-sdk/` (see [RFC-0002](docs/rfcs/0002-canonical-module-physical-layout.md) and RFC-0003 Decision C), the validation-library-agnostic boundary is:
 
 ```typescript
 export interface ValidatedSchema<T> {
@@ -39,7 +43,22 @@ export interface ValidatedSchema<T> {
 }
 ```
 
-Zod schemas satisfy this interface by construction. Third parties may use any library that produces something with a `parse(input: unknown): T` signature (Valibot, TypeBox, hand-rolled). The internal Umbraculum codebase commits to Zod v4 for plugin-pack consistency; third parties retain library autonomy.
+Zod schemas satisfy this interface by construction. Third parties may use any library that produces something with a `parse(input: unknown): T` signature (Valibot, TypeBox, hand-rolled).
+
+### Sibling zero-dependency MIT SDK packages (same boundary discipline)
+
+`@umbraculum/module-sdk` is not the only published SDK surface. These **leaf** packages also carry third-party contracts with **no** runtime dependency on Zod or app frameworks:
+
+| Package | Contract role | Typical consumer |
+|---------|----------------|------------------|
+| `@umbraculum/ai-tool-sdk` | `AiTool` / `AiToolContext` — module-owned AI tool registration | `registerModule({ registerAiTools })`, api AI executor |
+| `@umbraculum/i18n-keys` | `ModuleNavLabelKey`, `moduleMessageRoot`, `RESERVED_PLATFORM_MESSAGE_ROOTS` | `registerWebModule` / `registerNativeModule` `labelKey`, locale key layout |
+
+- **Pin peers explicitly** in third-party module repos (see `docs/modules/contribute/third-party-module.md` in umbraculum-dev).
+- **Do not** fold these types back into `@umbraculum/contracts` or `@umbraculum/i18n` — contracts stay Zod/wire-shaped; `@umbraculum/i18n` stays bundle content + machinery.
+- **Do not** import Zod into `packages/ai-tool-sdk/` or `packages/i18n-keys/` to validate keys or tool args at the SDK layer; runtime bundle proof is app/CI concern, not SDK v0.
+
+`module-sdk` may **depend on** `ai-tool-sdk` and `i18n-keys` for typed registration options; that does not make those packages part of the `ValidatedSchema` story — they are parallel MIT boundaries per PLATFORM-ARCHITECTURE §4.4.
 
 ## Backward-compat tunnels (staged-rename pattern)
 
@@ -82,7 +101,7 @@ This intentionally preserves v1.x soft tolerance during the migration. A subsequ
 - `JSON.parse(value) as StoredShape` — bypasses validation on stored payloads.
 - Declaring a parallel `interface Foo { ... }` and a `parseFoo(v: unknown): Foo` function that validates against it — that's the drift class RFC-0003 eliminated. Use `type Foo = z.infer<typeof FooSchema>` instead.
 - Importing Zod into a non-contracts package (`apps/web`, `apps/native`, `services/api/src/` outside routes) just to validate an internal in-memory shape — internal calls between typed TS modules don't need runtime validation; only boundaries do.
-- Adopting a different validation library inside `packages/*-contracts/` than Zod. The internal codebase commits to one library per RFC-0003 Decision B. The library-agnostic interface only applies to `packages/module-sdk/` for third parties.
+- Adopting a different validation library inside `packages/*-contracts/` than Zod. The internal codebase commits to one library per RFC-0003 Decision B. The library-agnostic SDK boundary applies to published MIT SDK packages (`module-sdk`, `ai-tool-sdk`, `i18n-keys`), not to `packages/*-contracts/` or app code.
 - Declaring a Fastify route that returns `reply.send(someTypedObject)` (or relies on the implicit return-value response) without a corresponding `schema: { response: { 200: SomeSchema, ... } }` declaration on the route. Without the response schema, `fastify-type-provider-zod` cannot detect when the route's runtime output drifts from the declared TypeScript type, and wrong-shape 200s reach clients silently. The exhaustive exception list is in the response-schema rule above (204, redirect, streaming, external-API proxies with wrapper schemas) — anything else is non-compliant.
 
 ## Authoring + audit helpers (this plugin pack)
