@@ -1,0 +1,53 @@
+---
+description: Static brochure site (`apps/website`) — preview and local verification serve `dist/`, not `public/`. After editing source under `public/**`, rebuild (or restart the compose `website` service) before preview or declaring done; otherwise you will verify stale HTML.
+alwaysApply: false
+globs:
+  - "**/apps/website/public/**"
+  - "**/apps/website/scripts/build.mjs"
+---
+
+# Static website — rebuild `dist/` before preview or verification
+
+The `@umbraculum/website` workspace (and equivalent static brochure workspaces in sibling repos) is **build-only**: HTML/CSS live in `public/`; `scripts/build.mjs` copies them to gitignored `dist/`. Local preview (`npm run preview`), the compose `website` service (`serve dist`), and Cloudflare Pages all consume **`dist/`**, not `public/`.
+
+## Rule (hard)
+
+**Whenever** you edit files under `apps/website/public/**` (or change `apps/website/scripts/build.mjs`), you **must** refresh `dist/` **before**:
+
+- opening or curling a local preview URL (e.g. `http://127.0.0.1:4321/support/`);
+- declaring the edit done or passing public-endpoint verification on brochure pages;
+- telling the user to refresh the browser and expect new content.
+
+**Do not** assume the preview server watches `public/` — it does not.
+
+## Refresh commands (pick one path)
+
+**Docker Compose** (when the stack defines a `website` service):
+
+```bash
+docker compose restart website
+```
+
+**Host / workspace** (container-only npm per `00-shared-node-npm-container-only.mdc` when applicable):
+
+```bash
+npm run build -w @umbraculum/website
+```
+
+Then preview if needed: `npm run preview -w @umbraculum/website` (host) or rely on the restarted compose service.
+
+## Symptom recognition
+
+If source under `public/` shows the new copy but the browser at `:4321` still shows old text (e.g. "Donation channels are not wired yet"), **`dist/` is stale** — rebuild, not a caching bug in the product app.
+
+## Frontier-now / local-subagent fit
+
+- **Rule (this file):** always-on guardrail when glob matches; no runbook beyond the two refresh paths above.
+- **Not a Skill:** procedure is two bounded commands; no troubleshooting tree warrants a separate skill.
+- **Not a Subagent:** no delegation trigger; agents apply this inline after brochure edits.
+
+## Cross-references
+
+- Repo `apps/website/README.md` — quick start for compose vs host preview.
+- `45-public-endpoint-verification.mdc` — brochure GET checks still require a fresh `dist/` first.
+- `51-restart-dev-server-after-git-tree-mutations.mdc` — sibling discipline for *hot-reload* dev servers; static brochure uses explicit rebuild instead.
