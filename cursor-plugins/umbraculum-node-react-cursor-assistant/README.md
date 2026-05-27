@@ -21,6 +21,7 @@ This plugin is one of the four umbraculum-toolset Cursor plugins. The companion 
 - `24-react-accessibility-first.mdc`
 - `26-typescript-strict-flags.mdc`
 - `30-e2e-no-hardcoded-paths.mdc`
+- `67-playwright-quick-gates-before-run.mdc`
 - `40-workflow-and-navigation.mdc`
 - `44-tsjs-project-docs-first.mdc`
 - `51-restart-dev-server-after-git-tree-mutations.mdc`
@@ -62,4 +63,5 @@ The `cursor-plugins/scripts/install-local.sh` installer installs all four umbrac
 
 ## Version history
 
+- **0.0.2** (2026-05-27) — Playwright quick gates: rule `67-playwright-quick-gates-before-run.mdc` (glob-scoped to `apps/web/e2e/**` and `e2e/playwright/**`); `playwright-runner-docs-gate` skill expanded with mandatory stack-health gate block, Umbraculum one-shot Docker template, and MRP/CRP export troubleshooting pointers (repo docs remain canonical SoT).
 - **0.0.1** (2026-05-25) — public baseline after the repository history reset. Includes the current Node/TypeScript/React/E2E rules, skills, and verifier agents, plus the companion-plugin split with `umbraculum-toolset-common`.

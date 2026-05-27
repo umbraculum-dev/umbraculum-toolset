@@ -1,0 +1,32 @@
+---
+description: Playwright — run stack health gates before any suite invocation; stop on API 502 or web 500
+alwaysApply: false
+globs:
+  - "**/apps/web/e2e/**"
+  - "**/e2e/playwright/**"
+  - "**/playwright.config.*"
+---
+
+# Playwright quick gates (mandatory before run)
+
+Before proposing or running **any** Playwright command (`npx playwright test`, export/render smoke, trace viewer), run the stack health gates from repo root. **Do not** launch Playwright when gates fail — auth/timeouts are usually upstream (502 API, 500 web, missing seed, stale `.auth` cookies).
+
+## Layout detection
+
+| Repo layout | Suite README (read first) |
+|---|---|
+| `apps/web/e2e/**` | `apps/web/e2e/README.md` |
+| `e2e/playwright/**` | `e2e/playwright/README-maintainers.md` (+ captcha todos if present) |
+
+Platform test map (when present): `docs/TESTING.md` § L5.
+
+## Procedure
+
+Follow the **`playwright-runner-docs-gate`** skill — it contains the copy-paste gate block, Playwright Docker one-shot template, trace viewer, and MRP/CRP export troubleshooting pointers.
+
+## Hard stops
+
+- `GET /api/health` not `{"ok":true}` → fix api container before Playwright.
+- Login page not HTTP 200 → fix web container before Playwright.
+- `seed:e2e` (or project equivalent) not run when specs use seeded personas.
+- After stack recovery: delete stale `apps/web/e2e/.auth/*.json` (or project equivalent) if sessions fail despite healthy health checks.

@@ -42,10 +42,13 @@ Keep this file short and high-signal. Put reusable procedures in plugin Skills i
 
 ## E2E defaults (only if stable for this project)
 
+- `<E2E_BASE_URL>`: `<fill_me>` (example: `http://localhost:18080`)
 - `<ORG>`: `<fill_me>`
 - `<ENV>`: `<fill_me>`
 - `<SITES>`: `<fill_me>`
 - `<PERSONAS>`: `<fill_me>`
+
+Playwright: before any suite run, agents must execute the **quick gates** in `playwright-runner-docs-gate` skill (stack up, `./scripts/smoke.sh`, `/api/health`, login page 200, `seed:e2e`). Umbraculum-dev canonical copy: `apps/web/e2e/README.md` + `docs/TESTING.md` § L5.
 
 ## Protected branches / Git conventions
 
