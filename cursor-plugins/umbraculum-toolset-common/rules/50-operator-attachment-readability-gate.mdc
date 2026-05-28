@@ -1,0 +1,67 @@
+---
+description: Operator-attachment readability gate — if an attachment the operator supplied is not readable, stop and ask for a clearer replacement; only the operator may explicitly skip.
+alwaysApply: true
+---
+
+# Operator-attachment readability gate (required)
+
+When the **operator** (human user) attaches or references a file, image, screenshot, log excerpt, PDF, or other artifact that you are expected to use as evidence for analysis, debugging, or decision-making, you MUST confirm it is readable **before** relying on it. If it is not readable, you MUST stop and ask the operator for a clearer replacement. You MUST NOT silently skip or substitute your own guess.
+
+## Why this rule exists
+
+Unreadable attachments are a silent analysis hazard: the agent proceeds as if it saw evidence it did not, the operator assumes the attachment was consumed, and the gap is invisible until a wrong conclusion ships. The only acceptable skip is an **explicit operator decision** to proceed without that artifact — never an agent-side convenience skip.
+
+## Scope (when this rule fires)
+
+Fires when:
+
+- The operator attaches one or more files or images to the conversation.
+- The operator names a path and expects you to read it (`Read`, image read, log tail, PDF, CSV, etc.).
+- The operator says "see the attachment", "in the screenshot", "the log I pasted", or equivalent and that artifact is load-bearing for the task.
+
+Does NOT fire when:
+
+- You are discovering files on your own via search/list/grep with no operator-supplied artifact in play.
+- The operator already gave an explicit skip (see "Operator-only skip" below).
+- The attachment is decorative or the operator states it is optional and not needed for the task.
+
+## Required behavior
+
+1. **Attempt to read** every operator-supplied attachment that is load-bearing for the current task (via `Read` or the appropriate tool for the media type).
+
+2. **If readable**: proceed using the actual content. Do not summarize from memory of a prior turn unless you re-read in this turn when the attachment is still load-bearing.
+
+3. **If not readable** (any of: tool error, permission denied, empty file, corrupt/truncated payload, illegible/blurry/low-resolution image, unreadable encoding, password-protected without password, wrong format, or content too incomplete to support the requested analysis): **STOP**. Report which attachment failed and why in one bounded line. Ask the operator for a clearer replacement (higher resolution, plain-text export, copy-paste of the relevant section, different format, unredacted version, etc.). Do **not** continue the analysis that depends on that artifact.
+
+4. **While blocked**, you MAY still do work that does not depend on the unreadable attachment (e.g. read unrelated repo files, run commands the operator already authorized). You MUST NOT present conclusions, root-cause claims, or "done" summaries that assume content from the unreadable attachment.
+
+5. **Final summary MUST include exactly one attachment-status line per load-bearing operator artifact**:
+
+   - `Attachment: READ <name-or-path>`
+   - `Attachment: UNREADABLE <name-or-path> — asked operator for replacement`
+   - `Attachment: SKIPPED <name-or-path> (reason: operator-explicit-skip)`
+
+   Missing lines for load-bearing attachments are a rule violation.
+
+## Operator-only skip
+
+The agent MUST NOT skip an unreadable attachment on its own. Skipping is allowed **only** when the operator explicitly says they cannot supply a clearer version and instructs you to proceed without it. Accept paraphrases that clearly mean the same thing, for example:
+
+- "skip this attachment — I don't have a clearer one"
+- "proceed without the screenshot"
+- "ignore the log; I'll paste the error below"
+
+When the operator skips, use reason token `operator-explicit-skip` verbatim in the summary line. Do not treat vague assent ("ok", "sure", "go ahead") as skip authorization unless it clearly refers to proceeding **without** the unreadable attachment.
+
+## Anti-patterns (do not ship)
+
+- Silently ignoring a failed `Read` and continuing the analysis.
+- "I couldn't read the image, but based on your description…" when the attachment was load-bearing and the operator did not explicitly skip it.
+- Inventing or hallucinating attachment contents to fill the gap.
+- Marking a task done while a load-bearing attachment is still `UNREADABLE` and the operator has not explicitly skipped it.
+- Delegating to a subagent in hopes it can "see" an attachment you could not read — the readability gate applies to the whole session; escalate to the operator instead.
+
+## Fits the system
+
+- **Frontier now**: always-applied guardrail in every umbraculum-toolset session; the deterministic `Attachment: READ|UNREADABLE|SKIPPED ...` summary lines make silent attachment loss visible to operator and agent.
+- **Local subagents (future)**: a readonly preflight subagent can attempt bounded reads and emit the same status lines before analysis subagents run; blocked state is regex-checkable and fail-closed.
