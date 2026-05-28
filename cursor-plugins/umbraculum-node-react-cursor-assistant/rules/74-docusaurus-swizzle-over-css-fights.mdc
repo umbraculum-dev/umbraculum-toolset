@@ -1,0 +1,63 @@
+---
+description: Docusaurus docs-site — prefer theme swizzles with owned class names over custom.css wars against @docusaurus/theme-classic CSS modules (announcement bar lesson). Applies when editing docs-site theme components, custom.css overrides of hashed theme classes, or shared announcement wiring.
+alwaysApply: false
+globs:
+  - "**/docs-site/**"
+  - "**/apps/website/announcement.config.json"
+  - "**/apps/website/scripts/announcement-theme.mjs"
+---
+
+# Docusaurus — swizzle theme components; do not fight React layout with CSS
+
+Umbraculum's docs site (`docs-site/`) uses Docusaurus 3.10 `@docusaurus/theme-classic`. Theme components ship **CSS modules** with hashed class names and **high-specificity** selectors (e.g. `:not(#\#_WRWm):not(#\#_WRWm)`). **`src/css/custom.css` is bundled before theme CSS**, so overrides that rely on load order or `:root` variables often **lose silently** — especially at desktop breakpoints.
+
+## Rule (hard)
+
+When changing **layout, height, flex behavior, or structure** of a built-in Docusaurus theme component (navbar, announcement bar, footer, doc sidebar chrome):
+
+1. **Swizzle the React component** under `docs-site/src/theme/<ComponentName>/index.tsx` (Docusaurus eject/swizzle pattern).
+2. Render **owned class names** (prefix `umb-doc-` in this repo) and style those in `custom.css`.
+3. **Keep Docusaurus hooks/config** for behavior you do not own (e.g. `useAnnouncementBar()` for dismiss + localStorage, `themeConfig.announcementBar` for content/colors).
+
+**Do not** try to fix theme layout by:
+
+- targeting `div[class*='announcementBar_']` or other hashed module classes in `custom.css`;
+- setting `display: flex` on `.announcementBarContent_*` (inline HTML children become **side-by-side columns**);
+- overriding `--docusaurus-announcement-bar-height` alone (theme sets `30px` at `min-width: 997px` **after** custom.css — text clips in Firefox).
+
+## When `custom.css` alone is fine
+
+- Global design tokens (`:root` colors, footer prose, Infima tweaks on **stable** class names).
+- Styles on **your** swizzled markup (`.umb-doc-*`).
+- Markdown preprocessor / remark output — not theme chrome.
+
+## Announcement bar (canonical pattern in umbraculum-dev)
+
+| Concern | Location |
+|---------|----------|
+| Copy + enable flag | `apps/website/announcement.config.json` |
+| Brochure runtime | `apps/website/public/announcement.{css,js}` |
+| Docusaurus themeConfig mapping | `apps/website/scripts/announcement-theme.mjs` |
+| React markup | `docs-site/src/theme/AnnouncementBar/index.tsx` (swizzled) |
+| Layout CSS | `docs-site/src/css/custom.css` (`.umb-doc-announcement*`) |
+
+After swizzle or config changes: `docker compose restart docs-site` (swizzles are not always hot-reloaded reliably).
+
+## Verification
+
+- Desktop width (≥997px) and mobile — announcement text must not clip top/bottom.
+- Hard refresh when validating CSS (`Ctrl+Shift+R`) — dev HMR can mask bundle-order issues.
+- `npm run build -w @umbraculum/docs-site` in Node 20 container before declaring done.
+
+## Frontier-now / local-subagent fit
+
+- **Rule (this file):** guardrail + pointers; glob-scoped to `docs-site/**` and shared announcement config.
+- **Not a Skill:** two-path decision (swizzle vs token CSS); no troubleshooting tree.
+- **Not a Subagent:** agents apply inline when touching docs-site theme or announcement wiring.
+
+## Cross-references
+
+- Repo `docs-site/src/theme/AnnouncementBar/index.tsx` — reference swizzle.
+- Repo `docs-site/README.md` § Theme customization.
+- Rule `73-website-static-build-before-preview.mdc` — brochure `dist/` vs docs-site (separate surface).
+- Repo `docs/rfcs/0005-docs-site.md` — RFC § theme overrides (`src/theme/` rare by design — intentional when layout-owned).
