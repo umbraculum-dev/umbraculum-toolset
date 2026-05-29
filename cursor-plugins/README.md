@@ -68,6 +68,17 @@ Cursor does **not** currently expose a `cursor` or `cursor-agent` subcommand for
 | OpenPLC + Python sister-repo (openplc/brewery) | `umbraculum-toolset-common` + `umbraculum-openplc-python-cursor-assistant` |
 | Magento | Out of scope for umbraculum-toolset (no plugin shipped here) |
 
+### Recommended third-party plugins (not shipped here)
+
+Cursor's loader does **not** support manifest-level `dependsOn` / `recommends`
+(see [`docs/PLUGIN-ROADMAP.md`](docs/PLUGIN-ROADMAP.md) §1b / §5). Pairings
+above are enforced in README + installer only. For **umbraculum-dev** and
+other Prisma monorepos in the family, we additionally **warmly advise**:
+
+| Plugin | Source | Required? | Notes |
+|--------|--------|-----------|--------|
+| **Prisma** (official) | Cursor Marketplace (publisher: Prisma) | **No** — not a witness in downstream `AGENTS.md` | MCP (Local/Remote), migration + schema rules, CLI skills. Complements platform rule `47-prisma-multischema-module-schemas.mdc`. Install procedure: consuming repo [`docs/CURSOR-PLUGINS.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/CURSOR-PLUGINS.md) §"Strongly recommended — Prisma" (umbraculum-dev). |
+
 Every domain plugin requires `umbraculum-toolset-common`. The common plugin carries the language-agnostic meta-framework artifacts (`00-development-local-addendum-gate.mdc`, `12-skill-contract.mdc`, `41-commit-message-ticket-prefix.mdc`, `skills/generate-development-local/`). Each domain plugin keeps the meta-framework rules whose ecosystem-specific additions (PLC source caveats, Modbus-write anti-patterns, ladder-graph merge notes, etc.) are too substantive to neutralize — see `docs/PLUGIN-ROADMAP.md` § 2 and `umbraculum-toolset-common/docs/DESIGN-NOTES.md` for the Strategy C analysis.
 
 The `umbraculum-platform-tsjs-cursor-assistant` ASSUMES the generic `umbraculum-node-react-cursor-assistant` plugin is also active (it omits the TS/JS ecosystem rules; the generic plugin provides them).

@@ -39,6 +39,7 @@ umbraculum-toolset/
 
 - **Cursor plugins overview + install + pairing rationale**: [`cursor-plugins/README.md`](./cursor-plugins/README.md)
 - **Witness-rule contract for downstream `AGENTS.md` consumers** (how repos that install these plugins should verify the plugin pack is loaded — relevant whenever an `AGENTS.md` apparatus self-check is being authored or updated): [`cursor-plugins/README.md` § "Witness-rule contract for downstream `AGENTS.md` consumers"](./cursor-plugins/README.md#witness-rule-contract-for-downstream-agentsmd-consumers)
+- **Recommended Prisma plugin (official Cursor marketplace; umbraculum-dev)** — not part of this repo; install from Cursor Marketplace alongside the toolset: [`umbraculum-dev` `docs/CURSOR-PLUGINS.md` § Strongly recommended — Prisma](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/CURSOR-PLUGINS.md#strongly-recommended--prisma-official-cursor-marketplace-plugin)
 - **Contributing (DCO sign-off, Cursor co-author trailer, commit-message + PR conventions)**: [`CONTRIBUTING.md`](./CONTRIBUTING.md)
 - **Future plugin roadmap + private-vs-marketplace transition notes**: [`cursor-plugins/docs/PLUGIN-ROADMAP.md`](./cursor-plugins/docs/PLUGIN-ROADMAP.md)
 - **Foundation-hardening plugin-pack origin plan (archived)**: [`cursor-plugins/docs/archive/foundation-hardening-plugin-pack.plan.md`](./cursor-plugins/docs/archive/foundation-hardening-plugin-pack.plan.md)
