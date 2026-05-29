@@ -37,5 +37,11 @@ jobs:
       - name: Publish @umbraculum/ci-parity (OIDC)
         working-directory: packages/ci-parity
         run: |
+          npmrc="${NPM_CONFIG_USERCONFIG:-$HOME/.npmrc}"
+          if [ -f "$npmrc" ]; then
+            sed -i '/_authToken/d' "$npmrc" || true
+            sed -i '/always-auth/d' "$npmrc" || true
+          fi
           rm -f "$HOME/.npmrc" "${GITHUB_WORKSPACE}/.npmrc" .npmrc 2>/dev/null || true
-          env -u NODE_AUTH_TOKEN npm publish --access public
+          unset NODE_AUTH_TOKEN
+          npm publish --access public

@@ -1,12 +1,12 @@
 {
   "name": "@umbraculum/ci-parity",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "CI parity runner — reproduce static-analysis CI jobs locally and in GitHub Actions from a versioned manifest",
   "type": "module",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/umbraculum-dev/umbraculum-toolset.git",
+    "url": "https://github.com/umbraculum-dev/umbraculum-toolset",
     "directory": "packages/ci-parity"
   },
   "bugs": {
