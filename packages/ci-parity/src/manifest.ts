@@ -31,10 +31,18 @@ const TypecheckJobSchema = z.object({
   needsNestedInstall: z.boolean().default(true),
 });
 
+/** npm build/test/pack verify steps shared by publish-sdk-batch GHA (no OIDC). */
+const SdkPublishPrepJobSchema = z.object({
+  id: z.literal("sdk-publish-prep"),
+  needsRootInstall: z.literal(true),
+  commands: z.array(z.string().min(1)).min(1),
+});
+
 const JobSchema = z.discriminatedUnion("id", [
   DocsReadmesJobSchema,
   LintJobSchema,
   TypecheckJobSchema,
+  SdkPublishPrepJobSchema,
 ]);
 
 export const CiParityManifestSchema = z.object({

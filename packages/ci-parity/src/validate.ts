@@ -194,6 +194,11 @@ export function explainManifest(manifest: CiParityManifest): string {
       for (const ws of job.workspaces) {
         lines.push(`      ${ws.path} [${ws.mode}]`);
       }
+    } else if (job.id === "sdk-publish-prep") {
+      lines.push(`  - sdk-publish-prep (${job.commands.length} commands)`);
+      for (const cmd of job.commands) {
+        lines.push(`      ${cmd}`);
+      }
     }
   }
 

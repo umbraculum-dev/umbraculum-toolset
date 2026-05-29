@@ -143,6 +143,15 @@ export function buildContainerScript(
       lines.push(
         `if [ \${#failed_ws[@]} -eq 0 ]; then ${rcVar}=0; else ${rcVar}=1; fi`,
       );
+    } else if (job.id === "sdk-publish-prep") {
+      lines.push("run_root_install");
+      lines.push(`: > /repo/.ci-parity-${job.id}.log`);
+      lines.push(`${rcVar}=0`);
+      for (const cmd of job.commands) {
+        lines.push(`${cmd} >> /repo/.ci-parity-${job.id}.log 2>&1`);
+        lines.push("cmd_rc=$?");
+        lines.push(`if [ $cmd_rc -ne 0 ]; then ${rcVar}=$cmd_rc; fi`);
+      }
     }
 
     lines.push(`echo "  exit: $${rcVar}"`);
