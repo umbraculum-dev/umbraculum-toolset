@@ -27,7 +27,7 @@ jobs:
       - name: Setup Node.js (orchestrator only — jobs run in Docker via ci-parity)
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
 
       - name: Run @umbraculum/ci-parity
         env:
