@@ -9,21 +9,21 @@ on:
     tags:
       - "ci-parity-v*"
 
+permissions:
+  contents: read
+  id-token: write # Required for npm OIDC trusted publishing
+
 jobs:
   publish:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    permissions:
-      contents: read
-      id-token: write # Required for npm OIDC trusted publishing
     steps:
       - uses: actions/checkout@v5
 
-      # Do NOT set registry-url here — it writes always-auth + empty _authToken
-      # to ~/.npmrc and breaks OIDC (npm error E404 on PUT).
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
+          registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
 
       - name: Ensure npm CLI supports trusted publishing (>= 11.5.1)
@@ -34,14 +34,17 @@ jobs:
       - run: npm test -w @umbraculum/ci-parity
       - run: npm run build -w @umbraculum/ci-parity
 
-      - name: Publish @umbraculum/ci-parity (OIDC)
-        working-directory: packages/ci-parity
+      # setup-node registry-url writes _authToken=${NODE_AUTH_TOKEN}; when unset that
+      # blocks OIDC. Strip only that line — keep registry= (actions/setup-node#1551).
+      - name: Strip setup-node _authToken for OIDC
         run: |
           npmrc="${NPM_CONFIG_USERCONFIG:-$HOME/.npmrc}"
           if [ -f "$npmrc" ]; then
-            sed -i '/_authToken/d' "$npmrc" || true
-            sed -i '/always-auth/d' "$npmrc" || true
+            sed -i '/_authToken/d' "$npmrc"
           fi
-          rm -f "$HOME/.npmrc" "${GITHUB_WORKSPACE}/.npmrc" .npmrc 2>/dev/null || true
+
+      - name: Publish @umbraculum/ci-parity (OIDC)
+        working-directory: packages/ci-parity
+        run: |
           unset NODE_AUTH_TOKEN
           npm publish --access public
