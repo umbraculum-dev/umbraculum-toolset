@@ -1,0 +1,52 @@
+---
+description: Prisma multiSchema discipline — platform/brewery/module schema ownership, registerModule prismaSchema, forward migrations only
+alwaysApply: false
+globs:
+  - "services/api/prisma/schema.prisma"
+  - "services/api/prisma/migrations/**/*.sql"
+  - "services/api/src/modules/*/index.ts"
+---
+
+# Prisma multiSchema — module schema discipline
+
+Authored 2026-05-28 as companion to umbraculum-dev
+[RFC-0010](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/rfcs/0010-platform-brewery-postgres-schema-split.md)
+and [`platform-brewery-postgres-schema-split.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/design/platform-brewery-postgres-schema-split.md).
+
+## Layout (committed)
+
+| Postgres schema | Owner |
+|-----------------|-------|
+| `platform` | Horizontal: auth, workspace, billing, ads, AI consultant, integrations |
+| `brewery` | Tier-6 brewery vertical domain tables |
+| `<code>` | Canonical modules (`automation`, `pim`, `mrp`, `crp`, …) |
+| `rendering` | Platform rendering jobs |
+| `ai`, `reporting` | SQL-only (outside Prisma `datasource.schemas`) |
+
+**Do not** add new Prisma-managed models to `public`.
+
+## `registerModule({ prismaSchema })`
+
+- Canonical modules and tier-6 verticals **must** set `prismaSchema` to the Postgres schema name (usually the module `code`).
+- Example: `registerBreweryModule` → `prismaSchema: "brewery"`.
+- Platform horizontal models are **not** registered via `registerModule`; they live in `platform.*` only.
+
+## Cross-schema `@relation`
+
+Allowed when both schemas are listed in `datasource db { schemas = [...] }`.
+Shipped examples: `brewery.*` → `platform.Workspace`; `automation.Vessel` → `brewery.EquipmentProfile`.
+
+Prefer app-level UUID FKs only when intentional — document why in the module surface doc.
+
+## Migrations
+
+1. **Backup first:** `pg_dump -Fc` to `backups/` before DDL (see companion runbook §3).
+2. **Forward migrations only** — never rewrite applied files under `prisma/migrations/`.
+3. Recreate `reporting.*` views when underlying table schemas change.
+4. Apply with `DATABASE_URL=$DATABASE_URL_DIRECT npx prisma migrate deploy` in the API container.
+5. Run `npx prisma generate` + full API test suite after `schema.prisma` changes.
+
+## New module tables
+
+Greenfield modules get a dedicated Postgres schema from the **first** migration.
+Never add module-owned tables to `platform` or `brewery` unless explicitly horizontal/vertical per RFC.
