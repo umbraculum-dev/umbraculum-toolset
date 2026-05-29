@@ -9,24 +9,25 @@ on:
     tags:
       - "ci-parity-v*"
 
-permissions:
-  contents: read
-  id-token: write # Required for npm OIDC trusted publishing
-
 jobs:
   publish:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # Required for npm OIDC trusted publishing
+
     steps:
       - uses: actions/checkout@v5
 
+      # No registry-url — setup-node would write _authToken=${NODE_AUTH_TOKEN}
+      # and block npm's OIDC path (actions/setup-node#1551).
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-          registry-url: "https://registry.npmjs.org"
           package-manager-cache: false
 
-      - name: Ensure npm CLI supports trusted publishing (>= 11.5.1)
+      - name: Install npm with OIDC trusted publishing support (>= 11.5.1)
         run: npm install -g npm@11.6.2 && npm --version
 
       - run: npm ci
@@ -34,17 +35,29 @@ jobs:
       - run: npm test -w @umbraculum/ci-parity
       - run: npm run build -w @umbraculum/ci-parity
 
-      # setup-node registry-url writes _authToken=${NODE_AUTH_TOKEN}; when unset that
-      # blocks OIDC. Strip only that line — keep registry= (actions/setup-node#1551).
-      - name: Strip setup-node _authToken for OIDC
+      - name: Obtain GitHub OIDC token for npm (audience npm:registry.npmjs.org)
         run: |
-          npmrc="${NPM_CONFIG_USERCONFIG:-$HOME/.npmrc}"
-          if [ -f "$npmrc" ]; then
-            sed -i '/_authToken/d' "$npmrc"
+          set -euo pipefail
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] || [ -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
+            echo "::error::Missing ACTIONS_ID_TOKEN_* env vars — job needs permissions.id-token: write"
+            exit 1
           fi
+          OIDC_URL="${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:registry.npmjs.org"
+          ID_TOKEN=$(curl -fsSL \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            -H "Accept: application/json" \
+            "${OIDC_URL}" | jq -r .value)
+          if [ -z "${ID_TOKEN}" ] || [ "${ID_TOKEN}" = "null" ]; then
+            echo "::error::GitHub OIDC response missing .value"
+            exit 1
+          fi
+          echo "NPM_ID_TOKEN=${ID_TOKEN}" >> "${GITHUB_ENV}"
 
       - name: Publish @umbraculum/ci-parity (OIDC)
         working-directory: packages/ci-parity
+        env:
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org
         run: |
-          unset NODE_AUTH_TOKEN
+          set -euo pipefail
+          unset NODE_AUTH_TOKEN NPM_TOKEN
           npm publish --access public
