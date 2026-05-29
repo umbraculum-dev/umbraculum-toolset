@@ -54,20 +54,16 @@ CI-PARITY-CHECK <short-sha>: docs-readmes=OK lint=OK typecheck=FAIL
 
 ## Publishing to npm
 
-**Workflow:** `publish-ci-parity` in this repo (Actions tab on **umbraculum-toolset**, not umbraculum-dev).
+**Workflow:** `publish-ci-parity` on **umbraculum-toolset** (Actions tab — not umbraculum-dev).
 
-**Trigger:** push tag `ci-parity-v*` (e.g. `ci-parity-v1.0.0`).
+**Auth (preferred):** [npm Trusted Publishing (OIDC)](https://docs.npmjs.com/trusted-publishers/) — no `NPM_TOKEN`. Setup: [umbraculum-dev trusted-publishing doc](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/design/ci-parity-npm-trusted-publishing.md).
 
-**Secret required:** `NPM_TOKEN` (npm granular token, read-write, max **90 days**) in umbraculum-toolset → Settings → Secrets → Actions. Rotate before expiry — see publish runbook § "Token rotation".
+**Trigger:** tag `ci-parity-v*`. Requires npm CLI ≥ 11.5.1 and `id-token: write` in the workflow.
 
-First publish without `NPM_TOKEN` fails with `npm error code ENEEDAUTH` after build/tests pass — expected. Add the secret and re-run the workflow.
-
-**Never commit or paste tokens in chat.** If leaked, revoke on npm immediately and issue a new token.
-
-Full runbook (maintainers): [umbraculum-dev `docs/design/ci-parity-npm-publish.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/design/ci-parity-npm-publish.md).
+Full runbook: [umbraculum-dev `docs/design/ci-parity-npm-publish.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/design/ci-parity-npm-publish.md).
 
 ```bash
-# Manual fallback
+# Manual fallback (laptop)
 npm login
 npm publish -w @umbraculum/ci-parity --access public
 ```
