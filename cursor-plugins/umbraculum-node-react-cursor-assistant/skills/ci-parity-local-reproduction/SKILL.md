@@ -111,6 +111,7 @@ If the repo does not yet ship a manifest, read the CI workflow file for the fail
 - `<REPO_ROOT>` is unknown or is not a git repo → halt and ask.
 - `docker` is not on PATH or user lacks docker access → halt and report.
 - `git archive <COMMIT_SHA>` fails (bad ref) → halt and ask for a valid SHA.
+- **Agent was about to recommend host `python3` / host `npm run lint` / `docker compose exec` / live-workspace `docker run` as the pre-push gate** → stop; use Recipe A (`npx @umbraculum/ci-parity`) instead. Those are debug-only per rule `72-ci-parity-local-vs-ci-divergence.mdc` § Agent anti-patterns.
 - The failing CI job is NOT in `{docs, lint, typecheck}` (e.g. an integration test, a Playwright e2e, a real-DNS check, a deploy step) → halt and report; this skill covers static-analysis CI jobs only. Out-of-scope failures need their own runbook (per-job skill or live-stack reproduction via `docker compose exec`).
 - After Recipe A or B, all three jobs report OK but CI is still failing → likely a CI-side issue (cache, runner image drift, secret leak); escalate rather than rerunning the local recipe.
 - The repo's CI workflow uses a non-`node:20-slim` image and the operator did not provide `<NODE_IMAGE>` → halt and ask.
