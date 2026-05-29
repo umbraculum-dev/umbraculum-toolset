@@ -16,6 +16,7 @@ This plugin **assumes** `umbraculum-node-react-cursor-assistant` is also install
 - `02-foundation-hardening.mdc` — cross-slice anchor. Always-on. Routes contributors to the synthesis doc + per-slice docs before broad TS/JS work.
 - `45-tsjs-module-readme-standard.mdc` — module-README authoring standard. Encodes the canonical template, the audit checklist, and the package-scope discipline (use the scope matching the current `package.json` `name` field; do not anticipate the future `@umbraculum/*` rename).
 - `46-web-route-shape.mdc` — web route-group physical-layout standard. Encodes the two β disciplines (no group-root `page.tsx`, no group-root dynamic segment), the URL-segment ownership contract via `@umbraculum/module-sdk`'s `registerWebModule()`, and the CI gate (`scripts/check-web-url-segments.ts`). Authored as the Week-1 web-route audit's plugin deliverable (umbraculum-dev RFC-0006 + `docs/design/web-route-group-audit.md`).
+- `47-prisma-multischema-module-schemas.mdc` — Prisma `multiSchema` discipline for module-owned Postgres schemas (`platform`, `brewery`, `automation`, etc.). Encodes the `@@schema("…")` + `prismaSchema` registration contract, cross-schema `@relation` rules, and the reporting-view reset caveat for `test:db:prepare`. Authored as the RFC-0010 plugin deliverable (umbraculum-dev `docs/rfcs/0010-platform-brewery-postgres-schema-split.md`).
 
 ### Agents (`agents/`)
 
