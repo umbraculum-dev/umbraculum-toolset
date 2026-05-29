@@ -1,8 +1,8 @@
 name: publish-ci-parity
 
 # Publishes @umbraculum/ci-parity to npm on ci-parity-v* tags.
-# Auth: npm Trusted Publishing (OIDC) — no long-lived NPM_TOKEN on publish step.
-# One-time npm setup: docs/design/ci-parity-npm-trusted-publishing.md (umbraculum-dev)
+# Auth: npm Trusted Publishing (OIDC) — no NPM_TOKEN.
+# See umbraculum-dev docs/design/ci-parity-npm-trusted-publishing.md
 
 on:
   push:
@@ -19,14 +19,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Do NOT set registry-url here — it writes always-auth + empty _authToken
+      # to ~/.npmrc and breaks OIDC (npm error E404 on PUT).
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
-          registry-url: https://registry.npmjs.org
           package-manager-cache: false
 
       - name: Ensure npm CLI supports trusted publishing (>= 11.5.1)
-        run: npm install -g npm@latest && npm --version
+        run: npm install -g npm@11.6.2 && npm --version
 
       - run: npm ci
       - run: npm run typecheck -w @umbraculum/ci-parity
@@ -34,4 +35,7 @@ jobs:
       - run: npm run build -w @umbraculum/ci-parity
 
       - name: Publish @umbraculum/ci-parity (OIDC)
-        run: npm publish -w @umbraculum/ci-parity --access public
+        working-directory: packages/ci-parity
+        run: |
+          rm -f "$HOME/.npmrc" "${GITHUB_WORKSPACE}/.npmrc" .npmrc 2>/dev/null || true
+          env -u NODE_AUTH_TOKEN npm publish --access public
