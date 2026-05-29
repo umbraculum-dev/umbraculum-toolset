@@ -1,0 +1,14 @@
+{
+  "name": "umbraculum-toolset",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Umbraculum toolset monorepo — Cursor plugins and shared CLI packages",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "npm test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "license": "MIT"
+}

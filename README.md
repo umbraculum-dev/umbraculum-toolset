@@ -7,8 +7,9 @@ A monorepo of tools and assistants for the umbraculum family of projects.
 | Path | What |
 |---|---|
 | [`cursor-plugins/`](./cursor-plugins/) | Four Cursor assistant plugins (rules + skills + agents): one common plugin carrying the language-agnostic meta-framework rules + the `generate-development-local` skill, plus three domain plugins targeting generic TS/JS/React (`umbraculum-node-react-cursor-assistant`), the umbraculum-platform TS/JS monorepo (`umbraculum-platform-tsjs-cursor-assistant`), and the OpenPLC + Python + Modbus + hardware-doc industrial-automation sister-repo (`umbraculum-openplc-python-cursor-assistant`). |
+| [`packages/ci-parity/`](./packages/ci-parity/) | **`@umbraculum/ci-parity`** — MIT npm CLI + JSON manifest schema + reusable GHA workflow for local/CI static-analysis parity. Sibling to the Cursor plugins, not inside them. |
 
-Future tooling (CLI helpers, schema generators, project scaffolds, etc.) will land here as additional top-level folders alongside `cursor-plugins/`.
+Future tooling (CLI helpers, schema generators, project scaffolds, etc.) will land here as additional top-level folders alongside `cursor-plugins/` and `packages/`.
 
 ## Repository layout
 
@@ -17,7 +18,10 @@ umbraculum-toolset/
 ├── README.md                            (this file)
 ├── CONTRIBUTING.md                      (DCO sign-off + Cursor co-author trailer + commit/PR conventions; root-level only — does NOT ship with the marketplace plugins)
 ├── LICENSE                              (MIT)
+├── package.json                         (npm workspaces root — `@umbraculum/ci-parity`)
 ├── .gitignore
+├── packages/
+│   └── ci-parity/                       (@umbraculum/ci-parity — manifest-driven CI parity CLI)
 ├── scripts/
 │   └── git-hooks/
 │       └── prepare-commit-msg           (canonical DCO + Cursor co-author hook; activate per-clone via `git config core.hooksPath scripts/git-hooks` — see CONTRIBUTING.md)

@@ -1,0 +1,45 @@
+{
+  "name": "@umbraculum/ci-parity",
+  "version": "1.0.0",
+  "description": "CI parity runner — reproduce static-analysis CI jobs locally and in GitHub Actions from a versioned manifest",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/umbraculum-dev/umbraculum-toolset.git",
+    "directory": "packages/ci-parity"
+  },
+  "bugs": {
+    "url": "https://github.com/umbraculum-dev/umbraculum-toolset/issues"
+  },
+  "homepage": "https://github.com/umbraculum-dev/umbraculum-toolset/tree/master/packages/ci-parity",
+  "publishConfig": {
+    "access": "public"
+  },
+  "bin": {
+    "ci-parity": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "schema",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "dependencies": {
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

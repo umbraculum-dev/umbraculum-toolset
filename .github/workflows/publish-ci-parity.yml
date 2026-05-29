@@ -1,0 +1,31 @@
+name: publish-ci-parity
+
+on:
+  push:
+    tags:
+      - "ci-parity-v*"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+      - run: npm run typecheck -w @umbraculum/ci-parity
+      - run: npm test -w @umbraculum/ci-parity
+      - run: npm run build -w @umbraculum/ci-parity
+
+      - name: Publish @umbraculum/ci-parity
+        run: npm publish -w @umbraculum/ci-parity --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

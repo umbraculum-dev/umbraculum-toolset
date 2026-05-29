@@ -57,19 +57,21 @@ If any job FAILed, append up to 3 lines of the failing output (the actual error 
 
 ## Commands
 
-### Recipe A (preferred — repo ships canonical script)
+### Recipe A (preferred — manifest + npm package)
 
-If `<REPO_ROOT>/scripts/ci-parity-check.sh` exists (canonical implementation for `umbraculum-dev`), run it directly. It does all three jobs in one shot (~2 min), with correct ordering (lint BEFORE the e2e install so its state matches `web-lint.yml`; typecheck AFTER so its state matches `typecheck.yml`):
+If `<REPO_ROOT>/.umbraculum/ci-parity.json` exists (canonical for `umbraculum-dev`), run:
 
 ```bash
-cd <REPO_ROOT> && bash scripts/ci-parity-check.sh
+cd <REPO_ROOT> && npx @umbraculum/ci-parity@^1 run --jobs <CI_JOB>
 ```
 
-Optional flags: `--sha <rev>` (target a specific revision; default HEAD), `--keep` (preserve the `/tmp/ci-parity-<sha>` snapshot + logs for post-mortem). Exit code 0 = all green; 1 = one or more jobs failed (per-job status printed); 2 = pre-job FATAL.
+For all jobs: omit `--jobs` or use `run` with no filter. Thin wrapper equivalent: `bash scripts/ci-parity-check.sh`.
 
-### Recipe B (fallback — manual reproduction for repos without the script)
+Optional flags: `--sha <rev>`, `--keep`. Exit code 0 = all green; non-zero = one or more jobs failed. Read `.umbraculum/ci-parity.json` for install order and commands — do not hardcode `apps/web/e2e` paths in agent prose.
 
-If the repo does not yet ship `ci-parity-check.sh`, use the manual 4-command recipe:
+### Recipe B (fallback — manual reproduction)
+
+If the repo does not yet ship a manifest, read the CI workflow file for the failing job and use the manual Docker recipe below. **Do not assume** nested-workspace install paths — grep the workflow for `cd` + `npm ci` steps.
 
 1. **Create the clean snapshot** (host shell):
    ```bash
@@ -88,7 +90,7 @@ If the repo does not yet ship `ci-parity-check.sh`, use the manual 4-command rec
    docker run --rm -v "$SNAP:/repo" -w /repo -e NODE_OPTIONS='--max-old-space-size=6144' <NODE_IMAGE> bash -lc 'npm install --no-audit --no-fund --workspaces --include-workspace-root >/dev/null 2>&1 && npm run lint'
    ```
 
-   For `typecheck` (TypeScript `tsc --noEmit`; INCLUDES the explicit nested-workspace install for any workspace not matched by the root `workspaces:` glob — adjust the `(cd <nested-ws> && npm install ...)` line per your repo's layout):
+   For `typecheck` (TypeScript `tsc --noEmit`; include any nested-workspace installs documented in the repo's CI workflow or `.umbraculum/ci-parity.json`):
    ```bash
    docker run --rm -v "$SNAP:/repo" -w /repo <NODE_IMAGE> bash -lc 'npm install --no-audit --no-fund --workspaces --include-workspace-root >/dev/null 2>&1 && (cd apps/web/e2e && npm install --no-audit --no-fund) >/dev/null 2>&1 && export PATH="/repo/node_modules/.bin:$PATH" && (cd apps/web/e2e && npm run typecheck)'
    ```
