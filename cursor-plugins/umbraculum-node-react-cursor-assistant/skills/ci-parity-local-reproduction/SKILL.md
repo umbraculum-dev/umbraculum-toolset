@@ -1,13 +1,15 @@
 ---
 name: ci-parity-local-reproduction
-description: Reproduce a CI static-analysis job (docs/lint/typecheck) in a clean `git archive HEAD` snapshot when local checks pass but CI fails. Use when a developer reports a local-vs-CI divergence, OR proactively before pushing any commit with non-trivial CI surface (most sub-plan #9 slot commits). Eliminates the three documented divergence mechanisms (gitignored cross-references, nested-workspace install drift, stale `<workspace>/node_modules` bind-mount shadowing). See rule `72-ci-parity-local-vs-ci-divergence.mdc`.
+description: Reproduce a CI static-analysis job (docs/lint/typecheck) in a clean `git archive HEAD` snapshot inside Docker when local checks pass but CI fails. Use when a developer reports a local-vs-CI divergence, OR proactively before pushing any commit with non-trivial CI surface. Eliminates four documented divergence mechanisms (gitignored cross-references, nested-workspace install drift, stale node_modules bind-mount shadowing, workspace hoisting splits). All npm/tsc/lint runs in-container — never on the host. See rule `72-ci-parity-local-vs-ci-divergence.mdc`.
 ---
 
 # Skill: CI parity — reproduce a CI static-analysis job locally in a clean snapshot
 
 ## Why this skill exists
 
-When CI fails on a check that the developer ran locally and saw green, the gap is almost always one of three local-vs-CI divergence mechanisms (documented in rule `72-ci-parity-local-vs-ci-divergence.mdc` and originally isolated 2026-05-19 during sub-plan #9 slot 7 — umbraculum-dev `docs/design/brewery-scope-migration-plan.md` §6.7). The recipe below reproduces a CI job against a **clean `git archive HEAD` snapshot** under `/tmp/ci-parity-<sha>`, eliminating all three mechanisms at once: no host node_modules bind-mount, no gitignored files visible, no stale workspace state.
+When CI fails on a check that the developer ran locally and saw green, the gap is almost always one of **four** local-vs-CI divergence mechanisms (documented in rule `72-ci-parity-local-vs-ci-divergence.mdc`). The recipe below reproduces a CI job against a **clean `git archive HEAD` snapshot** under `/tmp/ci-parity-<sha>`, with **all static-analysis commands inside Docker** (same image CI uses — default `node:20-slim`). The host only runs `git archive` and `docker run`; never host `npm` / `tsc` for parity.
+
+**Cross-platform:** Linux, macOS, and WSL2 + Docker Desktop. Requires `git`, `bash`, and Docker on PATH — not host Node.js.
 
 ## Inputs required (do not assume)
 
@@ -94,7 +96,8 @@ If the repo does not yet ship `ci-parity-check.sh`, use the manual 4-command rec
 3. **If a job FAILed, identify the divergence mechanism** by inspecting the symptom:
    - "Broken relative link" / file not found in a README check → **mechanism 1** (gitignored cross-reference). Run `cd <REPO_ROOT> && git check-ignore -v <link-target>` to confirm.
    - `TS2307: Cannot find module 'X'` for a workspace devDep → **mechanism 2** (nested-workspace install drift). Run `grep workspaces <REPO_ROOT>/package.json` to confirm the workspace is not in the root glob.
-   - Type-aware ESLint rule fires here but not in your live-workspace local run → **mechanism 3** (stale node_modules shadowing). Verify `ls <REPO_ROOT>/<workspace>/node_modules/ | head` is non-empty in the live workspace.
+   - Type-aware ESLint rule fires here but not in your live-workspace local run → **mechanism 3** (stale node_modules shadowing). Verify you mounted a `git archive` snapshot, not `$PWD`; if you mounted the live tree, `ls <REPO_ROOT>/<workspace>/node_modules/ | head` may be non-empty.
+   - `TS2339` on a plugin-augmented method (e.g. `app.swagger()`) in CI only, green in dev container → **mechanism 4** (workspace hoisting splits). Reproduce with hoisted root `npm ci --workspaces`; add workspace-local module augmentation if needed.
 
 4. **Clean up via docker** (the snapshot has root-owned files from in-container npm install; host `rm` won't work):
    ```bash

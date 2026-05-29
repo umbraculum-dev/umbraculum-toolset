@@ -1,5 +1,5 @@
 ---
-description: Local checks can lie — three documented divergence mechanisms; reproduce CI in a clean snapshot before claiming green
+description: Local checks can lie — four documented divergence mechanisms; reproduce CI in a clean container snapshot before claiming green
 alwaysApply: true
 globs:
   - "**/*.ts"
@@ -14,7 +14,16 @@ globs:
 
 # CI parity — local checks can lie
 
-When a developer reports "my local check passes but CI failed", do NOT default to "must be a CI flake" or "must be a stale CI cache". There are **three documented mechanisms** by which local static-analysis checks (lint, typecheck, README/link checkers) silently disagree with CI. They were isolated 2026-05-19 during sub-plan #9 slot 7 (umbraculum-dev `docs/design/brewery-scope-migration-plan.md` §6.7); the lesson applies to every TS/JS monorepo.
+When a developer reports "my local check passes but CI failed", do NOT default to "must be a CI flake" or "must be a stale CI cache". There are **four documented mechanisms** by which local static-analysis checks (lint, typecheck, README/link checkers) silently disagree with CI. The first three were isolated 2026-05-19 during sub-plan #9 slot 7 (umbraculum-dev `docs/design/brewery-scope-migration-plan.md` §6.7); mechanism 4 surfaced 2026-05-28 during OpenAPI alpha. The lesson applies to every TS/JS monorepo.
+
+## Container-only execution (cross-platform)
+
+CI parity checks **must run inside Docker**, using the **same image CI uses** (default `node:20-slim` — read the workflow file; do not assume). The host shell only orchestrates `git archive` + `docker run`; **never** run `npm` / `npx tsc` / `npm run lint` on the host for parity verification.
+
+- **Why:** Matches GitHub Actions (`ubuntu-latest` + container), eliminates host Node version drift (Linux / macOS / WSL), and avoids bind-mounting the live workspace (mechanism 3).
+- **Prerequisites on the developer machine:** `git`, `bash`, and Docker (Docker Desktop on macOS/Windows; native on Linux). WSL2 is the supported Windows path; native Windows `cmd` without WSL is out of scope.
+- **Canonical one-liner (umbraculum-dev):** `bash scripts/ci-parity-check.sh` — archives tracked files, bind-mounts the snapshot (not the live tree) into `node:20-slim`, runs all three static-analysis jobs in-container.
+- **Long-running dev containers** (`docker compose exec api npm run typecheck`, etc.) are fine for fast iteration but are **not** CI parity — different `node_modules` layout (see mechanism 4).
 
 ## Rule (hard)
 
@@ -25,19 +34,20 @@ When CI fails on a check that you (or the developer) ran locally and saw green:
 3. The runbook for this is **`ci-parity-local-reproduction`** skill (in this plugin).
 4. If the repo ships a `scripts/ci-parity-check.sh` (canonical implementation for `umbraculum-dev`), prefer it — one command, ~2 min, all three static-analysis jobs in one shot.
 
-## The three divergence mechanisms — check each one when local and CI disagree
+## The four divergence mechanisms — check each one when local and CI disagree
 
 | # | Mechanism | Symptom in CI | Root-cause check |
 |---|---|---|---|
 | 1 | **Gitignored cross-references** | Tracked README's relative link 404s in CI; resolves locally. | `git check-ignore -v <relative-link-target>` — if non-empty, the file is .gitignored. CI's `actions/checkout@v5` brings tracked files only; your host has the local copy. **Fix:** point the link at a tracked alternative (root `README.md`, `DEVELOPMENT-LOCAL.md`, etc.) or remove. |
 | 2 | **Nested-workspace install drift** | TS2307 "Cannot find module 'X'" for a workspace's devDep; locally resolves. | `grep workspaces <repo>/package.json` — if root `workspaces:` is a one-level glob (`apps/*`, `services/*`, `packages/*`), nested workspaces TWO levels deep (e.g. `apps/web/e2e`) are NOT installed by `npm install --workspaces`. Locally hidden by stale `<workspace>/node_modules` from prior manual installs (bind-mounted into your docker reproduction). **Fix:** add an explicit `cd <nested-ws> && npm install` step to every CI workflow that touches it. |
-| 3 | **Stale `<workspace>/node_modules` bind-mount shadowing** | Lint rule fires in CI but is silent locally; or type-aware rule behavior diverges. | Run `ls <workspace>/node_modules/` on your host — if non-empty, your docker reproductions see it via bind-mount. Type-aware ESLint rules (notably `@typescript-eslint/require-await`, `@typescript-eslint/no-floating-promises`) can fire differently depending on whether transitive types resolve. **Fix:** reproduce in a clean `git archive HEAD` snapshot under `/tmp/`, not in the live workspace. |
+| 3 | **Stale `<workspace>/node_modules` bind-mount shadowing** | Lint rule fires in CI but is silent locally; or type-aware rule behavior diverges. | Run `ls <workspace>/node_modules/` on your host — if non-empty, your docker reproductions see it via bind-mount **when you mount the live workspace**. Type-aware ESLint rules (notably `@typescript-eslint/require-await`, `@typescript-eslint/no-floating-promises`) can fire differently depending on whether transitive types resolve. **Fix:** reproduce in a clean `git archive HEAD` snapshot under `/tmp/`, not in the live workspace. |
+| 4 | **Workspace hoisting splits** | TS2339 / missing plugin augmentation in CI only; passes in a workspace-local or flat dev-container install. | Root `npm ci --workspaces` hoists some packages to `/repo/node_modules` while peers stay in `<workspace>/node_modules`. TypeScript `declare module` augmentations from the hoisted copy may not merge onto types resolved from the workspace copy. **Fix:** verify under the hoisted install (CI-parity snapshot); add a local `.d.ts` augmentation co-located with the workspace's dependency tree if needed. |
 
 ## Authoring-time guardrails (apply when writing READMEs / CI workflows / lint configs)
 
 - **README links** — never link from a tracked file to a `.gitignored` path. Specifically forbidden in this repo: `[DEVELOPMENT.md](...)` from any tracked README (the file is per-developer, gitignored). Use the root `README.md` or `DEVELOPMENT-LOCAL.md` (tracked template) instead.
 - **CI workflows** — for every workspace not matched by the root `workspaces:` glob (today: only `apps/web/e2e`, but future nested workspaces are analogous), every CI workflow that depends on it must `cd <ws> && npm install` explicitly after the root `npm install --workspaces`. Add an inline comment so the next maintainer understands the gap.
-- **Pre-push** — for slot work in sub-plan #9 and any commit with non-trivial CI surface, run `bash scripts/ci-parity-check.sh` (umbraculum-dev) as the last step before `git push`. It is the operational answer to "catch them locally".
+- **Pre-push** — before any push with non-trivial CI surface (TS/tsconfig, lockfiles, ESLint, READMEs, workflows), run `bash scripts/ci-parity-check.sh` when the repo ships it (umbraculum-dev does). All checks run **in-container** on a `git archive` snapshot. Dev-container `npm run typecheck` alone is not sufficient.
 
 ## Runbook
 
