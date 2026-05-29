@@ -22,7 +22,7 @@ CI parity checks **must run inside Docker**, using the **same image CI uses** (d
 
 - **Why:** Matches GitHub Actions (`ubuntu-latest` + container), eliminates host Node version drift (Linux / macOS / WSL), and avoids bind-mounting the live workspace (mechanism 3).
 - **Prerequisites on the developer machine:** `git`, `bash`, and Docker (Docker Desktop on macOS/Windows; native on Linux). WSL2 is the supported Windows path; native Windows `cmd` without WSL is out of scope.
-- **Canonical one-liner (umbraculum-dev):** `bash scripts/ci-parity-check.sh` — archives tracked files, bind-mounts the snapshot (not the live tree) into `node:20-slim`, runs all three static-analysis jobs in-container.
+- **Canonical one-liner (umbraculum-dev):** `npx @umbraculum/ci-parity` or `bash scripts/ci-parity-check.sh` (thin wrapper) — archives tracked files, bind-mounts the snapshot (not the live tree) into `node:20-slim`, runs all static-analysis jobs from `.umbraculum/ci-parity.json`.
 - **Long-running dev containers** (`docker compose exec api npm run typecheck`, etc.) are fine for fast iteration but are **not** CI parity — different `node_modules` layout (see mechanism 4).
 
 ## Rule (hard)
@@ -32,7 +32,7 @@ When CI fails on a check that you (or the developer) ran locally and saw green:
 1. **Do not push another commit hoping to "see what CI says" again.** That treats CI as a remote test runner and burns ~3–5 min per round-trip per job.
 2. **Reproduce the CI job in a clean `git archive HEAD` snapshot** — not in the live workspace — and confirm the failure locally. Then fix locally. Then re-verify in the snapshot. Then push.
 3. The runbook for this is **`ci-parity-local-reproduction`** skill (in this plugin).
-4. If the repo ships a `scripts/ci-parity-check.sh` (canonical implementation for `umbraculum-dev`), prefer it — one command, ~2 min, all three static-analysis jobs in one shot.
+4. If the repo ships a `scripts/ci-parity-check.sh` (thin wrapper) or `.umbraculum/ci-parity.json`, prefer `npx @umbraculum/ci-parity` — one command, ~2 min, all jobs from the manifest.
 
 ## The four divergence mechanisms — check each one when local and CI disagree
 
@@ -47,8 +47,8 @@ When CI fails on a check that you (or the developer) ran locally and saw green:
 
 - **README links** — never link from a tracked file to a `.gitignored` path. Specifically forbidden in this repo: `[DEVELOPMENT.md](...)` from any tracked README (the file is per-developer, gitignored). Use the root `README.md` or `DEVELOPMENT-LOCAL.md` (tracked template) instead.
 - **CI workflows** — for every workspace not matched by the root `workspaces:` glob (today: only `apps/web/e2e`, but future nested workspaces are analogous), every CI workflow that depends on it must `cd <ws> && npm install` explicitly after the root `npm install --workspaces`. Add an inline comment so the next maintainer understands the gap.
-- **Pre-push** — before any push with non-trivial CI surface (TS/tsconfig, lockfiles, ESLint, READMEs, workflows), run `bash scripts/ci-parity-check.sh` when the repo ships it (umbraculum-dev does). All checks run **in-container** on a `git archive` snapshot. Dev-container `npm run typecheck` alone is not sufficient.
+- **Pre-push** — before any push with non-trivial CI surface (TS/tsconfig, lockfiles, ESLint, READMEs, workflows), run `npx @umbraculum/ci-parity` when the repo ships `.umbraculum/ci-parity.json` (umbraculum-dev does). Manifest is the source of truth for install order and job commands. Dev-container `npm run typecheck` alone is not sufficient.
 
 ## Runbook
 
-See `ci-parity-local-reproduction` skill in this plugin for the bounded 5-command reproduction recipe (covers both the `ci-parity-check.sh` short-circuit and the manual `node:20-slim` fallback for repos that don't ship the script yet).
+See `ci-parity-local-reproduction` skill in this plugin for the bounded reproduction recipe (`npx @umbraculum/ci-parity` preferred; manual Docker fallback for repos without the manifest).

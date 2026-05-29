@@ -1,0 +1,44 @@
+name: ci-parity-reusable
+
+on:
+  workflow_call:
+    inputs:
+      manifest_path:
+        description: Path to ci-parity manifest relative to repo root
+        type: string
+        default: .umbraculum/ci-parity.json
+      jobs:
+        description: Comma-separated job ids (empty = all jobs in manifest)
+        type: string
+        default: ""
+      ci_parity_version:
+        description: npm version range for @umbraculum/ci-parity
+        type: string
+        default: "1"
+
+jobs:
+  ci-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js (orchestrator only — jobs run in Docker via ci-parity)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run @umbraculum/ci-parity
+        env:
+          JOBS: ${{ inputs.jobs }}
+        run: |
+          set -euo pipefail
+          JOB_ARGS=""
+          if [ -n "$JOBS" ]; then
+            JOB_ARGS="--jobs $JOBS"
+          fi
+          npx @umbraculum/ci-parity@${{ inputs.ci_parity_version }} run --ci \
+            --manifest "${{ inputs.manifest_path }}" \
+            --repo "${{ github.workspace }}" \
+            $JOB_ARGS
