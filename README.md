@@ -42,6 +42,7 @@ umbraculum-toolset/
 ## Quick links
 
 - **Cursor plugins overview + install + pairing rationale**: [`cursor-plugins/README.md`](./cursor-plugins/README.md)
+- **`@umbraculum/ci-parity`** (npm CLI sibling to plugins — CI parity runner): [`packages/ci-parity/README.md`](./packages/ci-parity/README.md); consumer docs in [umbraculum-dev `docs/CI-PARITY.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/CI-PARITY.md); publish runbook in [`docs/design/ci-parity-npm-publish.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/design/ci-parity-npm-publish.md)
 - **Witness-rule contract for downstream `AGENTS.md` consumers** (how repos that install these plugins should verify the plugin pack is loaded — relevant whenever an `AGENTS.md` apparatus self-check is being authored or updated): [`cursor-plugins/README.md` § "Witness-rule contract for downstream `AGENTS.md` consumers"](./cursor-plugins/README.md#witness-rule-contract-for-downstream-agentsmd-consumers)
 - **Recommended Prisma plugin (official Cursor marketplace; umbraculum-dev)** — not part of this repo; install from Cursor Marketplace alongside the toolset: [`umbraculum-dev` `docs/CURSOR-PLUGINS.md` § Strongly recommended — Prisma](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/CURSOR-PLUGINS.md#strongly-recommended--prisma-official-cursor-marketplace-plugin)
 - **Contributing (DCO sign-off, Cursor co-author trailer, commit-message + PR conventions)**: [`CONTRIBUTING.md`](./CONTRIBUTING.md)
