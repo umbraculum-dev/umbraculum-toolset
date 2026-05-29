@@ -49,6 +49,24 @@ describe("buildContainerScript", () => {
     expect(typecheckPos).toBeGreaterThan(lintPos);
     expect(nestedPos).toBeGreaterThan(typecheckPos);
   });
+
+  it("includes run_root_install before sdk-publish-prep commands", () => {
+    const manifest = parseManifest({
+      ...sampleManifest,
+      jobs: [
+        ...sampleManifest.jobs,
+        {
+          id: "sdk-publish-prep",
+          needsRootInstall: true,
+          commands: ["npm run build:packages", "npm pack -w @umbraculum/ai-tool-sdk --dry-run"],
+        },
+      ],
+    });
+    const script = buildContainerScript(manifest, [manifest.jobs[manifest.jobs.length - 1]!]);
+    expect(script).toContain("run_root_install");
+    expect(script).toContain("[job] sdk-publish-prep");
+    expect(script).toContain("npm pack -w @umbraculum/ai-tool-sdk --dry-run");
+  });
 });
 
 describe("parseManifest", () => {
