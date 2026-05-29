@@ -35,11 +35,12 @@ jobs:
       - run: npm test -w @umbraculum/ci-parity
       - run: npm run build -w @umbraculum/ci-parity
 
-      - name: Obtain GitHub OIDC token for npm (audience npm:registry.npmjs.org)
+      - name: Obtain GitHub OIDC ID token (audience npm:registry.npmjs.org)
+        id: oidc
         run: |
           set -euo pipefail
           if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] || [ -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
-            echo "::error::Missing ACTIONS_ID_TOKEN_* env vars — job needs permissions.id-token: write"
+            echo "::error::Missing ACTIONS_ID_TOKEN_* env — job needs permissions.id-token: write"
             exit 1
           fi
           OIDC_URL="${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:registry.npmjs.org"
@@ -51,13 +52,55 @@ jobs:
             echo "::error::GitHub OIDC response missing .value"
             exit 1
           fi
-          echo "NPM_ID_TOKEN=${ID_TOKEN}" >> "${GITHUB_ENV}"
+          # Diagnostic: print decoded JWT claims (header + payload) without signature
+          echo "OIDC payload claims (sub/repo/workflow):"
+          echo "${ID_TOKEN}" | cut -d. -f2 | tr '_-' '/+' | base64 -d 2>/dev/null \
+            | jq '{sub, repository, repository_owner, workflow, workflow_ref, ref, environment, job_workflow_ref}' \
+            || true
+          echo "::add-mask::${ID_TOKEN}"
+          echo "id_token=${ID_TOKEN}" >> "${GITHUB_OUTPUT}"
 
-      - name: Publish @umbraculum/ci-parity (OIDC)
-        working-directory: packages/ci-parity
+      - name: Exchange OIDC token with npm registry (manual fallback)
+        id: exchange
         env:
-          NPM_CONFIG_REGISTRY: https://registry.npmjs.org
+          ID_TOKEN: ${{ steps.oidc.outputs.id_token }}
         run: |
           set -euo pipefail
+          # https://docs.npmjs.com/trusted-publishers — POST /-/npm/v1/oidc/token/exchange/package/<escaped>
+          PKG_ESCAPED="@umbraculum%2fci-parity"
+          EXCHANGE_URL="https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/${PKG_ESCAPED}"
+          HTTP_CODE=$(curl -sS -o /tmp/exchange.json -w '%{http_code}' \
+            -X POST \
+            -H "Authorization: Bearer ${ID_TOKEN}" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            "${EXCHANGE_URL}")
+          echo "Exchange HTTP ${HTTP_CODE}"
+          echo "Exchange body:"
+          cat /tmp/exchange.json || true
+          echo
+          if [ "${HTTP_CODE}" != "200" ] && [ "${HTTP_CODE}" != "201" ]; then
+            echo "::error::npm OIDC token exchange failed (HTTP ${HTTP_CODE}) — verify trusted publisher config at https://www.npmjs.com/package/@umbraculum/ci-parity/access"
+            exit 1
+          fi
+          NPM_TOKEN=$(jq -r .token < /tmp/exchange.json)
+          if [ -z "${NPM_TOKEN}" ] || [ "${NPM_TOKEN}" = "null" ]; then
+            echo "::error::npm exchange response missing .token"
+            exit 1
+          fi
+          echo "::add-mask::${NPM_TOKEN}"
+          echo "npm_token=${NPM_TOKEN}" >> "${GITHUB_OUTPUT}"
+
+      - name: Publish @umbraculum/ci-parity
+        working-directory: packages/ci-parity
+        env:
+          NPM_TOKEN_FROM_OIDC: ${{ steps.exchange.outputs.npm_token }}
+        run: |
+          set -euo pipefail
+          # Use the short-lived OIDC-exchanged token via .npmrc (auto-removed when runner exits).
+          cat > "$HOME/.npmrc" <<EOF
+          registry=https://registry.npmjs.org/
+          //registry.npmjs.org/:_authToken=${NPM_TOKEN_FROM_OIDC}
+          EOF
           unset NODE_AUTH_TOKEN NPM_TOKEN
           npm publish --access public
