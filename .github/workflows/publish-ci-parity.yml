@@ -1,5 +1,9 @@
 name: publish-ci-parity
 
+# Publishes @umbraculum/ci-parity to npm on ci-parity-v* tags.
+# Auth: npm Trusted Publishing (OIDC) — no long-lived NPM_TOKEN on publish step.
+# One-time npm setup: docs/design/ci-parity-npm-trusted-publishing.md (umbraculum-dev)
+
 on:
   push:
     tags:
@@ -11,7 +15,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
-      id-token: write
+      id-token: write # Required for npm OIDC trusted publishing
     steps:
       - uses: actions/checkout@v5
 
@@ -19,13 +23,15 @@ jobs:
         with:
           node-version: "24"
           registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Ensure npm CLI supports trusted publishing (>= 11.5.1)
+        run: npm install -g npm@latest && npm --version
 
       - run: npm ci
       - run: npm run typecheck -w @umbraculum/ci-parity
       - run: npm test -w @umbraculum/ci-parity
       - run: npm run build -w @umbraculum/ci-parity
 
-      - name: Publish @umbraculum/ci-parity
+      - name: Publish @umbraculum/ci-parity (OIDC)
         run: npm publish -w @umbraculum/ci-parity --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
