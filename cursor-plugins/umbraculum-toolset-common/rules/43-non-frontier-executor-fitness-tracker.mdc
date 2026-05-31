@@ -37,11 +37,14 @@ repo's docs root, you MUST consult it in the following situations:
      family has historically struggled with. Promote those into
      extra-specific plan instructions.
 
-2. **Before drafting any multi-phase plan** (frontier or not): include a
-   **Documentation context** section per rule `49-plan-documentation-context.mdc`
-   and [`docs/design/plan-documentation-context-template.md`](docs/design/plan-documentation-context-template.md)
-   when the consuming repo provides it. Executors use that table to find RFC
-   and surface docs without inferring from code alone.
+2. **Before drafting any multi-phase plan** (frontier or not): open the plan
+   with **Standards & governance context** then **Documentation context** per
+   rule `49-plan-documentation-context.mdc` and
+   [`docs/design/plan-documentation-context-template.md`](docs/design/plan-documentation-context-template.md)
+   when the consuming repo provides it. Section 1 binds RFC § and
+   `docs/CODING-STANDARDS.md` (or sibling equivalent) for implementation;
+   section 2 links surface docs and build logs so executors need not infer
+   from code alone.
 
 3. **Before executing a plan** as a non-frontier executor (or before
    simulating one for testing purposes):
