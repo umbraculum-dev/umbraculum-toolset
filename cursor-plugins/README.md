@@ -9,7 +9,7 @@ This directory packages four Cursor plugins in a multi-plugin repository:
 
 Multi-plugin discovery is defined in `.cursor-plugin/marketplace.json`.
 
-**Sibling npm tooling (not a Cursor plugin):** [`packages/ci-parity`](../packages/ci-parity/) ships **`@umbraculum/ci-parity`** — manifest-driven local/CI static-analysis parity. Consumer repos pin `.umbraculum/ci-parity.json` and call `npx @umbraculum/ci-parity`; the node-react plugin's rule `72-ci-parity-local-vs-ci-divergence` and skill `ci-parity-local-reproduction` reference it.
+**Sibling npm tooling (not a Cursor plugin):** [`packages/ci-parity`](../packages/ci-parity/) ships **`@umbraculum/ci-parity`** — manifest-driven local/CI **static-analysis** parity. Consumer repos pin `.umbraculum/ci-parity.json` and call `npx @umbraculum/ci-parity`; the node-react plugin's rule `72-ci-parity-local-vs-ci-divergence` and skill `ci-parity-local-reproduction` reference it. The GHA **`api`** vitest workflow is **out of ci-parity scope** — use skill **`api-integration-tests-pre-push`** and rule **`75-api-integration-pre-push-gate`**.
 
 See `docs/PLUGIN-ROADMAP.md` for: (a) the rationale for the common plugin and what was deliberately NOT moved into it (Strategy C — only the trivially-neutralizable artifacts moved), and (b) the private-vs-marketplace (Cursor) plugin transition notes if any of these ever needs to be published publicly.
 

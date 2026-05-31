@@ -43,5 +43,6 @@ Each adopting project SHOULD keep its concrete mapping (exact package names, `np
 ## Acceptance criteria
 - After a Magento change: run the relevant PHPUnit suite(s) and keep them green.
 - After a TS/JS change: run the matching layer(s) and keep them green; see the project's `docs/TESTING.md` (or equivalent) for exact commands.
+- **Umbraculum-class monorepos with `.umbraculum/ci-parity.json`:** before push, run **`npx @umbraculum/ci-parity`** (static analysis). When **`services/api/**`** (or api workflow path filters) change, also run skill **`api-integration-tests-pre-push`** — ci-parity does not substitute for the GHA `api` vitest job.
 - For containerized Node/npm execution, follow `node-npm-container-only` skill.
 - If tests are skipped because the code is too legacy/entangled to test cheaply, explicitly document which module/class/path was skipped and why.
