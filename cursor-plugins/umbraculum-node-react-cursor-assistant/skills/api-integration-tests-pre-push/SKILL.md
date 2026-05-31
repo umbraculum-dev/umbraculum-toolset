@@ -17,7 +17,9 @@ Local gaps this skill closes:
 | Vitest **unhandled rejections** after all tests pass | `api-integration-tests` FAIL, exit 1, "Tests passed" + "Errors: 1" | ioredis `Connection is closed` on `app.close()` when `REDIS_URL` set |
 | Stale bind-mounted `node_modules` | intermittent | compose exec green, CI red |
 
-**Both gates:** run **ci-parity `--job typecheck`** (or full ci-parity) **and** this skill when the change set touches API behavior or API tests.
+**T2 API gate:** this skill is the **T2** complement to ci-parity (T2 static). **T1** scoped vitest (`verify-slice-runbook`, `npm run verify:openapi`) does **not** substitute for this skill before push. See [`docs/VERIFICATION-TIERS.md`](../../umbraculum-dev/docs/VERIFICATION-TIERS.md) in umbraculum-dev.
+
+**Both T2 gates:** run **ci-parity** (or `npm run verify:pre-push`) **and** this skill when the change set touches API behavior or API tests.
 
 ## Inputs required (do not assume)
 
