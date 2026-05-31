@@ -1,11 +1,13 @@
 ---
-description: When authoring a Cursor or multi-phase execution plan for feature work in an Umbraculum-family repo, include a Documentation context table (governing RFC, surface docs, plugin rules, runbook) using repo-relative links; cite absolute paths in executor steps per 97-plans-must-include-canonical-absolute-paths.
+description: When authoring a Cursor or multi-phase execution plan for feature work in an Umbraculum-family repo, open with a Standards & governance context block (RFCs, coding standards, foundation gates, plugin rules) then a Documentation context table; cite absolute paths in executor steps per 97-plans-must-include-canonical-absolute-paths.
 alwaysApply: true
 ---
 
-# Plan documentation context (required for feature plans)
+# Plan standards + documentation context (required for feature plans)
 
-Plans that only cite code paths are hard for humans to review and for non-frontier executors to align with governance. Feature plans in Umbraculum-family repos MUST include a **Documentation context** section.
+Plans that only cite code paths are hard for humans to review and for non-frontier executors to align with governance. Feature plans in Umbraculum-family repos MUST open with **Standards & governance context** (first content section after YAML frontmatter), then **Documentation context**.
+
+The standards block is the implementation contract: executors treat cited RFC § and coding-standard sections as binding unless the operator explicitly approves a deviation in the plan or in chat.
 
 ## When this rule fires
 
@@ -14,29 +16,84 @@ Plans that only cite code paths are hard for humans to review and for non-fronti
 
 Does **not** fire for one-line fixes, typo-only docs, or plans explicitly marked documentation-only with `apparatus: override`.
 
-## Required section shape
+## Required placement
+
+1. YAML frontmatter (`name`, `overview`, `todos`, …) when present.
+2. **`## Standards & governance context (required)`** — MUST be the first markdown heading after frontmatter.
+3. **`## Documentation context (required)`** — immediately after the standards block.
+4. Plan body (phases, executor steps, todos).
+
+Do not bury RFC or coding-standard citations only in phase prose. If a standard applies to the whole plan, cite it in section 2 above.
+
+## Required section 1 — Standards & governance context
+
+```markdown
+## Standards & governance context (required)
+
+**Binding for implementation:** phases below MUST follow these unless the operator explicitly approves a deviation.
+
+| Role | Document |
+|------|----------|
+| Governing RFC | [RFC-0007](docs/rfcs/0007-....md) — §N (list bullets the plan implements) |
+| Coding standards | [CODING-STANDARDS.md](docs/CODING-STANDARDS.md) — § headings that apply |
+| Foundation gates | [LINTING.md](docs/LINTING.md), [TESTING.md](docs/TESTING.md), [TYPING.md](docs/TYPING.md) — when TS/JS code changes |
+| Cross-platform | [CROSS-PLATFORM-BOUNDARIES.md](docs/CROSS-PLATFORM-BOUNDARIES.md) — when touching `apps/web`, `apps/native`, or shared packages |
+| Plugin rules | `22-typescript-contracts-runtime-validation.mdc`, `45-public-endpoint-verification.mdc`, … |
+| Runbook | [DEVELOPMENT.md](DEVELOPMENT.md) — container npm, CI parity, rendering stack |
+
+**Applicable coding-standard sections (explicit):**
+- [ ] Native-ready packages / `dist/` discipline
+- [ ] Shared logic over copying / package placement
+- [ ] External API runtime validation (`unknown` → parse)
+- [ ] `@umbraculum/contracts` versioning
+- [ ] UI layering (`@umbraculum/ui` vs domain packages vs app adapters)
+- [ ] _(add or strike rows — unchecked rows MUST NOT apply to this plan)_
+```
+
+Rules for section 1:
+
+- Use **repo-relative markdown links**.
+- **Governing RFC** — cite § numbers and name the RFC bullets the plan implements (not just the RFC title).
+- **Coding standards** — umbraculum-dev canonical path: `docs/CODING-STANDARDS.md`. Sister repos: equivalent path or strike the row with `(n/a — <repo> has no coding-standards doc)`.
+- **Foundation gates** — include when the plan touches TS/JS; strike or omit for docs-only or non-TS repos.
+- **Plugin rules** — cite by **filename** (witness contract in consuming repo's `docs/CURSOR-PLUGINS.md`).
+- **Applicable coding-standard sections** — checklist MUST reflect this plan; do not leave all boxes checked by default.
+
+## Required section 2 — Documentation context
 
 ```markdown
 ## Documentation context (required)
 
 | Role | Document |
 |------|----------|
-| Governing RFC | [RFC-0007](docs/rfcs/0007-....md) — §N |
 | Horizontal surface | [canonical-....md](docs/design/....md) |
 | Module surface | [canonical-....md](docs/design/....md) §N |
-| Plugin rules | `22-typescript-contracts-runtime-validation.mdc`, ... |
-| Runbook | [DEVELOPMENT.md](DEVELOPMENT.md) |
+| Build log pattern | [....-build-log.md](docs/design/....md) |
+| Non-frontier traps | [NON-FRONTIER-EXECUTOR-FITNESS-TRACKER.md](docs/NON-FRONTIER-EXECUTOR-FITNESS-TRACKER.md) §10 |
 ```
 
-Use **repo-relative markdown links**. Cite RFC/surface **§ numbers** when the doc is long. Cite plugin rules by **filename** (witness contract in `docs/CURSOR-PLUGINS.md`).
+Governing RFC and coding standards live in section 1 — do not duplicate them here unless a companion surface doc also needs a § cite.
 
 Template: `docs/design/plan-documentation-context-template.md` in umbraculum-dev (or equivalent in sibling repos).
 
 ## Executor instructions
 
+- Each phase MUST start with: `Follows: Standards & governance context above.`
 - Enumerate **per-file artifacts** by absolute path where the plan will be executed by a subagent (platform plugin rule `97-plans-must-include-canonical-absolute-paths.mdc`).
 - If the plan adds document templates, state that **horizontal rendering surface §2** must be updated in the same wave.
 
+## Anti-patterns
+
+- Plan opens with `## Overview` or phase 1 before standards context.
+- Coding standards mentioned only in passing ("follow existing conventions") with no `CODING-STANDARDS.md` link or § checklist.
+- RFC cited in frontmatter `overview` but not in section 1 with § numbers.
+- Executor phases that contradict an checked coding-standard row without a documented operator-approved deviation.
+
 ## Companion skill
 
-Use `plan-documentation-context` skill to scaffold the table from module code / RFC keywords.
+Use `plan-documentation-context` skill to scaffold both required sections from module code / RFC keywords.
+
+## Fits the system
+
+- **Frontier now**: always-applied plan-authoring gate; standards block at the top makes RFC + coding-standard compliance reviewable before execution starts.
+- **Local subagents (future)**: a readonly `plan-preflight` subagent can regex-check for both headings and a non-empty RFC row before an executor subagent runs.
