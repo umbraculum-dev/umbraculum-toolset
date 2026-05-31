@@ -7,7 +7,7 @@ description: Reproduce a CI static-analysis job (docs/lint/typecheck) in a clean
 
 ## Why this skill exists
 
-When CI fails on a check that the developer ran locally and saw green, the gap is almost always one of **four** local-vs-CI divergence mechanisms (documented in rule `72-ci-parity-local-vs-ci-divergence.mdc`). The recipe below reproduces a CI job against a **clean `git archive HEAD` snapshot** under `/tmp/ci-parity-<sha>`, with **all static-analysis commands inside Docker** (same image CI uses — default `node:20-slim`). The host only runs `git archive` and `docker run`; never host `npm` / `tsc` for parity.
+When CI fails on a check that the developer ran locally and saw green, the gap is almost always one of **four** local-vs-CI divergence mechanisms (documented in rule `72-ci-parity-local-vs-ci-divergence.mdc`). This skill implements the **T2 static-analysis gate** — use **`verify-slice-runbook`** for T0/T1 while iterating. See umbraculum-dev [`docs/VERIFICATION-TIERS.md`](../../umbraculum-dev/docs/VERIFICATION-TIERS.md).
 
 **Cross-platform:** Linux, macOS, and WSL2 + Docker Desktop. Requires `git`, `bash`, and Docker on PATH — not host Node.js.
 

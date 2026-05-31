@@ -1,0 +1,33 @@
+---
+description: After non-doc TS/JS edits, run T0 or T1 verification via verify-slice-runbook before declaring done; T2 before push. Forbids full build-packages-in-docker when scoped build suffices.
+globs:
+  - apps/**
+  - services/**
+  - packages/**
+alwaysApply: false
+---
+
+# Verification tiers gate (T0 / T1 / T2)
+
+Canonical doc: `docs/VERIFICATION-TIERS.md` in the consuming umbraculum-class repo (e.g. umbraculum-dev).
+
+## Rule (hard)
+
+After editing **`apps/**`**, **`services/**`**, or **`packages/**`** (non-doc-only):
+
+1. **Before declaring done:** run **T0 or T1** via skill **`verify-slice-runbook`** (named slice or `--from-diff`).
+2. **Before push:** run **T2** — `npm run verify:pre-push` or skill **`ci-parity-local-reproduction`** plus skill **`api-integration-tests-pre-push`** when API paths changed.
+
+## Anti-patterns
+
+- Do **not** run `./scripts/build-packages-in-docker.sh` for a single-package `src/` edit when `./scripts/build-package-in-docker.sh @umbraculum/<name> --include-dependents` suffices.
+- Do **not** treat T1 green as T2 green.
+- Do **not** use host `npm test` in containerized repos.
+
+## Skills
+
+| Tier | Skill |
+|------|-------|
+| T0/T1 | `verify-slice-runbook`, `scoped-package-build-in-docker` |
+| T2 static | `ci-parity-local-reproduction` |
+| T2 API | `api-integration-tests-pre-push` |

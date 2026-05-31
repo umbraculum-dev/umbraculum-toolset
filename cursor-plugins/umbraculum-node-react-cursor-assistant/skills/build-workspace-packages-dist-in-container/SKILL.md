@@ -16,6 +16,8 @@ Invoke proactively whenever ANY of the following just happened in the session:
 3. **You added a runtime dep to a consumer workspace's `package.json`** (e.g. added `zod` to `services/api/package.json`). The package.json edit on the host does NOT propagate to the consumer container's bind-mounted `node_modules`. After the dist rebuild, *also* run `docker compose exec -T <consumer> sh -c "cd /app && npm install --no-audit --no-fund"` then `docker compose restart <consumer>` so the new dep is resolvable inside the container.
 4. **A consumer container is crash-looping with one of the two canonical failure modes above** (stale-dist `SyntaxError` or missing-dep `ERR_MODULE_NOT_FOUND`).
 
+**Prefer scoped build first (umbraculum-dev):** if `<REPO_ROOT>/scripts/build-package-in-docker.sh` exists and only one (or diff-detected) package changed, use skill **`scoped-package-build-in-docker`** instead of full `build:packages`. Reserve this skill's full `build:packages` path for SDK publish, `--all` dist audits, or multi-package releases.
+
 Skip this skill if the edit was confined to `apps/<name>/src/**`, `services/<name>/src/**`, or a documentation / config file — those do not produce committed `dist/` artifacts that consumers depend on.
 
 ## Inputs required (do not assume)
@@ -44,10 +46,19 @@ Skip this skill if the edit was confined to `apps/<name>/src/**`, `services/<nam
 - Confirm the repo defines `<NPM_BUILD_SCRIPT>` (for example in root `package.json`).
 
 ## Commands (templates)
+
+**Umbraculum-dev scoped path (preferred when script exists):**
+
+1) `./scripts/build-package-in-docker.sh @umbraculum/<name> --include-dependents` from `<REPO_ROOT>`.
+
+**Full monorepo fallback:**
+
 1) Install dependencies (repo root):
    - `docker exec -i <NODE_CONTAINER> bash -lc 'cd <REPO_WORKDIR_IN_CONTAINER> && <NPM_INSTALL_CMD>'`
 2) Build workspace package outputs:
    - `docker exec -i <NODE_CONTAINER> bash -lc 'cd <REPO_WORKDIR_IN_CONTAINER> && npm run -s <NPM_BUILD_SCRIPT>'`
+
+Or from host (umbraculum-dev): `./scripts/build-packages-in-docker.sh` (runs `--all`).
 
 ## Stop conditions
 - `<NODE_CONTAINER>` or `<REPO_WORKDIR_IN_CONTAINER>` is unknown/ambiguous.
