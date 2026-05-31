@@ -1,0 +1,39 @@
+---
+description: API integration pre-push gate — ci-parity typecheck does not run the GHA api vitest job; reproduce npm test with REDIS_URL before push
+alwaysApply: false
+globs:
+  - "services/api/**"
+  - "packages/contracts/**"
+  - "packages/core/**"
+  - "packages/module-sdk/**"
+---
+
+# API integration pre-push gate (umbraculum-class monorepos)
+
+## Two-tier pre-push (hard)
+
+| Tier | Tool | Catches | Does **not** catch |
+|------|------|---------|---------------------|
+| **1 — Static analysis** | `npx @umbraculum/ci-parity` (jobs from `.umbraculum/ci-parity.json`) | TS errors in tests (`tsc --noEmit`), lint, docs | Vitest runtime, Redis/BullMQ teardown, DB integration |
+| **2 — API integration** | **`api-integration-tests-pre-push`** skill | GHA `api` workflow failures (`npm test`, unhandled vitest rejections with `REDIS_URL`) | Playwright e2e, deploy, DNS |
+
+When editing **`services/api/**`**, API test files, **`buildApp()`** boot paths, or shared packages in `.github/workflows/api.yml` path filters: run **both tiers** before push.
+
+## Rule (hard)
+
+1. **Do not treat `docker compose exec api npm run typecheck` or a green dev UI as sufficient** for API changes.
+2. **Do not treat ci-parity alone as sufficient** for API changes — it does not execute `services/api` vitest with Redis.
+3. **Treat vitest "Tests passed" + "Unhandled Errors" / `Errors: 1` as FAIL** — CI exits non-zero the same way.
+4. Procedure: skill **`api-integration-tests-pre-push`** (this plugin). Static analysis: skill **`ci-parity-local-reproduction`** + rule **`72-ci-parity-local-vs-ci-divergence`**.
+
+## Agent anti-patterns
+
+| Anti-pattern | Why it fails |
+|---|---|
+| Push after only manual browser check | Misses test-file TS errors and vitest teardown |
+| `vitest run` without Redis when CI sets `REDIS_URL` | Misses BullMQ/ioredis lifecycle bugs |
+| Ignoring unhandled rejection summary | CI fails despite 542 passed tests |
+
+## Runbook
+
+Skill: `api-integration-tests-pre-push` in this plugin.
