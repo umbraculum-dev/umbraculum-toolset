@@ -33,6 +33,8 @@ Use this when you need to run Node/npm tasks in a containerized project.
 1) Verify `<NODE_CONTAINER>` is the correct container.
 2) Run: `docker exec -i <NODE_CONTAINER> bash -lc 'cd <REPO_WORKDIR_IN_CONTAINER> && npm run -s <NPM_SCRIPT>'`.
 
+For **one-shot** `docker run … npm install` in umbraculum-class monorepos, use skill **`docker-npm-volumes-runbook`** (`./scripts/docker-npm-run.sh -r`) — do not discard the npm cache every run.
+
 ## Stop conditions
 - `<NODE_CONTAINER>` or `<REPO_WORKDIR_IN_CONTAINER>` is unknown/ambiguous.
 - The exec command is blocked by allowlist/approval.

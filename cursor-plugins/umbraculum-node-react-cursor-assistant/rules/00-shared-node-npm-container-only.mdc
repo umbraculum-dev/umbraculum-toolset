@@ -19,4 +19,4 @@ globs:
 
 ## Runbook
 
-See `node-npm-container-only` skill.
+See `node-npm-container-only` skill. For warm npm cache / named `node_modules` volumes on one-shots, see **`docker-npm-volumes-runbook`** (umbraculum-dev: `docs/DEVELOPMENT-NPM-VOLUMES.md`).

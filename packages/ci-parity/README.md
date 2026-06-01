@@ -31,6 +31,8 @@ Host prerequisites: `git`, `bash`, Docker. Host Node orchestrates Docker only; j
 
 Each consumer repo ships `.umbraculum/ci-parity.json` as the single source of truth for jobs, install ordering, and typecheck workspaces.
 
+Optional **`docker.volumes`** (since 1.0.8) — array of `{ "name", "containerPath" }` mounted on the parity container for **local** warm npm cache / `node_modules` persistence (Linux + Docker Desktop macOS). Example names in umbraculum-dev: `umbraculum_npm_cache`, `umbraculum_root_node_modules`. See umbraculum-dev [`docs/DEVELOPMENT-NPM-VOLUMES.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/DEVELOPMENT-NPM-VOLUMES.md). GHA runners remain ephemeral per job.
+
 Canonical guide: [umbraculum-dev `docs/CI-PARITY.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/CI-PARITY.md).
 
 ## Commands

@@ -7,7 +7,7 @@ description: Run T0 or T1 verification for a named slice or git diff via scripts
 
 ## Why this skill exists
 
-Agents and humans need one command per change theme instead of improvising docker/npm sequences. Umbraculum-dev ships **`scripts/verify-slice.sh`** backed by **`.umbraculum/verification-slices.json`**.
+Agents and humans need one command per change theme instead of improvising docker/npm sequences. Umbraculum-dev ships **`scripts/verify-slice.sh`** backed by **`.umbraculum/verification-slices.json`**. L1 contract tests call **`./scripts/docker-npm-run.sh -r`** (warm volumes — skill **`docker-npm-volumes-runbook`**).
 
 T2 (ci-parity + API integration) uses **`npm run verify:pre-push`** / skills **`ci-parity-local-reproduction`** + **`api-integration-tests-pre-push`** — not this skill.
 

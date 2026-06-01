@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { parseManifest } from "./manifest.js";
-import { buildContainerScript } from "./runner.js";
+import { buildContainerScript, dockerVolumeArgs } from "./runner.js";
 
 const sampleManifest = parseManifest({
   schemaVersion: 1,
@@ -81,5 +81,53 @@ describe("parseManifest", () => {
         jobs: [],
       }),
     ).toThrow();
+  });
+
+  it("defaults docker.volumes to empty", () => {
+    const manifest = parseManifest({
+      schemaVersion: 1,
+      profile: "ts-npm-monorepo",
+      runtime: { image: "node:20-slim" },
+      snapshot: { local: "git-archive", ci: "checkout" },
+      install: { root: "npm ci", nested: [] },
+      jobs: [
+        {
+          id: "lint",
+          command: "npm run lint",
+          needsRootInstall: true,
+        },
+      ],
+    });
+    expect(manifest.docker.volumes).toEqual([]);
+    expect(dockerVolumeArgs(manifest)).toEqual([]);
+  });
+
+  it("maps docker.volumes to docker -v args", () => {
+    const manifest = parseManifest({
+      schemaVersion: 1,
+      profile: "ts-npm-monorepo",
+      runtime: { image: "node:20-slim" },
+      docker: {
+        volumes: [
+          { name: "umbraculum_npm_cache", containerPath: "/root/.npm" },
+          { name: "umbraculum_root_node_modules", containerPath: "/repo/node_modules" },
+        ],
+      },
+      snapshot: { local: "git-archive", ci: "checkout" },
+      install: { root: "npm ci", nested: [] },
+      jobs: [
+        {
+          id: "lint",
+          command: "npm run lint",
+          needsRootInstall: true,
+        },
+      ],
+    });
+    expect(dockerVolumeArgs(manifest)).toEqual([
+      "-v",
+      "umbraculum_npm_cache:/root/.npm",
+      "-v",
+      "umbraculum_root_node_modules:/repo/node_modules",
+    ]);
   });
 });
