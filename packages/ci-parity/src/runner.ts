@@ -72,6 +72,24 @@ function bashVarName(jobId: string, suffix: string): string {
   return `${jobId.replace(/-/g, "_")}_${suffix}`;
 }
 
+/** Explicit pull with backoff — implicit pull during `docker run` flakes on Docker Hub from GHA. */
+export function ensureDockerImage(image: string, maxAttempts = 5): void {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const result = spawnSync("docker", ["pull", image], { stdio: "inherit", encoding: "utf8" });
+    if (result.status === 0) {
+      return;
+    }
+    if (attempt < maxAttempts) {
+      const delaySec = attempt * 15;
+      console.error(
+        `docker pull ${image} failed (attempt ${attempt}/${maxAttempts}); retrying in ${delaySec}s...`,
+      );
+      spawnSync("sleep", [String(delaySec)], { stdio: "ignore" });
+    }
+  }
+  throw new Error(`docker pull ${image} failed after ${maxAttempts} attempts`);
+}
+
 export function buildContainerScript(
   manifest: CiParityManifest,
   jobs: CiParityJob[],
@@ -221,6 +239,8 @@ export function runCiParity(options: RunOptions): RunOutput {
   }
 
   dockerArgs.push(options.manifest.runtime.image, "bash", "/repo/.ci-parity-run.sh");
+
+  ensureDockerImage(options.manifest.runtime.image);
 
   console.log(`=== @umbraculum/ci-parity — running against ${options.sha} (${short}) ===`);
   console.log(`snapshot: ${snapshotDir}`);

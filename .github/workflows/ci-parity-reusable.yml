@@ -24,6 +24,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Pull CI parity runtime image (retry Docker Hub flakes)
+        run: |
+          set -euo pipefail
+          IMAGE="$(jq -r '.runtime.image' "${{ inputs.manifest_path }}")"
+          echo "Pulling ${IMAGE} (manifest runtime.image)..."
+          for attempt in 1 2 3 4 5; do
+            if docker pull "${IMAGE}"; then
+              echo "Pulled ${IMAGE}"
+              exit 0
+            fi
+            delay=$((attempt * 15))
+            echo "docker pull failed (attempt ${attempt}/5); retrying in ${delay}s..." >&2
+            sleep "${delay}"
+          done
+          echo "FATAL: could not pull ${IMAGE} after 5 attempts" >&2
+          exit 1
+
       - name: Setup Node.js (orchestrator only — jobs run in Docker via ci-parity)
         uses: actions/setup-node@v4
         with:
