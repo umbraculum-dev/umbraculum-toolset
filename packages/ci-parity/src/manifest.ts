@@ -45,6 +45,11 @@ const JobSchema = z.discriminatedUnion("id", [
   SdkPublishPrepJobSchema,
 ]);
 
+const DockerVolumeSchema = z.object({
+  name: z.string().min(1),
+  containerPath: z.string().min(1),
+});
+
 export const CiParityManifestSchema = z.object({
   schemaVersion: z.literal(1),
   profile: z.enum(["ts-npm-monorepo", "python", "magento-php"]),
@@ -52,6 +57,11 @@ export const CiParityManifestSchema = z.object({
     image: z.string().min(1),
     nodeOptions: z.string().optional(),
   }),
+  docker: z
+    .object({
+      volumes: z.array(DockerVolumeSchema).default([]),
+    })
+    .default({ volumes: [] }),
   snapshot: z.object({
     local: z.literal("git-archive"),
     ci: z.literal("checkout"),

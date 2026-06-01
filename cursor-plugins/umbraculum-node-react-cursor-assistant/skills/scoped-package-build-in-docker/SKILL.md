@@ -7,7 +7,7 @@ description: Rebuild one or more workspace package dist/ outputs via scripts/bui
 
 ## Why this skill exists
 
-Full `./scripts/build-packages-in-docker.sh` runs `npm ci` + all 16 `build:packages` workspaces (~15–25 min, network-fragile). Umbraculum-dev ships **`scripts/build-package-in-docker.sh`** for scoped rebuilds with a warm `node_modules` volume (~1–2 min).
+Full `./scripts/build-packages-in-docker.sh` runs `npm ci` + all 16 `build:packages` workspaces (~15–25 min, network-fragile). Umbraculum-dev ships **`scripts/build-package-in-docker.sh`** for scoped rebuilds with warm **`umbraculum_npm_cache`** + **`umbraculum_root_node_modules`** volumes (~1–2 min after first warm). See **`docker-npm-volumes-runbook`** and `<REPO_ROOT>/docs/DEVELOPMENT-NPM-VOLUMES.md`.
 
 ## Inputs required (do not assume)
 
@@ -50,7 +50,7 @@ SCOPED-PACKAGE-BUILD <workspace>: OK|FAIL
 cd <REPO_ROOT> && ./scripts/build-package-in-docker.sh <WORKSPACE> --include-dependents
 ```
 
-Add `--fresh` only when lockfile deps are broken or `<FRESH>` is `yes`.
+Add `--fresh` only when lockfile deps are broken or `<FRESH>` is `yes` (runs `npm ci --prefer-offline` into `umbraculum_root_node_modules`).
 
 2. Diff-driven build (when multiple packages may have changed):
 
@@ -72,4 +72,4 @@ cd <REPO_ROOT> && ./scripts/check-packages-dist-up-to-date.sh
 
 ## Fits the system
 
-Input-driven, output-constrained, bounded (≤3 commands). Complements **`verify-slice-runbook`** (T1) and rule **`76-verification-tiers-gate`**.
+Input-driven, output-constrained, bounded (≤3 commands). Complements **`verify-slice-runbook`** (T1) and rule **`76-verification-tiers-gate`**. Volume names: skill **`docker-npm-volumes-runbook`**.

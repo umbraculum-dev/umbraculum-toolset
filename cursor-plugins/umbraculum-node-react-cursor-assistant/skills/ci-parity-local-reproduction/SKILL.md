@@ -54,6 +54,7 @@ If any job FAILed, append up to 3 lines of the failing output (the actual error 
 - `docker` is on PATH and the user is in the docker group (or has sudoless docker access).
 - `<NODE_IMAGE>` is pullable (or already pulled).
 - If reproducing local edits not yet committed: stash or temporarily commit them so `git archive <COMMIT_SHA>` captures the state being tested. (`git archive` only sees committed state.)
+- **Repeat local runs:** umbraculum-dev manifests may declare `docker.volumes` (requires `@umbraculum/ci-parity` ≥ 1.0.8) for warm `umbraculum_npm_cache` + `umbraculum_root_node_modules`. See skill **`docker-npm-volumes-runbook`** and umbraculum-dev `docs/DEVELOPMENT-NPM-VOLUMES.md`. Does not apply to ephemeral GHA runners.
 
 ## Commands
 

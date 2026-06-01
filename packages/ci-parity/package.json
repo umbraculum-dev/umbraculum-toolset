@@ -1,6 +1,6 @@
 {
   "name": "@umbraculum/ci-parity",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "CI parity runner — reproduce static-analysis CI jobs locally and in GitHub Actions from a versioned manifest",
   "type": "module",
   "license": "MIT",

@@ -174,6 +174,15 @@ export function buildContainerScript(
   return lines.join("\n");
 }
 
+/** Docker `-v name:path` pairs from manifest `docker.volumes` (local warm-cache persistence). */
+export function dockerVolumeArgs(manifest: CiParityManifest): string[] {
+  const args: string[] = [];
+  for (const vol of manifest.docker.volumes) {
+    args.push("-v", `${vol.name}:${vol.containerPath}`);
+  }
+  return args;
+}
+
 export function runCiParity(options: RunOptions): RunOutput {
   const jobs = jobsToRun(options.manifest, options.jobFilter);
   if (jobs.length === 0) {
@@ -204,6 +213,7 @@ export function runCiParity(options: RunOptions): RunOutput {
     `${snapshotDir}:/repo`,
     "-w",
     "/repo",
+    ...dockerVolumeArgs(options.manifest),
   ];
 
   if (options.manifest.runtime.nodeOptions) {
