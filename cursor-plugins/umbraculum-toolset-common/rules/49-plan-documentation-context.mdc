@@ -1,29 +1,46 @@
 ---
-description: When authoring a Cursor or multi-phase execution plan for feature work in an Umbraculum-family repo, open with a Standards & governance context block (RFCs, coding standards, foundation gates, plugin rules) then a Documentation context table; cite absolute paths in executor steps per 97-plans-must-include-canonical-absolute-paths.
+description: When authoring a Cursor or multi-phase execution plan for feature work in an Umbraculum-family repo, open with Standards & governance context, Documentation context, and Local verification before push; at plan completion add YAML todos for pertinent pre-push workflows. Executors (with or without a plan) MUST run change-surface verification — not every GHA workflow.
 alwaysApply: true
 ---
 
 # Plan standards + documentation context (required for feature plans)
 
-Plans that only cite code paths are hard for humans to review and for non-frontier executors to align with governance. Feature plans in Umbraculum-family repos MUST open with **Standards & governance context** (first content section after YAML frontmatter), then **Documentation context**.
+Plans that only cite code paths are hard for humans to review and for non-frontier executors to align with governance. Feature plans in Umbraculum-family repos MUST open with **Standards & governance context** (first content section after YAML frontmatter), then **Documentation context**, then **Local verification before push**.
 
 The standards block is the implementation contract: executors treat cited RFC § and coding-standard sections as binding unless the operator explicitly approves a deviation in the plan or in chat.
 
 ## When this rule fires
 
+### Plan authoring
+
 - Authoring or materially extending a **multi-phase** `.plan.md` or equivalent execution plan (new wave, new RFC consumer, cross-module feature).
 - Handing a plan to a **non-frontier executor** — also read rule `43-non-frontier-executor-fitness-tracker.mdc` §10.
+- **Finalizing a plan for handoff** — YAML `todos` MUST include applicable rows from **Local verification before push** (section 3 below) as explicit, checkable todo items.
 
 Does **not** fire for one-line fixes, typo-only docs, or plans explicitly marked documentation-only with `apparatus: override`.
+
+### Implementation (independent of plan authoring)
+
+This rule also binds **executors and agents implementing code** (with or without a written plan):
+
+- After non-doc changes, run **pertinent** verification for the change surface — **not** every GHA workflow.
+- Use section 3 matrix + consuming repo `docs/VERIFICATION-TIERS.md` + node-react rules `76-verification-tiers-gate`, `72-ci-parity-local-vs-ci-divergence`, `75-api-integration-pre-push-gate`.
+- **Before declaring done:** T0 or T1 (named slice / `--from-diff`).
+- **Before push:** T2 for the same pertinent jobs (ci-parity subset + API integration when `services/api/**` or path-filtered packages changed).
+
+Local full `npx @umbraculum/ci-parity` can exceed GHA wall time on the **first** run until Docker named volumes warm (`docker.volumes` in `.umbraculum/ci-parity.json`; see umbraculum-dev `docs/DEVELOPMENT-NPM-VOLUMES.md`). Prefer **T1 slices during iteration**; reserve full T2 for pre-push.
 
 ## Required placement
 
 1. YAML frontmatter (`name`, `overview`, `todos`, …) when present.
 2. **`## Standards & governance context (required)`** — MUST be the first markdown heading after frontmatter.
 3. **`## Documentation context (required)`** — immediately after the standards block.
-4. Plan body (phases, executor steps, todos).
+4. **`## Local verification before push (required)`** — immediately after documentation context.
+5. Plan body (phases, executor steps, todos).
 
 Do not bury RFC or coding-standard citations only in phase prose. If a standard applies to the whole plan, cite it in section 2 above.
+
+Do not hand off a plan whose frontmatter `todos` omit section 3 verification items for the plan's change surface.
 
 ## Required section 1 — Standards & governance context
 
@@ -76,6 +93,38 @@ Governing RFC and coding standards live in section 1 — do not duplicate them h
 
 Template: `docs/design/plan-documentation-context-template.md` in umbraculum-dev (or equivalent in sibling repos).
 
+## Required section 3 — Local verification before push (required)
+
+List **only** workflows that apply to this plan's change surface. Strike rows that do not apply.
+
+```markdown
+## Local verification before push (required)
+
+**Executor rule:** run pertinent rows before push — not every GHA workflow. During implementation use T0/T1; before push use T2 equivalents.
+
+| Change surface (this plan) | Before done (T0/T1) | Before push (T2) | GHA workflow(s) |
+|----------------------------|---------------------|------------------|-----------------|
+| Docs / README only | — | `npx @umbraculum/ci-parity run --jobs docs-readmes` | `docs-readmes.yml` |
+| TS/JS lint surface | `npm run verify:from-diff` or named slice | `npx @umbraculum/ci-parity run --jobs lint` | `web-lint.yml` |
+| TS typecheck surface | scoped slice + `build-package-in-docker.sh` as needed | `npx @umbraculum/ci-parity run --jobs typecheck` | `typecheck.yml` |
+| `services/api/**`, OpenAPI, contracts routes | `npm run verify:openapi` | ci-parity pertinent jobs **+** skill `api-integration-tests-pre-push` | `api.yml` + ci-parity |
+| `packages/**` dist / SDK | `check-packages-dist-up-to-date.sh` | `npx @umbraculum/ci-parity run --jobs sdk-publish-prep` (when SDK batch) | `packages-dist-check.yml`, `publish-sdk-batch.yml` |
+| Full unknown mixed diff | `npm run verify:from-diff` | `npm run verify:pre-push` | all ci-parity + API reminder |
+
+**Skills (node-react plugin):** `verify-slice-runbook`, `scoped-package-build-in-docker`, `ci-parity-local-reproduction`, `api-integration-tests-pre-push`, `docker-npm-volumes-runbook`.
+
+**Plan YAML todos (required at plan completion):** for each **non-struck** row above, add one frontmatter todo (YAML frontmatter `todos:` list with ids like `verify-t1-openapi`, `verify-t2-ci-parity`, `verify-t2-api` and content strings naming the T1/T2 command).
+
+Executor phases MUST NOT mark the plan complete until these todos are checked off or explicitly waived by the operator.
+```
+
+Rules for section 3:
+
+- **Pertinent only** — if the plan touches only `packages/contracts`, do not require `api-integration-tests-pre-push`.
+- **Docs-only plans** — ci-parity `docs-readmes` job only; strike lint/typecheck/api rows.
+- **Do not** list "run all GHA workflows" as a single todo — enumerate jobs from `.umbraculum/ci-parity.json` and API skill separately.
+- Cross-platform entry: `npx @umbraculum/ci-parity` (not host `npm run lint`).
+
 ## Executor instructions
 
 - Each phase MUST start with: `Follows: Standards & governance context above.`
@@ -88,12 +137,15 @@ Template: `docs/design/plan-documentation-context-template.md` in umbraculum-dev
 - Coding standards mentioned only in passing ("follow existing conventions") with no `CODING-STANDARDS.md` link or § checklist.
 - RFC cited in frontmatter `overview` but not in section 1 with § numbers.
 - Executor phases that contradict an checked coding-standard row without a documented operator-approved deviation.
+- Plan handoff **without** section 3 verification todos in YAML frontmatter.
+- Declaring implementation complete or pushing without running **pertinent** verification rows (running every workflow "just in case").
+- Using full `npx @umbraculum/ci-parity` on every save during iteration instead of T1 slices (then blaming local slowness on CI parity itself).
 
 ## Companion skill
 
-Use `plan-documentation-context` skill to scaffold both required sections from module code / RFC keywords.
+Use `plan-documentation-context` skill to scaffold all three required header sections from module code / RFC keywords.
 
 ## Fits the system
 
-- **Frontier now**: always-applied plan-authoring gate; standards block at the top makes RFC + coding-standard compliance reviewable before execution starts.
-- **Local subagents (future)**: a readonly `plan-preflight` subagent can regex-check for both headings and a non-empty RFC row before an executor subagent runs.
+- **Frontier now**: always-applied plan-authoring gate; standards block at the top makes RFC + coding-standard compliance reviewable before execution starts. Section 3 + YAML todos make pre-push workflow proof explicit; executor obligation applies even without a plan.
+- **Local subagents (future)**: a readonly `plan-preflight` subagent can regex-check for all three headings, a non-empty RFC row, and at least one verification todo before an executor subagent runs.
