@@ -60,15 +60,23 @@ If any job FAILed, append up to 3 lines of the failing output (the actual error 
 
 ### Recipe A (preferred — manifest + npm package)
 
-If `<REPO_ROOT>/.umbraculum/ci-parity.json` exists (canonical for `umbraculum-dev`), run:
+If `<REPO_ROOT>/.umbraculum/ci-parity.json` exists (canonical for `umbraculum-dev`):
+
+**Pre-push (agents — mandatory before push):** commit first, clean tree, then:
 
 ```bash
-cd <REPO_ROOT> && npx @umbraculum/ci-parity@^1 run --jobs <CI_JOB>
+cd <REPO_ROOT> && npm run verify:pre-push
+# equivalent:
+cd <REPO_ROOT> && ./scripts/ci-parity-check.sh --archive run
 ```
 
-For all jobs: omit `--jobs` or use `run` with no filter. Thin wrapper equivalent: `bash scripts/ci-parity-check.sh`.
+Subset: `--jobs lint,typecheck` (or `docs-readmes` for docs-only).
 
-Optional flags: `--sha <rev>`, `--keep`. Exit code 0 = all green; non-zero = one or more jobs failed. Read `.umbraculum/ci-parity.json` for install order and commands — do not hardcode `apps/web/e2e` paths in agent prose.
+**WIP iteration (not push proof):** `./scripts/ci-parity-check.sh run` (`--ci`, working tree).
+
+Reproducing a historical failure: `npx @umbraculum/ci-parity@^1 run --sha <rev> --jobs <CI_JOB>`. Thin wrapper: `bash scripts/ci-parity-check.sh --archive run`.
+
+Optional flags: `--keep`. Exit code 0 = all green; non-zero = one or more jobs failed. Read `.umbraculum/ci-parity.json` for install order and commands — do not hardcode `apps/web/e2e` paths in agent prose.
 
 ### Recipe B (fallback — manual reproduction)
 

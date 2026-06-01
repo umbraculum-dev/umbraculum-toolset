@@ -22,7 +22,7 @@ CI parity checks **must run inside Docker**, using the **same image CI uses** (d
 
 - **Why:** Matches GitHub Actions (`ubuntu-latest` + container), eliminates host Node version drift (Linux / macOS / WSL), and avoids bind-mounting the live workspace (mechanism 3).
 - **Prerequisites on the developer machine:** `git`, Docker, and Node.js (to run `npx @umbraculum/ci-parity`). Bash is required only for the optional `scripts/ci-parity-check.sh` wrapper on Unix — **not** for the canonical cross-platform path. Docker Desktop on macOS/Windows; WSL2 is the supported Windows path for compose-heavy debug; native Windows `cmd` without Docker is out of scope.
-- **Canonical one-liner (umbraculum-dev):** `npx @umbraculum/ci-parity` or `bash scripts/ci-parity-check.sh` (thin wrapper) — archives tracked files, bind-mounts the snapshot (not the live tree) into `node:20-slim`, runs all static-analysis jobs from `.umbraculum/ci-parity.json`.
+- **Canonical pre-push (umbraculum-dev):** after **commit**, with a **clean working tree**, run `npm run verify:pre-push` or `./scripts/ci-parity-check.sh --archive run` — cold `npm ci` on committed `HEAD`. **`--ci`** (wrapper default) is for **WIP iteration only**, not the push gate.
 - **Long-running dev containers** (`docker compose exec api npm run typecheck`, etc.) are fine for fast iteration but are **not** CI parity — different `node_modules` layout (see mechanism 4).
 
 ## Rule (hard)
@@ -47,9 +47,10 @@ When CI fails on a check that you (or the developer) ran locally and saw green:
 
 - **README links** — never link from a tracked file to a `.gitignored` path. Specifically forbidden in this repo: `[DEVELOPMENT.md](...)` from any tracked README (the file is per-developer, gitignored). Use the root `README.md` or `DEVELOPMENT-LOCAL.md` (tracked template) instead.
 - **CI workflows** — for every workspace not matched by the root `workspaces:` glob (today: only `apps/web/e2e`, but future nested workspaces are analogous), every CI workflow that depends on it must `cd <ws> && npm install` explicitly after the root `npm install --workspaces`. Add an inline comment so the next maintainer understands the gap.
-- **Pre-push (two tiers)** — before any push with non-trivial CI surface:
-  1. **Static analysis:** `npx @umbraculum/ci-parity` when the repo ships `.umbraculum/ci-parity.json` (umbraculum-dev does). Jobs: `docs-readmes`, `lint`, `typecheck`. Manifest is the source of truth. Dev-container `npm run typecheck` alone is not sufficient.
-  2. **API integration (separate workflow):** when the change set touches `services/api/**` or packages in `.github/workflows/api.yml` path filters, also run skill **`api-integration-tests-pre-push`** — ci-parity does **not** run vitest with `REDIS_URL`. Rule **`75-api-integration-pre-push-gate`**.
+- **Pre-push (two tiers — agent-owned)** — when **you** will push non-trivial CI surface, **you** run the gate; do not tell the operator to run it:
+  1. **Commit** intended changes first (archive mode does not see uncommitted fixes).
+  2. **Static analysis:** `npm run verify:pre-push` or `./scripts/ci-parity-check.sh --archive run` when the repo ships `.umbraculum/ci-parity.json` (umbraculum-dev does). Jobs: `docs-readmes`, `lint`, `typecheck`. Manifest is the source of truth. Dev-container `npm run typecheck` alone is not sufficient. **`--ci`** is WIP-only — not push proof.
+  3. **API integration (separate workflow):** when the change set touches `services/api/**` or packages in `.github/workflows/api.yml` path filters, also run skill **`api-integration-tests-pre-push`** — ci-parity does **not** run vitest with `REDIS_URL`. Rule **`75-api-integration-pre-push-gate`**.
 - **New GHA workflows** — add equivalent verify steps to `.umbraculum/ci-parity.json` as a named job; workflows and local pre-push must not diverge. Do not document host-only `python3` / `bash` one-liners as the pre-push gate.
 
 ## Agent anti-patterns (hard)
@@ -63,12 +64,16 @@ Agents **must not** treat any of the following as sufficient pre-push verificati
 | `docker compose exec api npm run …` | Dev-container layout ≠ CI hoisting (mechanism 4); also **not** the GHA `api` vitest job |
 | `docker compose exec api npm test` without checking vitest **Unhandled Errors** | CI fails on unhandled rejections even when all tests pass |
 | "CI will tell us" / push to discover failures | Burns GHA minutes; ci-parity exists to avoid this |
+| Push without `--archive` after commit (only `--ci` during WIP) | GHA runs committed code; uncommitted local fixes hide broken `HEAD` |
+| Ending a session with "run verify:pre-push before you push" | Pre-push is **agent-owned** — run T2 yourself per umbraculum-dev `AGENTS.md` |
 | New `scripts/foo-check.sh` for pre-push without a ci-parity job | Forks the contract; Windows contributors cannot run bash gates |
 
-**Required before push (umbraculum-dev):**
+**Required before push (umbraculum-dev — agents run this, not the operator):**
 
-- **Always (non-docs TS surface):** `npx @umbraculum/ci-parity` or `npx @umbraculum/ci-parity run --jobs <subset>` (e.g. docs-only → `--jobs docs-readmes`).
-- **Additionally when API paths change:** skill **`api-integration-tests-pre-push`** (vitest + Redis — not covered by ci-parity).
+1. Commit all intended changes; working tree clean.
+2. **Static analysis:** `npm run verify:pre-push` or `./scripts/ci-parity-check.sh --archive run` (subset: `--jobs docs-readmes,lint,typecheck` as needed).
+3. **Additionally when API paths change:** skill **`api-integration-tests-pre-push`** (vitest + Redis — not covered by ci-parity).
+4. Push only after steps 2–3 are green.
 
 **Allowed for local debug** (operator or agent, after ci-parity fails or during tight edit loop): compose exec, host scripts, live-tree docker — label these as debug, not as push gates.
 
