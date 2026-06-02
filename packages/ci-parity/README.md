@@ -56,19 +56,29 @@ CI-PARITY-CHECK <short-sha>: docs-readmes=OK lint=OK typecheck=FAIL
 
 ## Publishing to npm
 
+> **Agents:** publish via **GitHub Actions + tag** only — **not** `npm publish` on a laptop.
+> Browser npm login is for humans; routine bumps: tag `ci-parity-vX.Y.Z` on this repo.
+> See umbraculum-dev [`AGENTS.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/AGENTS.md) § "npm publish discipline".
+
 **Workflow:** `publish-ci-parity` on **umbraculum-toolset** (Actions tab — not umbraculum-dev).
 
-**Auth (preferred):** [npm Trusted Publishing (OIDC)](https://docs.npmjs.com/trusted-publishers/) — no `NPM_TOKEN`. Setup: [umbraculum-dev trusted-publishing doc](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/design/ci-parity-npm-trusted-publishing.md).
+**Auth (routine):** [npm Trusted Publishing (OIDC)](https://docs.npmjs.com/trusted-publishers/) from GHA — no `NPM_TOKEN`, no laptop OTP. Setup: [umbraculum-dev trusted-publishing doc](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/design/ci-parity-npm-trusted-publishing.md).
 
-**Trigger:** tag `ci-parity-v*`. Requires npm CLI ≥ 11.5.1 and `id-token: write` in the workflow.
+**Trigger:** tag `ci-parity-v*` (must match `package.json` version). Requires npm CLI ≥ 11.5.1 and `id-token: write` in the workflow.
+
+```bash
+# Maintainer routine (preferred)
+cd umbraculum-toolset
+# edit packages/ci-parity/package.json version
+git commit -am "chore(ci-parity): release X.Y.Z"
+git tag ci-parity-vX.Y.Z
+git push origin master ci-parity-vX.Y.Z
+# → Actions → publish-ci-parity → green → npm view @umbraculum/ci-parity version
+```
 
 Full runbook: [umbraculum-dev `docs/design/ci-parity-npm-publish.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/design/ci-parity-npm-publish.md).
 
-```bash
-# Manual fallback (laptop)
-npm login
-npm publish -w @umbraculum/ci-parity --access public
-```
+**Manual laptop publish:** maintainer-only emergency fallback (may require OTP) — documented in runbook §5; agents must not use it as default.
 
 ## Development
 
