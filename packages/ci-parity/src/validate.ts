@@ -199,6 +199,11 @@ export function explainManifest(manifest: CiParityManifest): string {
       for (const cmd of job.commands) {
         lines.push(`      ${cmd}`);
       }
+    } else if (job.id === "dogfood-npm-smoke") {
+      lines.push(`  - dogfood-npm-smoke (${job.commands.length} commands)`);
+      for (const cmd of job.commands) {
+        lines.push(`      ${cmd}`);
+      }
     }
   }
 

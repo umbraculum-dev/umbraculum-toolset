@@ -50,6 +50,23 @@ describe("buildContainerScript", () => {
     expect(nestedPos).toBeGreaterThan(typecheckPos);
   });
 
+  it("runs dogfood-npm-smoke without root install", () => {
+    const manifest = parseManifest({
+      ...sampleManifest,
+      jobs: [
+        {
+          id: "dogfood-npm-smoke",
+          commands: ["./scripts/dogfood-npm-smoke.sh"],
+        },
+      ],
+    });
+    const script = buildContainerScript(manifest, manifest.jobs);
+    const jobBlock = script.split("[job] dogfood-npm-smoke")[1]?.split("\n\n")[0] ?? "";
+    expect(script).toContain("[job] dogfood-npm-smoke");
+    expect(script).toContain("./scripts/dogfood-npm-smoke.sh");
+    expect(jobBlock).not.toMatch(/\nrun_root_install\n/);
+  });
+
   it("includes run_root_install before sdk-publish-prep commands", () => {
     const manifest = parseManifest({
       ...sampleManifest,
