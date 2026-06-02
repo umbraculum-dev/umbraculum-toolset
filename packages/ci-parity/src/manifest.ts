@@ -38,11 +38,18 @@ const SdkPublishPrepJobSchema = z.object({
   commands: z.array(z.string().min(1)).min(1),
 });
 
+/** Registry-only npm install smoke (external integrator path; no monorepo root install). */
+const DogfoodNpmSmokeJobSchema = z.object({
+  id: z.literal("dogfood-npm-smoke"),
+  commands: z.array(z.string().min(1)).min(1),
+});
+
 const JobSchema = z.discriminatedUnion("id", [
   DocsReadmesJobSchema,
   LintJobSchema,
   TypecheckJobSchema,
   SdkPublishPrepJobSchema,
+  DogfoodNpmSmokeJobSchema,
 ]);
 
 const DockerVolumeSchema = z.object({
