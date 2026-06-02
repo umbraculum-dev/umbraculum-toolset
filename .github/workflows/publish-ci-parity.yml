@@ -3,6 +3,9 @@ name: publish-ci-parity
 # Publishes @umbraculum/ci-parity to npm on ci-parity-v* tags.
 # Auth: npm Trusted Publishing (OIDC) — no NPM_TOKEN.
 #
+# AGENTS: do NOT npm publish from a laptop (OTP trap). Push ci-parity-v* tag here;
+# see umbraculum-dev AGENTS.md § "npm publish discipline".
+#
 # Why explicit OIDC token-exchange instead of the sample workflow in
 # https://docs.npmjs.com/trusted-publishers — npm 11.x runs `oidc()`
 # inside `npm publish` but swallows all errors silently and falls
