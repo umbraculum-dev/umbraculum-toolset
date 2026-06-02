@@ -1,0 +1,51 @@
+---
+description: Docusaurus docs-site — embed OpenAPI with Redoc via OpenApiRedocEmbed + getRedocTheme(colorMode); never bare Redoc.init(..., {}, ...) (dark mode breaks layout). Applies when adding or editing docs-site OpenAPI/Redoc pages.
+alwaysApply: false
+globs:
+  - "**/docs-site/**"
+  - "**/docs/API-OPENAPI.md"
+---
+
+# Docusaurus — Redoc OpenAPI embed (theme sync required)
+
+Umbraculum browsable OpenAPI on the docs site uses **Redoc standalone** inside Docusaurus **custom pages** (`docs-site/src/pages/openapi-*.tsx`) — not MDX, not a Docusaurus OpenAPI plugin.
+
+## Rule (hard)
+
+When adding or changing a browsable OpenAPI page under `docs-site/`:
+
+1. **Reuse** `docs-site/src/components/OpenApiRedocEmbed.tsx` — do not copy the Redoc CDN loader into each page.
+2. **Pass** `theme: getRedocTheme(colorMode)` from `docs-site/src/openapi/redocTheme.ts`, driven by Docusaurus `useColorMode()` — the embed re-inits when the user toggles light/dark.
+3. **Do not** call `Redoc.init(specUrl, {}, container)` with an empty options object.
+
+Redoc defaults to a **light** palette. Docusaurus **dark mode** applies global `[data-theme='dark']` CSS on top → typical failure: white sidebar, dark main background, **invisible body text**, empty-looking right panel. This is a **theme integration** bug, not an OpenAPI spec problem.
+
+## New page checklist
+
+1. Static spec copy: `docs-site/static/openapi/<name>.json` (mirror from `services/api/openapi/` after `openapi:generate`).
+2. Page: `docs-site/src/pages/openapi-<name>.tsx` — thin `Layout` + `<main className="openapi-redoc-page">` + `<OpenApiRedocEmbed specPath="/openapi/…" />`.
+3. Sidebar link in `docs-site/sidebars.ts` (`type: 'link'`, `href: '/openapi-<name>'`).
+4. Cross-link from `docs/API-OPENAPI.md` integrator workflow when public-facing.
+5. **Verify light and dark** on the docs dev server before declaring done.
+
+## CSS
+
+Scoped rules live in `docs-site/src/css/custom.css` (`.openapi-redoc-host`, `.openapi-redoc-page`) — extend there if IFM typography still bleeds into Redoc; do not fight Redoc layout with hashed theme classes (see rule `74-docusaurus-swizzle-over-css-fights.mdc`).
+
+## Verification
+
+- `http://127.0.0.1:3001/openapi-platform` and `/openapi-brewery` — toggle theme; full Redoc UI readable in both modes.
+- `npm run typecheck -w @umbraculum/docs-site` in Node 20 container.
+- `npm run build -w @umbraculum/docs-site` before merge when CI surface is touched.
+
+## Frontier-now / local-subagent fit
+
+- **Rule (this file):** guardrail + checklist; glob-scoped to `docs-site/**` and `docs/API-OPENAPI.md`.
+- **Not a Skill:** two-path decision (reuse embed vs invent loader); no troubleshooting tree beyond theme sync.
+- **Not a Subagent:** agents apply inline when touching OpenAPI browse pages.
+
+## Cross-references
+
+- Repo `docs-site/README.md` § OpenAPI / Redoc embed pages.
+- Repo `docs/API-OPENAPI.md` § Docs site Redoc embed (maintainer).
+- Rule `74-docusaurus-swizzle-over-css-fights.mdc` — theme component swizzles vs CSS wars (separate concern).
