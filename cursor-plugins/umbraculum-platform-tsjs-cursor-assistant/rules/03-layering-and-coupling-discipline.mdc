@@ -1,0 +1,68 @@
+---
+description: Layering and coupling discipline — SOLID as repo-native boundaries; dependency direction; @arch-boundary for intentional coupling
+alwaysApply: false
+globs:
+  - "services/api/src/modules/**"
+  - "packages/module-sdk/**"
+  - "apps/web/app/**"
+  - "apps/native/src/modules/**"
+  - "packages/*-contracts/**"
+---
+
+# Layering and coupling discipline
+
+Decision-of-record: umbraculum-dev `docs/design/solid-decoupling-audit.md` (2026-06-04, SOUND).
+Charter: `docs/design/solid-audit-charter.md`.
+
+## Dependency direction (hard)
+
+- **Apps** → `@umbraculum/api-client` + `*-contracts` only — never `services/api`, never `@prisma/*`.
+- **Canonical modules** → platform SDK + own `services/` — **never** import sibling module services or internals.
+- **Shared cross-module IDs/contracts** → `services/api/src/platform/` or a `*-contracts` package — not `modules/foo` → `modules/bar`.
+
+## Single responsibility (routes vs services)
+
+- Route handlers: `requireActiveWorkspace` / `requireSession` → call service → `Schema.parse(response)`.
+- Do not put business logic or raw `app.prisma` in route handlers when a service exists for that domain.
+- Reference shape: `services/api/src/modules/pim/routes/productsRoutes.ts`.
+
+## Extension (open/closed)
+
+- Add module behavior via `registerModule()` / `registerWebModule()` — not new conditionals in `app.ts`.
+- Version wire DTOs as `*V1`; do not mutate published contract shapes in place.
+
+## Accepted patterns (no `@arch-boundary` required)
+
+- `new XxxService(app.prisma)` in route plugins — DIP at package boundary, not every class.
+- `module-sdk` boot-time registries — intentional composition root.
+
+## Intentional coupling
+
+When cost > benefit to decouple now, annotate at the site:
+
+```ts
+/** @arch-boundary — intentional coupling
+ * Reason: …
+ * Revisit: …
+ * Owner: …
+ */
+```
+
+Mirror one line in module README § **Known couplings**.
+
+## Read first
+
+- `docs/design/solid-decoupling-audit.md` — findings + Tier A/B/C backlog
+- `docs/design/application-surfaces-vs-platform-backbone.md` — layer taxonomy
+- `docs/DATA-ACCESS-BOUNDARIES.md` — client vs server data access
+- `docs/CODING-STANDARDS.md` § Architectural coupling
+
+Mechanical enforcement: `eslint-plugin-boundaries` `boundaries/element-types` at **`error`** on `services/api/src/modules/**` (SOLID B5, 2026-06-04). See umbraculum-dev `docs/LINTING.md` § Canonical module boundaries.
+
+Regenerate inventory: `npm run audit:solid-inventory` (report-only drift signal; complements boundaries lint).
+
+## Why this fits the system (authoring gate)
+
+**Frontier-now:** Prevents re-introducing P0 patterns the SOLID audit found (sibling module imports, fat routes). Pairs with existing `46-web-route-shape`, `47-prisma-multischema`, and B5 boundaries lint.
+
+**Local-subagent-future:** Optional readonly `coupling-boundary-verifier` subagent wrapping `npm run audit:solid-inventory` — deferred; revisit if inventory-only signal proves insufficient post-B5.
