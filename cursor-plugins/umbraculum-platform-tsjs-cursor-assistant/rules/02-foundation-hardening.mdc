@@ -41,3 +41,4 @@ The foundation hardening pass invested in *bug-prevention foundations* (lint + t
 - `module-readme-checker` subagent — wraps `scripts/docs/check-readmes.py` for a bounded structural OK/FAIL.
 - `l2-cross-workspace-isolation-test` skill — scaffolds the canonical 6-axis L2 test pattern for workspace-scoped routes.
 - `package-scope-migration-preflight` skill — per-slot file inventory + hard-stop flags for the `@brewery/*` → `@umbraculum/*` package-scope rename (codified after slots 1 + 2 of umbraculum-dev sub-plan #9; reused for slots 3–14).
+- `03-layering-and-coupling-discipline.mdc` — SOLID as repo-native boundaries; `@arch-boundary` for intentional coupling (`docs/design/solid-decoupling-audit.md`).
