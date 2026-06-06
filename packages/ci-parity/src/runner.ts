@@ -214,21 +214,32 @@ export function dockerVolumeArgs(manifest: CiParityManifest, isolatedInstall = f
   return args;
 }
 
+function copySnapshotForJob(baseDir: string, jobId: string): string {
+  const jobDir = `${baseDir}-${jobId}`;
+  if (existsSync(jobDir)) {
+    execFileSync("rm", ["-rf", jobDir]);
+  }
+  execFileSync("cp", ["-a", baseDir, jobDir]);
+  return jobDir;
+}
+
 function runSingleJobContainer(
   snapshotDir: string,
   manifest: CiParityManifest,
   job: CiParityJob,
   isolatedInstall: boolean,
+  parallel = false,
 ): number {
+  const jobSnapshot = parallel ? copySnapshotForJob(snapshotDir, job.id) : snapshotDir;
   const containerScript = buildContainerScript(manifest, [job]);
-  const scriptPath = join(snapshotDir, `.ci-parity-run-${job.id}.sh`);
+  const scriptPath = join(jobSnapshot, `.ci-parity-run-${job.id}.sh`);
   writeFileSync(scriptPath, `#!/usr/bin/env bash\n${containerScript}\n`, "utf8");
 
   const dockerArgs = [
     "run",
     "--rm",
     "-v",
-    `${snapshotDir}:/repo`,
+    `${jobSnapshot}:/repo`,
     "-w",
     "/repo",
     ...dockerVolumeArgs(manifest, isolatedInstall),
@@ -249,16 +260,18 @@ function runSingleJobContainerAsync(
   manifest: CiParityManifest,
   job: CiParityJob,
   isolatedInstall: boolean,
+  parallel = false,
 ): Promise<JobResult> {
+  const jobSnapshot = parallel ? copySnapshotForJob(snapshotDir, job.id) : snapshotDir;
   const containerScript = buildContainerScript(manifest, [job]);
-  const scriptPath = join(snapshotDir, `.ci-parity-run-${job.id}.sh`);
+  const scriptPath = join(jobSnapshot, `.ci-parity-run-${job.id}.sh`);
   writeFileSync(scriptPath, `#!/usr/bin/env bash\n${containerScript}\n`, "utf8");
 
   const dockerArgs = [
     "run",
     "--rm",
     "-v",
-    `${snapshotDir}:/repo`,
+    `${jobSnapshot}:/repo`,
     "-w",
     "/repo",
     ...dockerVolumeArgs(manifest, isolatedInstall),
@@ -347,7 +360,7 @@ export async function runCiParity(options: RunOptions): Promise<RunOutput> {
   console.log(`snapshot: ${snapshotDir}`);
   console.log(`jobs: ${jobs.map((j) => j.id).join(", ")}`);
   if (parallel) {
-    console.log("mode: parallel (isolated install per job container)");
+    console.log("mode: parallel (per-job snapshot copy + isolated install)");
   }
   if (isolatedInstall) {
     console.log("install: isolated (/repo/node_modules not shared across containers)");
@@ -359,17 +372,19 @@ export async function runCiParity(options: RunOptions): Promise<RunOutput> {
 
   if (parallel && jobs.length > 1) {
     const parallelResults = await Promise.all(
-      jobs.map((job) => runSingleJobContainerAsync(snapshotDir, options.manifest, job, isolatedInstall)),
+      jobs.map((job) =>
+        runSingleJobContainerAsync(snapshotDir, options.manifest, job, isolatedInstall, true),
+      ),
     );
     results = parallelResults;
     for (const job of jobs) {
-      copyJobLog(snapshotDir, logDir, job.id);
+      copyJobLog(`${snapshotDir}-${job.id}`, logDir, job.id);
     }
     exitCode = printSummary(short, logDir, results);
   } else if (parallel && jobs.length === 1) {
-    const code = runSingleJobContainer(snapshotDir, options.manifest, jobs[0]!, isolatedInstall);
+    const code = runSingleJobContainer(snapshotDir, options.manifest, jobs[0]!, isolatedInstall, true);
     results = [{ id: jobs[0]!.id, exitCode: code }];
-    copyJobLog(snapshotDir, logDir, jobs[0]!.id);
+    copyJobLog(`${snapshotDir}-${jobs[0]!.id}`, logDir, jobs[0]!.id);
     exitCode = printSummary(short, logDir, results);
   } else {
     const containerScript = buildContainerScript(options.manifest, jobs);
@@ -401,19 +416,15 @@ export async function runCiParity(options: RunOptions): Promise<RunOutput> {
   }
 
   if (!options.keep && !options.ci) {
+    const rmTargets = [`/host-tmp/ci-parity-${short}`, `/host-tmp/ci-parity-${short}.logs`];
+    if (parallel) {
+      for (const job of jobs) {
+        rmTargets.push(`/host-tmp/ci-parity-${short}-${job.id}`);
+      }
+    }
     spawnSync(
       "docker",
-      [
-        "run",
-        "--rm",
-        "-v",
-        "/tmp:/host-tmp",
-        "node:20-slim",
-        "rm",
-        "-rf",
-        `/host-tmp/ci-parity-${short}`,
-        `/host-tmp/ci-parity-${short}.logs`,
-      ],
+      ["run", "--rm", "-v", "/tmp:/host-tmp", "node:20-slim", "rm", "-rf", ...rmTargets],
       { stdio: "ignore" },
     );
   } else if (options.keep) {
