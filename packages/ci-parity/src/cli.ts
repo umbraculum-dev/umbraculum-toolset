@@ -14,6 +14,8 @@ type ParsedArgs = {
   keep: boolean;
   strict: boolean;
   jobs: string[] | null;
+  parallel: boolean;
+  isolatedInstall: boolean;
 };
 
 function printHelp(): void {
@@ -30,6 +32,8 @@ Options:
   --sha <ref>         Git ref for git-archive snapshot (default: HEAD)
   --ci                CI mode: use checkout mount instead of git archive
   --jobs <a,b,c>      Comma-separated job ids subset
+  --parallel          Run each job in a separate container (requires --jobs or subset)
+  --isolated-install  Skip shared /repo/node_modules volume (safe for --parallel)
   --keep              Keep /tmp/ci-parity-* snapshot and logs
   --strict            validate: fail on undocumented nested workspaces
   -h, --help          Show help
@@ -56,6 +60,8 @@ function parseArgs(argv: string[]): ParsedArgs {
   let keep = false;
   let strict = false;
   let jobs: string[] | null = null;
+  let parallel = false;
+  let isolatedInstall = false;
   let explicitRepo: string | null = null;
 
   for (let i = 0; i < args.length; i++) {
@@ -74,6 +80,10 @@ function parseArgs(argv: string[]): ParsedArgs {
       strict = true;
     } else if (arg === "--jobs" && args[i + 1]) {
       jobs = (args[++i] ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+    } else if (arg === "--parallel") {
+      parallel = true;
+    } else if (arg === "--isolated-install") {
+      isolatedInstall = true;
     }
   }
 
@@ -91,10 +101,12 @@ function parseArgs(argv: string[]): ParsedArgs {
     keep,
     strict,
     jobs,
+    parallel,
+    isolatedInstall,
   };
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const parsed = parseArgs(process.argv.slice(2));
 
   if (parsed.command === "help") {
@@ -133,16 +145,21 @@ function main(): void {
     process.exit(1);
   }
 
-  const output = runCiParity({
+  const output = await runCiParity({
     repoRoot: parsed.repoRoot,
     manifest,
     sha: parsed.sha,
     ci: parsed.ci,
     keep: parsed.keep,
     jobFilter: parsed.jobs,
+    parallel: parsed.parallel,
+    isolatedInstall: parsed.isolatedInstall,
   });
 
   process.exit(output.exitCode);
 }
 
-main();
+main().catch((err: unknown) => {
+  console.error(err instanceof Error ? err.message : String(err));
+  process.exit(2);
+});

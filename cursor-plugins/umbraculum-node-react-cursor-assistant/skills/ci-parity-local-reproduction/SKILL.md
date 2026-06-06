@@ -65,12 +65,17 @@ If `<REPO_ROOT>/.umbraculum/ci-parity.json` exists (canonical for `umbraculum-de
 **Pre-push (agents — mandatory before push):** commit first, clean tree, then:
 
 ```bash
-cd <REPO_ROOT> && npm run verify:pre-push
-# equivalent:
-cd <REPO_ROOT> && ./scripts/ci-parity-check.sh --archive run
+cd <REPO_ROOT> && npm run verify:pre-push          # T2-PR (default)
+cd <REPO_ROOT> && npm run verify:pre-push:release  # T2-release (manifest/pins/SDK tags)
 ```
 
-Subset: `--jobs lint,typecheck` (or `docs-readmes` for docs-only).
+Equivalent low-level:
+
+```bash
+cd <REPO_ROOT> && ./scripts/ci-parity-check.sh --archive run --parallel --isolated-install --jobs lint,typecheck,docs-readmes
+```
+
+Resolve jobs: `python3 scripts/lib/verify-slice.py --repo-root . resolve-gha-triggers --base origin/master`
 
 **WIP iteration (not push proof):** `./scripts/ci-parity-check.sh run` (`--ci`, working tree).
 

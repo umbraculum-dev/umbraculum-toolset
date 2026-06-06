@@ -146,5 +146,6 @@ describe("parseManifest", () => {
       "-v",
       "umbraculum_root_node_modules:/repo/node_modules",
     ]);
+    expect(dockerVolumeArgs(manifest, true)).toEqual(["-v", "umbraculum_npm_cache:/root/.npm"]);
   });
 });
