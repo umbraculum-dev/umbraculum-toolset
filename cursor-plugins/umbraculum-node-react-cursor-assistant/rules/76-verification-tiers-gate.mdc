@@ -16,7 +16,7 @@ Canonical doc: `docs/VERIFICATION-TIERS.md` in the consuming umbraculum-class re
 After editing **`apps/**`**, **`services/**`**, or **`packages/**`** (non-doc-only):
 
 1. **Before declaring done:** run **T0 or T1** via skill **`verify-slice-runbook`** (named slice or `--from-diff`).
-2. **Before push:** run **T2** — `npm run verify:pre-push` or skill **`ci-parity-local-reproduction`** plus skill **`api-integration-tests-pre-push`** when API paths changed.
+2. **Before push:** run **T2-PR** — `npm run verify:pre-push` (skill **`path-aware-pre-push`**) or **T2-release** — `npm run verify:pre-push:release` when manifest/pins/SDK tags change.
 
 ## Anti-patterns
 
@@ -29,5 +29,6 @@ After editing **`apps/**`**, **`services/**`**, or **`packages/**`** (non-doc-on
 | Tier | Skill |
 |------|-------|
 | T0/T1 | `verify-slice-runbook`, `scoped-package-build-in-docker` |
-| T2 static | `ci-parity-local-reproduction` |
-| T2 API | `api-integration-tests-pre-push` |
+| T2-PR | `path-aware-pre-push`, `ci-parity-local-reproduction` |
+| T2-release | `ci-parity-local-reproduction` (`--full`) |
+| T2 API | auto from T2-PR; else `api-integration-tests-pre-push` |

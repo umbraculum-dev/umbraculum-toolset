@@ -1,4 +1,4 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -16,6 +16,8 @@ export type RunOptions = {
   ci: boolean;
   keep: boolean;
   jobFilter: string[] | null;
+  parallel?: boolean;
+  isolatedInstall?: boolean;
 };
 
 export type RunOutput = {
@@ -201,20 +203,131 @@ export function buildContainerScript(
 }
 
 /** Docker `-v name:path` pairs from manifest `docker.volumes` (local warm-cache persistence). */
-export function dockerVolumeArgs(manifest: CiParityManifest): string[] {
+export function dockerVolumeArgs(manifest: CiParityManifest, isolatedInstall = false): string[] {
   const args: string[] = [];
   for (const vol of manifest.docker.volumes) {
+    if (isolatedInstall && vol.containerPath === "/repo/node_modules") {
+      continue;
+    }
     args.push("-v", `${vol.name}:${vol.containerPath}`);
   }
   return args;
 }
 
-export function runCiParity(options: RunOptions): RunOutput {
+function runSingleJobContainer(
+  snapshotDir: string,
+  manifest: CiParityManifest,
+  job: CiParityJob,
+  isolatedInstall: boolean,
+): number {
+  const containerScript = buildContainerScript(manifest, [job]);
+  const scriptPath = join(snapshotDir, `.ci-parity-run-${job.id}.sh`);
+  writeFileSync(scriptPath, `#!/usr/bin/env bash\n${containerScript}\n`, "utf8");
+
+  const dockerArgs = [
+    "run",
+    "--rm",
+    "-v",
+    `${snapshotDir}:/repo`,
+    "-w",
+    "/repo",
+    ...dockerVolumeArgs(manifest, isolatedInstall),
+  ];
+
+  if (manifest.runtime.nodeOptions) {
+    dockerArgs.push("-e", `NODE_OPTIONS=${manifest.runtime.nodeOptions}`);
+  }
+
+  dockerArgs.push(manifest.runtime.image, "bash", `/repo/.ci-parity-run-${job.id}.sh`);
+
+  const dockerResult = spawnSync("docker", dockerArgs, { stdio: "inherit", encoding: "utf8" });
+  return dockerResult.status ?? 1;
+}
+
+function runSingleJobContainerAsync(
+  snapshotDir: string,
+  manifest: CiParityManifest,
+  job: CiParityJob,
+  isolatedInstall: boolean,
+): Promise<JobResult> {
+  const containerScript = buildContainerScript(manifest, [job]);
+  const scriptPath = join(snapshotDir, `.ci-parity-run-${job.id}.sh`);
+  writeFileSync(scriptPath, `#!/usr/bin/env bash\n${containerScript}\n`, "utf8");
+
+  const dockerArgs = [
+    "run",
+    "--rm",
+    "-v",
+    `${snapshotDir}:/repo`,
+    "-w",
+    "/repo",
+    ...dockerVolumeArgs(manifest, isolatedInstall),
+  ];
+
+  if (manifest.runtime.nodeOptions) {
+    dockerArgs.push("-e", `NODE_OPTIONS=${manifest.runtime.nodeOptions}`);
+  }
+
+  dockerArgs.push(manifest.runtime.image, "bash", `/repo/.ci-parity-run-${job.id}.sh`);
+
+  return new Promise((resolve) => {
+    const proc = spawn("docker", dockerArgs, { stdio: "inherit" });
+    proc.on("close", (code) => {
+      resolve({ id: job.id, exitCode: code ?? 1 });
+    });
+    proc.on("error", () => {
+      resolve({ id: job.id, exitCode: 1 });
+    });
+  });
+}
+
+function collectJobResults(snapshotDir: string, logDir: string, jobs: CiParityJob[]): JobResult[] {
+  const results: JobResult[] = [];
+  const statusPath = join(snapshotDir, ".ci-parity-status");
+  if (existsSync(statusPath)) {
+    const parts = readFileSync(statusPath, "utf8").trim().split(/\s+/);
+    jobs.forEach((job, index) => {
+      const code = Number(parts[index] ?? "1");
+      results.push({ id: job.id, exitCode: Number.isNaN(code) ? 1 : code });
+      copyJobLog(snapshotDir, logDir, job.id);
+    });
+  } else {
+    for (const job of jobs) {
+      results.push({ id: job.id, exitCode: 1 });
+    }
+  }
+  return results;
+}
+
+function copyJobLog(snapshotDir: string, logDir: string, jobId: string): void {
+  const logSource = join(snapshotDir, `.ci-parity-${jobId}.log`);
+  const logDest = join(logDir, `${jobId}.log`);
+  if (existsSync(logSource)) {
+    execFileSync("cp", ["-f", logSource, logDest]);
+  }
+}
+
+function printSummary(short: string, logDir: string, results: JobResult[]): number {
+  console.log("");
+  console.log("=== @umbraculum/ci-parity — summary ===");
+  const summaryParts = results.map((r) => `${r.id}=${r.exitCode === 0 ? "OK" : "FAIL"}`);
+  console.log(`CI-PARITY-CHECK ${short}: ${summaryParts.join(" ")}`);
+  for (const r of results) {
+    const status = r.exitCode === 0 ? "OK  " : "FAIL";
+    console.log(`  ${r.id.padEnd(14)}: ${status}  (log: ${logDir}/${r.id}.log)`);
+  }
+  console.log("");
+  return results.some((r) => r.exitCode !== 0) ? 1 : 0;
+}
+
+export async function runCiParity(options: RunOptions): Promise<RunOutput> {
   const jobs = jobsToRun(options.manifest, options.jobFilter);
   if (jobs.length === 0) {
     throw new Error("No jobs selected — check --jobs filter against manifest job ids");
   }
 
+  const parallel = options.parallel ?? false;
+  const isolatedInstall = options.isolatedInstall ?? false;
   const short = shortSha(options.repoRoot, options.sha);
   let snapshotDir: string;
 
@@ -228,66 +341,64 @@ export function runCiParity(options: RunOptions): RunOutput {
   const logDir = `${snapshotDir}.logs`;
   mkdirSync(logDir, { recursive: true });
 
-  const containerScript = buildContainerScript(options.manifest, jobs);
-  const scriptPath = join(snapshotDir, ".ci-parity-run.sh");
-  writeFileSync(scriptPath, `#!/usr/bin/env bash\n${containerScript}\n`, "utf8");
-
-  const dockerArgs = [
-    "run",
-    "--rm",
-    "-v",
-    `${snapshotDir}:/repo`,
-    "-w",
-    "/repo",
-    ...dockerVolumeArgs(options.manifest),
-  ];
-
-  if (options.manifest.runtime.nodeOptions) {
-    dockerArgs.push("-e", `NODE_OPTIONS=${options.manifest.runtime.nodeOptions}`);
-  }
-
-  dockerArgs.push(options.manifest.runtime.image, "bash", "/repo/.ci-parity-run.sh");
-
   ensureDockerImage(options.manifest.runtime.image);
 
   console.log(`=== @umbraculum/ci-parity — running against ${options.sha} (${short}) ===`);
   console.log(`snapshot: ${snapshotDir}`);
   console.log(`jobs: ${jobs.map((j) => j.id).join(", ")}`);
+  if (parallel) {
+    console.log("mode: parallel (isolated install per job container)");
+  }
+  if (isolatedInstall) {
+    console.log("install: isolated (/repo/node_modules not shared across containers)");
+  }
   console.log("");
 
-  const dockerResult = spawnSync("docker", dockerArgs, { stdio: "inherit", encoding: "utf8" });
+  let results: JobResult[];
+  let exitCode: number;
 
-  const results: JobResult[] = [];
-  const statusPath = join(snapshotDir, ".ci-parity-status");
-  if (existsSync(statusPath)) {
-    const parts = readFileSync(statusPath, "utf8").trim().split(/\s+/);
-    jobs.forEach((job, index) => {
-      const code = Number(parts[index] ?? "1");
-      results.push({ id: job.id, exitCode: Number.isNaN(code) ? 1 : code });
-
-      const logSource = join(snapshotDir, `.ci-parity-${job.id}.log`);
-      const logDest = join(logDir, `${job.id}.log`);
-      if (existsSync(logSource)) {
-        execFileSync("cp", ["-f", logSource, logDest]);
-      }
-    });
-  } else {
+  if (parallel && jobs.length > 1) {
+    const parallelResults = await Promise.all(
+      jobs.map((job) => runSingleJobContainerAsync(snapshotDir, options.manifest, job, isolatedInstall)),
+    );
+    results = parallelResults;
     for (const job of jobs) {
-      results.push({ id: job.id, exitCode: 1 });
+      copyJobLog(snapshotDir, logDir, job.id);
+    }
+    exitCode = printSummary(short, logDir, results);
+  } else if (parallel && jobs.length === 1) {
+    const code = runSingleJobContainer(snapshotDir, options.manifest, jobs[0]!, isolatedInstall);
+    results = [{ id: jobs[0]!.id, exitCode: code }];
+    copyJobLog(snapshotDir, logDir, jobs[0]!.id);
+    exitCode = printSummary(short, logDir, results);
+  } else {
+    const containerScript = buildContainerScript(options.manifest, jobs);
+    const scriptPath = join(snapshotDir, ".ci-parity-run.sh");
+    writeFileSync(scriptPath, `#!/usr/bin/env bash\n${containerScript}\n`, "utf8");
+
+    const dockerArgs = [
+      "run",
+      "--rm",
+      "-v",
+      `${snapshotDir}:/repo`,
+      "-w",
+      "/repo",
+      ...dockerVolumeArgs(options.manifest, isolatedInstall),
+    ];
+
+    if (options.manifest.runtime.nodeOptions) {
+      dockerArgs.push("-e", `NODE_OPTIONS=${options.manifest.runtime.nodeOptions}`);
+    }
+
+    dockerArgs.push(options.manifest.runtime.image, "bash", "/repo/.ci-parity-run.sh");
+
+    const dockerResult = spawnSync("docker", dockerArgs, { stdio: "inherit", encoding: "utf8" });
+    results = collectJobResults(snapshotDir, logDir, jobs);
+    exitCode = printSummary(short, logDir, results);
+    if (exitCode === 0 && (dockerResult.status ?? 0) !== 0) {
+      exitCode = dockerResult.status ?? 1;
     }
   }
-
-  const exitCode = dockerResult.status ?? 1;
-
-  console.log("");
-  console.log("=== @umbraculum/ci-parity — summary ===");
-  const summaryParts = results.map((r) => `${r.id}=${r.exitCode === 0 ? "OK" : "FAIL"}`);
-  console.log(`CI-PARITY-CHECK ${short}: ${summaryParts.join(" ")}`);
-  for (const r of results) {
-    const status = r.exitCode === 0 ? "OK  " : "FAIL";
-    console.log(`  ${r.id.padEnd(14)}: ${status}  (log: ${logDir}/${r.id}.log)`);
-  }
-  console.log("");
 
   if (!options.keep && !options.ci) {
     spawnSync(

@@ -26,7 +26,7 @@ This rule also binds **executors and agents implementing code** (with or without
 - After non-doc changes, run **pertinent** verification for the change surface — **not** every GHA workflow.
 - Use section 3 matrix + consuming repo `docs/VERIFICATION-TIERS.md` + node-react rules `76-verification-tiers-gate`, `72-ci-parity-local-vs-ci-divergence`, `75-api-integration-pre-push-gate`.
 - **Before declaring done:** T0 or T1 (named slice / `--from-diff`).
-- **Before push:** T2 for the same pertinent jobs (ci-parity subset + API integration when `services/api/**` or path-filtered packages changed).
+- **Before push:** T2-PR (`npm run verify:pre-push`) for feature work; T2-release (`npm run verify:pre-push:release`) when manifest/ci-parity pins or SDK tags change.
 
 Local full `npx @umbraculum/ci-parity` can exceed GHA wall time on the **first** run until Docker named volumes warm (`docker.volumes` in `.umbraculum/ci-parity.json`; see umbraculum-dev `docs/DEVELOPMENT-NPM-VOLUMES.md`). Prefer **T1 slices during iteration**; reserve full T2 for pre-push.
 
@@ -109,7 +109,7 @@ List **only** workflows that apply to this plan's change surface. Strike rows th
 | TS typecheck surface | scoped slice + `build-package-in-docker.sh` as needed | `npx @umbraculum/ci-parity run --jobs typecheck` | `typecheck.yml` |
 | `services/api/**`, OpenAPI, contracts routes | `npm run verify:openapi` | ci-parity pertinent jobs **+** skill `api-integration-tests-pre-push` | `api.yml` + ci-parity |
 | `packages/**` dist / SDK | `check-packages-dist-up-to-date.sh` | `npx @umbraculum/ci-parity run --jobs sdk-publish-prep` (when SDK batch) | `packages-dist-check.yml`, `publish-sdk-batch.yml` |
-| Full unknown mixed diff | `npm run verify:from-diff` | `npm run verify:pre-push` | all ci-parity + API reminder |
+| Full unknown mixed diff | `npm run verify:from-diff` | `npm run verify:pre-push` (T2-PR) | path-resolved ci-parity + native companions |
 
 **Skills (node-react plugin):** `verify-slice-runbook`, `scoped-package-build-in-docker`, `ci-parity-local-reproduction`, `api-integration-tests-pre-push`, `docker-npm-volumes-runbook`.
 

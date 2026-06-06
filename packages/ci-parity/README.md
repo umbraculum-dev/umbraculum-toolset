@@ -40,6 +40,7 @@ Canonical guide: [umbraculum-dev `docs/CI-PARITY.md`](https://github.com/umbracu
 | Command | Description |
 |---------|-------------|
 | `ci-parity run` | Run all manifest jobs (default) |
+| `ci-parity run --parallel --isolated-install --jobs lint,typecheck` | Parallel job containers; skip shared `/repo/node_modules` volume (T2-PR safe) |
 | `ci-parity run --jobs lint,typecheck` | Subset of jobs |
 | `ci-parity run --ci` | CI mode: mount checkout instead of `git archive` |
 | `ci-parity run --sha <ref>` | Snapshot ref for local runs (default `HEAD`) |
