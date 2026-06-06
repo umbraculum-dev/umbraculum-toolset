@@ -5,18 +5,20 @@ globs:
   - "services/api/src/modules/**"
   - "packages/module-sdk/**"
   - "apps/web/app/**"
-  - "apps/native/src/modules/**"
+  - "apps/native/src/**"
   - "packages/*-contracts/**"
 ---
 
 # Layering and coupling discipline
 
 Decision-of-record: umbraculum-dev `docs/design/solid-decoupling-audit.md` (2026-06-04, SOUND).
-Charter: `docs/design/solid-audit-charter.md`.
+Charter: `docs/design/solid-audit-charter.md` §2 (mapping), §11 (WS5 apps).
+Program status: `docs/design/solid-post-wave17-closure.md` §7–§8 (S closed; D enforced).
+Agent gate: umbraculum-dev `AGENTS.md` § SOLID and dependency direction (D).
 
 ## Dependency direction (hard)
 
-- **Apps** → `@umbraculum/api-client` + `*-contracts` only — never `services/api`, never `@prisma/*`.
+- **Apps** → `@umbraculum/api-client` + `*-contracts` + allowed shared packages — never `services/api/**` source, never `@prisma/*`, never sibling app segments or locale verticals they do not own (e.g. `(mrp)` → `(pim)`, mash → boil, native `brewery` → `pim`).
 - **Canonical modules** → platform SDK + own `services/` — **never** import sibling module services or internals.
 - **Shared cross-module IDs/contracts** → `services/api/src/platform/` or a `*-contracts` package — not `modules/foo` → `modules/bar`.
 
@@ -53,16 +55,25 @@ Mirror one line in module README § **Known couplings**.
 ## Read first
 
 - `docs/design/solid-decoupling-audit.md` — findings + Tier A/B/C backlog
+- `docs/design/solid-post-wave17-closure.md` — when to reopen hygiene waves; enforcement table
 - `docs/design/application-surfaces-vs-platform-backbone.md` — layer taxonomy
-- `docs/DATA-ACCESS-BOUNDARIES.md` — client vs server data access
+- `docs/DATA-ACCESS-BOUNDARIES.md` — client vs server data access (§6 for apps)
 - `docs/CODING-STANDARDS.md` § Architectural coupling
 
-Mechanical enforcement: `eslint-plugin-boundaries` `boundaries/element-types` at **`error`** on `services/api/src/modules/**` (SOLID B5, 2026-06-04). See umbraculum-dev `docs/LINTING.md` § Canonical module boundaries.
+**Mechanical enforcement (CI-blocking `error` on `lint`):**
+
+| Rule | Scope | LINTING.md |
+|------|-------|------------|
+| **B5** `boundaries/element-types` | `services/api/src/modules/**` sibling modules | § Canonical module boundaries |
+| **WS5** `boundaries/element-types` | `apps/{web,native}/**` segment + locale vertical fences | § App layer boundaries (WS5) |
+| **WS6** `no-restricted-imports` | Apps → no `@prisma/*`, no `services/api/**` source | § Client-safe package imports (WS6) |
+
+Spikes: `docs/design/solid-boundaries-eslint-spike.md` (B5), `solid-boundaries-eslint-apps-spike.md` (WS5), `solid-client-safe-imports-spike.md` (WS6).
 
 Regenerate inventory: `npm run audit:solid-inventory` (report-only drift signal; complements boundaries lint).
 
 ## Why this fits the system (authoring gate)
 
-**Frontier-now:** Prevents re-introducing P0 patterns the SOLID audit found (sibling module imports, fat routes). Pairs with existing `46-web-route-shape`, `47-prisma-multischema`, and B5 boundaries lint.
+**Frontier-now:** Prevents re-introducing P0 patterns the SOLID audit found (sibling module imports, app→API source imports, cross-segment app imports, fat routes). Pairs with `46-web-route-shape`, `47-prisma-multischema`, B5/WS5 boundaries lint, and WS6 client-safe imports.
 
-**Local-subagent-future:** Optional readonly `coupling-boundary-verifier` subagent wrapping `npm run audit:solid-inventory` — deferred; revisit if inventory-only signal proves insufficient post-B5.
+**Local-subagent-future:** Optional readonly `coupling-boundary-verifier` subagent wrapping `npm run audit:solid-inventory` — deferred; revisit if inventory-only signal proves insufficient post-B5/WS5.
