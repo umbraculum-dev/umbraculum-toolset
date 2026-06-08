@@ -31,7 +31,7 @@ GHA runs **separate workflows in parallel** (lint, typecheck, docs-readmes) with
 ### Result
 
 ```
-VERIFY-SLICE T2-PR @ <short-sha>: ci-parity=OK|FAIL jobs=<list> parallel=<N> api=OK|FAIL|SKIPPED
+VERIFY-SLICE T2-PR @ <short-sha>: ci-parity=OK|FAIL jobs=<list> parallel=<N> api=OK|FAIL|SKIPPED expo-doctor=OK|FAIL|SKIPPED
 ```
 
 ## Bounds
@@ -63,7 +63,7 @@ cd <REPO_ROOT> && npm run validate:gha-triggers
 cd <REPO_ROOT> && npm run verify:pre-push
 ```
 
-Runs path-aware parallel ci-parity + native companions when `.umbraculum/gha-trigger-map.json` matches the diff.
+Runs path-aware parallel ci-parity + native companions when `.umbraculum/gha-trigger-map.json` matches the diff (`api-integration`, `expo-doctor`, etc.).
 
 ### 4. T2-release (manifest / pin / SDK tag prep only)
 
@@ -80,6 +80,7 @@ Only after step 3 (or 4) is green.
 - Uncommitted changes → commit first; do not treat `--ci` as push proof.
 - `validate:gha-triggers` FAIL → sync `.umbraculum/gha-trigger-map.json` with workflow YAML.
 - API vitest FAIL with unhandled errors → fix before push even if tests "passed".
+- `expo-doctor=FAIL` → run skill **`native-expo-doctor-pre-push`**; do not loosen peers or split web/native React.
 
 ## Local-subagent-future readiness
 

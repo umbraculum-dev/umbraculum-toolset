@@ -1,0 +1,52 @@
+---
+description: Native expo-doctor monorepo gate — ci-parity typecheck does not run native-deps; reproduce check-native-expo-doctor.sh before push when touching native hoist surface
+alwaysApply: false
+globs:
+  - "apps/native/**"
+  - "packages/platform/native-shell/**"
+  - "packages/platform/ui/package.json"
+  - "package.json"
+  - "package-lock.json"
+  - "scripts/check-native-expo-doctor.sh"
+---
+
+# Native expo-doctor monorepo gate (umbraculum-dev)
+
+## Two-tier pre-push (native hoist surface)
+
+| Tier | Tool | Catches | Does **not** catch |
+|------|------|---------|---------------------|
+| **1 — Static analysis** | `npx @umbraculum/ci-parity` (`typecheck`, `lint`) | TS errors in native-shell / brewery | `expo-doctor` duplicate deps, phantom `expo@56`, stale `apps/native/node_modules` |
+| **2 — Native deps** | Skill **`native-expo-doctor-pre-push`** | GHA `native-deps` failures (18/18 doctor, `expo install --check`) | EAS cloud build, device smoke |
+
+When editing **`apps/native/**`**, **`packages/platform/native-shell/package.json`**, root **`overrides`**, **`metro.config.js`**, or lockfiles on the native hoist path: run **both tiers** before push.
+
+## Hard rules (do not regress Path A — 2026-06-07)
+
+1. **Monorepo React minor is `19.1.0`** via root `package.json` `overrides` — Expo Go ABI. Do **not** bump `apps/web` to `19.2.x` without an explicit Path B milestone (SDK upgrade or dev-client exit).
+2. **`@umbraculum/native-shell` `peerDependencies.expo`** must stay **`~54.0.35`** (or current SDK pin) — never `>=54` (npm hoists phantom `expo@56` at root).
+3. **Do not add `expo-*` packages to `native-shell` `devDependencies`** — they hoist to root and break duplicate detection.
+4. **`apps/native/` must not accumulate `node_modules/`** — stale pre–Wave 4A tree; cleanup is in `check-native-expo-doctor.sh`.
+5. **`app.config.js`** must use Expo dynamic config: `module.exports = ({ config }) => ({ ...config, ... })` — not a manual `require("./app.json")` wrapper.
+6. **Metro** pins `react` from **`apps/native/brewery/node_modules`**, not repo root.
+
+## Agent anti-patterns
+
+| Anti-pattern | Why it fails |
+|---|---|
+| "Align web to latest React" without SDK check | `expo-doctor` duplicate `react` / ABI crash on device |
+| Loosen `native-shell` expo peer to `>=54` | Root phantom `expo@56`, doctor duplicate check |
+| Run `expo-doctor` only inside brewery without root `npm ci` | Misses EAS/CI hoist context |
+| Skip cleanup script after lockfile edit | Identical-version duplicates at root (`expo-font`, `react-native-svg`) |
+| Treat ci-parity `typecheck` green as native-deps proof | `native-deps.yml` runs doctor + brewery typecheck separately |
+
+## Canonical docs (humans + agents)
+
+- Assessment SoT: `docs/design/expo-doctor-monorepo-assessment.md`
+- Operations: `docs/DEVELOPMENT-NATIVE-LOCAL.md`
+- CI rationale: `docs/NATIVE-STRATEGY-AND-CI.md`
+- Repo gate: `AGENTS.md` § Native dependency / expo-doctor gate
+
+## Runbook
+
+Skill: **`native-expo-doctor-pre-push`** in this plugin. T2 companion: `npm run verify:pre-push` when diff triggers `native-deps` in `.umbraculum/gha-trigger-map.json`.
