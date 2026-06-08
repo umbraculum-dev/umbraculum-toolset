@@ -63,7 +63,7 @@ cd <REPO_ROOT> && npm run validate:gha-triggers
 cd <REPO_ROOT> && npm run verify:pre-push
 ```
 
-Runs path-aware parallel ci-parity + native companions when `.umbraculum/gha-trigger-map.json` matches the diff (`api-integration`, `expo-doctor`, etc.).
+Runs path-aware **parallel** ci-parity (`--parallel --isolated-install`) with native companions (`api-integration`, `expo-doctor`, …) **started in parallel with** ci-parity when `.umbraculum/gha-trigger-map.json` matches the diff — mirrors GHA separate workflows on one push.
 
 ### 4. T2-release (manifest / pin / SDK tag prep only)
 
