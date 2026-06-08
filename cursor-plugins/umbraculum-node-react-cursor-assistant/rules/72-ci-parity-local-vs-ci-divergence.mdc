@@ -67,6 +67,7 @@ Agents **must not** treat any of the following as sufficient pre-push verificati
 | Push without `--archive` after commit (only `--ci` during WIP) | GHA runs committed code; uncommitted local fixes hide broken `HEAD` |
 | Ending a session with "run verify:pre-push before you push" | Pre-push is **agent-owned** — run T2 yourself per umbraculum-dev `AGENTS.md` |
 | Full sequential manifest on every feature push | Use T2-PR (`verify:pre-push`); reserve T2-release for manifest/pin/SDK tag prep |
+| Host `npm view` / host `./scripts/*-smoke.sh` / host npm polling | Host is not the project; Node/npm skew yields false red/green — use `node:20-slim` or ci-parity (rule `00-shared-node-npm-container-only`) |
 
 **Required before push (umbraculum-dev — agents run this, not the operator):**
 

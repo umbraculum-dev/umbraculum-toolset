@@ -12,10 +12,27 @@ globs:
 
 # Node/npm commands: container-only (shared)
 
+## Why (project vs host)
+
+- **The project execution surface is Docker** (compose services, `node:20-slim` ci-parity image, manifest-driven one-shots) — same bar as GHA.
+- **The host is not part of the project.** Node/npm versions, PATH, Cursor AppImage mounts, and global npm differ per machine (e.g. Node 14 + npm 11 → CLI crash or false `npm view` negatives).
+- **Agents must not treat host command output as verification.** If host and container disagree, the container wins.
+
 ## Rule (hard)
-- **Never run `node`, `npm`, or `npx` on the host machine** when assisting with containerized projects.
-  - Host Node/npm may be missing or a different version than the container image.
-  - Running on host can lead to non-reproducible behavior, flaky CI parity, and accidental dependency drift.
+
+- **Default:** never run `node`, `npm`, or `npx` on the **host** for containerized Umbraculum-family repos.
+  - Includes: install, build, test, lint, typecheck, registry checks (`npm view`), and repo scripts that call npm (`dogfood-npm-smoke.sh`, etc.) — run them **inside** the stack image or `docker compose exec` service.
+- **Use the project container** (`docker compose exec …`, `docker run node:20-slim`, `./scripts/ci-parity-check.sh`, `./scripts/docker-npm-run.sh`) — not the operator's laptop Node.
+
+## Host exception (rare — operator consent required)
+
+Use the host **only** when container paths are blocked (allowlist, no Docker) **and** the operator explicitly approves after you state the cons:
+
+1. Host env is **not** CI parity and **not** reproducible across contributors.
+2. Results may be **false green or false red** (version skew, broken global npm, wrong PATH).
+3. You must **re-run in container** before declaring done or pushing.
+
+Do **not** use host npm for convenience (quick `npm view` polls, "one-liner" smoke tests). Ask first if you believe host is unavoidable.
 
 ## Runbook
 
