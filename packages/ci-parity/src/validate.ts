@@ -72,17 +72,44 @@ function findNestedPackageJsonDirs(repoRoot: string, maxDepth = 4): string[] {
   return found;
 }
 
-/** Paths like apps/web/e2e — not matched by root workspaces: ["apps/*", "services/*", "packages/*"]. */
-function isOutsideRootWorkspacesGlob(relPath: string): boolean {
-  const parts = relPath.split("/");
-  if (parts.length < 3) {
-    return false;
+/** Load npm `workspaces` globs from repo-root package.json (mechanism #2 strict gate). */
+export function loadWorkspacePackageGlobs(repoRoot: string): string[] {
+  try {
+    const raw = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as {
+      workspaces?: string[] | { packages?: string[] };
+    };
+    const ws = raw.workspaces;
+    if (!ws) return [];
+    if (Array.isArray(ws)) return ws;
+    return ws.packages ?? [];
+  } catch {
+    return [];
   }
-  const top = parts[0];
-  if (top !== "apps" && top !== "services" && top !== "packages") {
-    return parts.length >= 2;
+}
+
+/**
+ * Match a relative package path against one npm workspace glob (`*` = single segment).
+ * e.g. `apps/native/*` matches `apps/native/brewery`; `apps/*` does not.
+ */
+export function pathMatchesWorkspaceGlob(relPath: string, glob: string): boolean {
+  const globParts = glob.split("/").filter((p) => p.length > 0);
+  const pathParts = relPath.split("/").filter((p) => p.length > 0);
+  if (globParts.length !== pathParts.length) return false;
+  for (let i = 0; i < globParts.length; i++) {
+    if (globParts[i] === "*") continue;
+    if (globParts[i] !== pathParts[i]) return false;
   }
-  return parts.length >= 3;
+  return true;
+}
+
+function isUndocumentedNestedInstall(
+  relPath: string,
+  documented: Set<string>,
+  workspaceGlobs: string[],
+): boolean {
+  if (documented.has(relPath)) return false;
+  if (workspaceGlobs.some((g) => pathMatchesWorkspaceGlob(relPath, g))) return false;
+  return true;
 }
 
 export function validateManifest(options: ValidateOptions): ValidateResult {
@@ -146,9 +173,10 @@ export function validateManifest(options: ValidateOptions): ValidateResult {
 
   if (options.strict) {
     const documented = new Set(options.manifest.install.nested.map((n) => n.path));
+    const workspaceGlobs = loadWorkspacePackageGlobs(options.repoRoot);
     const nestedDirs = findNestedPackageJsonDirs(options.repoRoot);
     for (const dir of nestedDirs) {
-      if (!documented.has(dir) && isOutsideRootWorkspacesGlob(dir)) {
+      if (isUndocumentedNestedInstall(dir, documented, workspaceGlobs)) {
         errors.push(
           `strict: nested package.json at ${dir} is not listed in install.nested (mechanism #2)`,
         );
