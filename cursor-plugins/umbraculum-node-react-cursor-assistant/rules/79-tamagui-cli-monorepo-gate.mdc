@@ -1,0 +1,41 @@
+---
+description: Tamagui CLI check gate — run npx @tamagui/cli check when Tamagui deps/hoist surface changes; catches duplicate instances that break TamaguiProvider theme context
+alwaysApply: true
+---
+
+# Tamagui CLI monorepo gate (umbraculum-dev)
+
+## When agents MUST run the check
+
+Run skill **`tamagui-cli-check`** (canonical script: `scripts/check-tamagui-cli.sh`) when **any** of these apply:
+
+| Trigger | Examples |
+|---------|----------|
+| Tamagui version bump | `tamagui` / `@tamagui/*` pins in `apps/web`, `packages/platform/ui`, `recipes-ui`, `apps/native/brewery`, `native-shell` |
+| Root hoist change | `package.json` `overrides` for `tamagui` or `@tamagui/*`; lockfile refresh after root `npm install` |
+| Runtime symptom | `Can't find Tamagui configuration`, `duplicate tamagui instances`, `no parent theme context` on web login |
+| Pre-push (Tamagui surface) | Diff touches paths above **or** `packages/platform/ui/**`, `apps/web/**` Tamagui config, `docker-compose.yml` web `npm install` |
+
+**Skip** on pure docs-only / unrelated API-only work (`apparatus: override` still valid).
+
+## Hard rules
+
+1. **Every `tamagui` and `@tamagui/*` dependency must share one exact version** across the five manifests — see `docs/TAMAGUI.md` pinned-version row.
+2. **No nested `node_modules` under file-linked workspaces** — `packages/platform/ui/node_modules` and `packages/verticals/brewery/recipes-ui/node_modules` (and the mirror paths under `apps/web/node_modules/@umbraculum/*/node_modules`) duplicate Tamagui and break `TamaguiProvider`.
+3. **Do not “fix” duplicate instances by pinning mismatched versions** — align versions, then dedupe/clean per the skill.
+4. **Run in container** — never host `npm`/`npx` for this gate (`00-shared-node-npm-container-only`).
+
+## Agent anti-patterns
+
+| Anti-pattern | Why it fails |
+|---|---|
+| Only `npm ls tamagui` | Same version string can still load multiple physical copies |
+| Bump one package’s Tamagui pin without the other four | Runtime theme/config split |
+| Root `npm install` without re-running CLI check | Recreates nested ui/recipes-ui `node_modules` |
+| Treat ci-parity `typecheck` green as Tamagui hoist proof | CLI check is separate; not in ci-parity manifest today |
+
+## Enforcement (umbraculum-dev)
+
+Plugin `alwaysApply` is **not reliably enforced** by Cursor. **umbraculum-dev** commits a verbatim copy at `.cursor/rules/79-tamagui-cli-monorepo-gate.mdc` — agents in that repo must treat **that file** as binding.
+
+Runbook: skill **`tamagui-cli-check`**. Human SoT: `docs/TAMAGUI.md` § Tamagui CLI check.

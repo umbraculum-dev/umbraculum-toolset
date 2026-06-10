@@ -26,6 +26,8 @@ This plugin is one of the four umbraculum-toolset Cursor plugins. The companion 
 - `44-tsjs-project-docs-first.mdc`
 - `51-restart-dev-server-after-git-tree-mutations.mdc`
 - `73-website-static-build-before-preview.mdc`
+- `78-native-expo-doctor-monorepo-gate.mdc`
+- `79-tamagui-cli-monorepo-gate.mdc` (`alwaysApply: true`; umbraculum-dev also commits a repo-side copy under `.cursor/rules/` for enforcement)
 - `70-frontend-known-issues.mdc`
 - `prisma-client-sync.mdc`
 
@@ -56,6 +58,8 @@ The `cursor-plugins/scripts/install-local.sh` installer installs all four umbrac
 - `agentic-e2e-runbook`
 - `agentic-browser-web-app`
 - `test-mcp-server`
+- `native-expo-doctor-pre-push`
+- `tamagui-cli-check`
 
 ## Agents
 
@@ -64,6 +68,7 @@ The `cursor-plugins/scripts/install-local.sh` installer installs all four umbrac
 
 ## Version history
 
+- **0.0.6** (2026-06-10) — Tamagui duplicate-instance gate: rule `79-tamagui-cli-monorepo-gate.mdc` + skill `tamagui-cli-check` (`npx @tamagui/cli check` via consuming-repo `scripts/check-tamagui-cli.sh`). umbraculum-dev commits a repo-side `.cursor/rules/` copy because plugin `alwaysApply` enforcement is unreliable.
 - **0.0.3** (2026-05-27) — Static brochure guardrail: rule `73-website-static-build-before-preview.mdc` (glob-scoped to `apps/website/public/**`); rebuild `dist/` before preview/verification after `public/` edits.
 - **0.0.2** (2026-05-27) — Playwright quick gates: rule `67-playwright-quick-gates-before-run.mdc` (glob-scoped to `apps/web/e2e/**` and `e2e/playwright/**`); `playwright-runner-docs-gate` skill expanded with mandatory stack-health gate block, Umbraculum one-shot Docker template, and MRP/CRP export troubleshooting pointers (repo docs remain canonical SoT).
 - **0.0.1** (2026-05-25) — public baseline after the repository history reset. Includes the current Node/TypeScript/React/E2E rules, skills, and verifier agents, plus the companion-plugin split with `umbraculum-toolset-common`.
