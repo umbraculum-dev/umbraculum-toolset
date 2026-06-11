@@ -1,6 +1,6 @@
 {
   "name": "umbraculum-node-react-cursor-assistant",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Node/TypeScript/React/E2E Cursor assistant: rules, skills, and agents. Generic; suitable for any TS/JS project (the umbraculum- brand prefix is for marketplace name-uniqueness, not because the plugin is umbraculum-specific). Install alongside umbraculum-toolset-common for the language-agnostic meta-framework rules and the generate-development-local skill.",
   "author": {
     "name": "umbraculum-toolset"
