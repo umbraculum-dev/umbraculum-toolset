@@ -13,7 +13,7 @@
 This document complements [`PLUGIN-ROADMAP.md`](./PLUGIN-ROADMAP.md). Later sections also answer:
 
 1. **What the plugin manifest can express** (§2) — short answer: not workspace gating.
-2. **How this setup interacts with Marketplace installs** (§5) — after publication.
+2. **How this setup interacts with Marketplace installs** (§4) — after publication.
 
 ---
 
@@ -91,7 +91,7 @@ rm -rf ~/.cursor/plugins/local/umbraculum-openplc-python-cursor-assistant
 - **Ctrl+Shift+P → Developer: Reload Window**, or fully quit Cursor and reopen each workspace.
 - `workspaceOpen` runs on workspace open / folder change — not when the hook file is written while a window is already open.
 
-**5. Verify** each workspace you care about (see [§6 Verification checklist](#6-verification-checklist)).
+**5. Verify** each workspace you care about (see [§5 Verification checklist](#5-verification-checklist)).
 
 ### Day-to-day updates
 
@@ -293,7 +293,7 @@ The `workspaceOpen` hook returns **absolute paths to real directories**, not sym
 
 ---
 
-## 5. Post-publication: marketplace install + `workspaceOpen` hook coexistence
+## 4. Post-publication: marketplace install + `workspaceOpen` hook coexistence
 
 When any of the umbraculum-toolset plugins is eventually published to the Cursor Marketplace (see [`PLUGIN-ROADMAP.md` §3.F](./PLUGIN-ROADMAP.md#f-concrete-blockers-to-close-before-any-marketplace-submission) for the prerequisite blockers), a developer's machine may have **two independent sources** for the same plugin:
 
