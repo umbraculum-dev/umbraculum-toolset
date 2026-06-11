@@ -19,6 +19,8 @@ See `docs/PLUGIN-ROADMAP.md` for: (a) the rationale for the common plugin and wh
 
 **[`docs/WORKSPACE-PLUGIN-LOADING.md`](docs/WORKSPACE-PLUGIN-LOADING.md)** — canonical step-by-step install: clone source repos, create `~/.cursor/hooks.json` + `register-workspace-plugins.sh`, keep `~/.cursor/plugins/local/` empty, **manually reload Cursor**, verify per-workspace plugin list in Settings → Plugins.
 
+Official Cursor reference: [`workspaceOpen` hook](https://cursor.com/docs/hooks#workspaceopen) — per-workspace `pluginPaths` on workspace open.
+
 Do **not** use `install-local.sh.legacy` for normal installs — it globalizes all four umbraculum plugins. Use the hook so each workspace gets only the plugins it needs (verified: umbraculum-dev vs OpenPLC brewery vs Magento example workspace show different Installed lists).
 
 After `git pull` here: **Developer: Reload Window** in affected workspaces (manual; no rsync).
@@ -120,13 +122,17 @@ The witness-rule choice matters, because rules in this toolset fall into two act
 
 - **Unconditional** — `alwaysApply: true` in frontmatter, with no `globs:` (or with `globs:` that `alwaysApply: true` overrides; verified empirically against the loader's behavior). Cursor loads these into the agent's context in every conversation regardless of which files are open. **Suitable as introspectable witnesses.**
 
-- **Conditional** — `alwaysApply: false`, scoped via `globs:` to specific file patterns (e.g. `apps/**/*.{ts,tsx,js,jsx}`). Cursor only auto-attaches these when a matching file is in the conversation's active context. They are **silently absent** from the agent's loaded rule list in conversations with no matching file open, even when the plugin is correctly installed on disk. **NOT suitable as introspectable witnesses.** They MUST be verified by an alternate mechanism — typically by instructing the agent to attempt a `Read` of the rule's canonical installed path, `~/.cursor/plugins/local/<plugin-name>/rules/<rule>.mdc`. A successful Read both confirms the file is present on disk *and* brings the rule's full content into the conversation, functionally identical to auto-attach for rule-enforcement purposes.
+- **Conditional** — `alwaysApply: false`, scoped via `globs:` to specific file patterns (e.g. `apps/**/*.{ts,tsx,js,jsx}`). Cursor only auto-attaches these when a matching file is in the conversation's active context. They are **silently absent** from the agent's loaded rule list in conversations with no matching file open, even when the plugin is correctly installed on disk. **NOT suitable as introspectable witnesses.** They MUST be verified by an alternate mechanism — typically by instructing the agent to attempt a `Read` of the rule's canonical path on disk. With the recommended hook install, that path is the **source clone** (example: `$UMB_BASE/umbraculum-node-react-cursor-assistant/rules/<rule>.mdc` where `UMB_BASE` is your `umbraculum-toolset/cursor-plugins` directory). Legacy global rsync or marketplace cache installs use `~/.cursor/plugins/local/<plugin-name>/rules/<rule>.mdc` or the marketplace cache path instead. A successful Read both confirms the file is present on disk *and* brings the rule's full content into the conversation, functionally identical to auto-attach for rule-enforcement purposes.
 
 ### Authoring guidance for downstream `AGENTS.md`
 
 When authoring or updating the witness-rule table in a downstream `AGENTS.md`, confirm each chosen witness rule's category by inspecting its frontmatter:
 
 ```bash
+# Hook install (recommended): source clone
+head -10 "$UMB_BASE/<plugin-name>/rules/<witness-rule>.mdc"
+
+# Legacy global rsync only:
 head -10 ~/.cursor/plugins/local/<plugin-name>/rules/<witness-rule>.mdc
 ```
 
@@ -161,8 +167,10 @@ If a developer observes that a specific `alwaysApply: true` rule from one of the
 
 ```bash
 mkdir -p <repo>/.cursor/rules
-cp ~/.cursor/plugins/local/<plugin-name>/rules/<rule>.mdc \
+# Hook install (recommended): copy from source clone
+cp "$UMB_BASE/<plugin-name>/rules/<rule>.mdc" \
    <repo>/.cursor/rules/<rule>.mdc
+# Legacy global rsync: ~/.cursor/plugins/local/<plugin-name>/rules/<rule>.mdc
 cd <repo>
 git add .cursor/rules/<rule>.mdc
 git commit -m "chore(.cursor/rules): copy <rule>.mdc from <plugin-name> as enforcement fallback"

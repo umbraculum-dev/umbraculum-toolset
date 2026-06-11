@@ -72,7 +72,7 @@ Clone / pull these repos normally. The hook reads **source folders** — no copy
 chmod +x ~/.cursor/hooks/register-workspace-plugins.sh
 ```
 
-Adjust path constants in the script if your clones live elsewhere (`UMB_BASE`, `UMBRACULUM_PLATFORM_REPO`, `OPENPLC_PROJECT_REPO`, `MAGENTO_PLUGIN`, `MAGENTO_WORKSPACE_PREFIX`).
+Adjust path constants in the script if your clones live elsewhere (`UMB_BASE`, `UMBRACULUM_PLATFORM_REPO`, `OPENPLC_PROJECT_REPO`, `MAGENTO_PLUGIN`, `MAGENTO_WORKSPACE_PREFIX`). The example script ships with one maintainer's layout; **every developer must edit these constants** to match their machine before expecting the pairing matrix to work.
 
 **3. Remove global copies** (if you previously used `install-local.sh` or rsync):
 
@@ -359,3 +359,4 @@ After any change to `~/.cursor/plugins/local/`, `~/.cursor/hooks.json`, or `regi
 - [`../README.md`](../README.md) § "Per-project enablement" — short version of the same `workspaceOpen` recommendation, embedded in the install instructions.
 - Cursor docs: <https://cursor.com/docs/hooks#workspaceopen> — official `workspaceOpen` hook reference.
 - Cursor docs: <https://cursor.com/docs/plugins> — official plugin overview (manifest, marketplace, local plugins).
+- umbraculum-dev [`docs/CURSOR-PLUGINS.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/CURSOR-PLUGINS.md) — contributor-facing *why the apparatus matters*, umbraculum-dev pairing (three plugins), witness-rule verify prompts, and onboarding pointers back to this runbook.

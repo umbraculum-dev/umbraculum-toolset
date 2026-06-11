@@ -44,6 +44,10 @@ These artifacts are the §8 plugin-pack handoff manifest from umbraculum-dev's `
 
 - **0.0.1** (2026-05-25) — public baseline after the repository history reset. Includes the current umbraculum-platform TS/JS rules, skills, and verifier agents, including the web-route-shape and module-README disciplines.
 
+## Install
+
+Install via the `workspaceOpen` hook when the workspace matches your umbraculum-dev (or umbraculum-platform) clone path — together with `umbraculum-toolset-common` and `umbraculum-node-react-cursor-assistant`. See toolset [cursor-plugins/README.md](../README.md) and [docs/WORKSPACE-PLUGIN-LOADING.md](../docs/WORKSPACE-PLUGIN-LOADING.md). Official Cursor reference: [`workspaceOpen` hook](https://cursor.com/docs/hooks#workspaceopen). Legacy global rsync: `install-local.sh.legacy` (rollback only).
+
 ## See also
 
 - `/path/to/umbraculum-toolset/cursor-plugins/README.md` — multi-plugin overview + install + the why-pair-both rationale.
