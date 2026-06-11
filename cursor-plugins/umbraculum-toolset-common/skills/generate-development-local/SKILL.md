@@ -37,7 +37,7 @@ This skill is **ecosystem-agnostic**: the canonical shape of `DEVELOPMENT-LOCAL.
 ## Prerequisites
 
 - `DEVELOPMENT.md` exists at repo root. If absent, STOP and ask the user to author it first; do not invent a `DEVELOPMENT-LOCAL.md` from generic plugin guidance alone.
-- The plugin template at `<PLUGIN_TEMPLATE_PATH>` is readable. If not, STOP and report the missing/inaccessible path (the plugin may not be installed correctly — point user at `cursor-plugins/scripts/install-local.sh`).
+- The plugin template at `<PLUGIN_TEMPLATE_PATH>` is readable. If not, STOP and report the missing/inaccessible path (the plugin may not be installed correctly — point user at `cursor-plugins/docs/WORKSPACE-PLUGIN-LOADING.md`).
 - `DEVELOPMENT-LOCAL.md` does NOT already exist at repo root. If it does, STOP and ask the user whether to (a) leave it alone, (b) print a diff vs what this skill would generate, or (c) overwrite (only on explicit consent).
 
 ## Commands (templates)
@@ -51,7 +51,7 @@ This skill is **ecosystem-agnostic**: the canonical shape of `DEVELOPMENT-LOCAL.
 ## Stop conditions
 
 - `DEVELOPMENT.md` is absent at repo root.
-- `<PLUGIN_TEMPLATE_PATH>` is missing or unreadable (plugin install may be broken — point user at `cursor-plugins/scripts/install-local.sh`).
+- `<PLUGIN_TEMPLATE_PATH>` is missing or unreadable (plugin install may be broken — point user at `cursor-plugins/docs/WORKSPACE-PLUGIN-LOADING.md`).
 - `DEVELOPMENT-LOCAL.md` already exists and the user has not granted explicit overwrite consent.
 - More than a handful of `<fill_me>` slots remain unresolved after one user-prompt round (defer rather than badger — write what you have, leave the rest as `<fill_me>`, and report the gaps in the summary).
 - The user declines the write at the confirmation step.

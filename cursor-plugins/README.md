@@ -15,39 +15,41 @@ See `docs/PLUGIN-ROADMAP.md` for: (a) the rationale for the common plugin and wh
 
 ## Install
 
-### Local folder install (recommended for this repo)
+### Workspace-scoped loading (recommended for this repo)
 
-Cursor's local-plugin loading path is `~/.cursor/plugins/local/<plugin-name>/`. Each subdirectory there must contain a `.cursor-plugin/plugin.json` at its root. The repo-level `cursor-plugins/.cursor-plugin/marketplace.json` is NOT auto-discovered by the local-install flow (it only matters for publishing to the public Cursor Marketplace or to a Teams/Enterprise Team Marketplace), so each of the three plugins must be registered individually.
+**Primary path:** register plugins from their **source folders** via a user-level `workspaceOpen` hook. Plugins load per workspace path — not globally from `~/.cursor/plugins/local/`. After `git pull` in this repo (or in a paired domain repo such as `rf-magento-cursor-assistant`), reopen the workspace or **Developer: Reload Window** — no rsync mirror needed.
 
-**Important — symlinks do NOT work today.** Cursor's docs (`cursor.com/docs/plugins.md` → "Test plugins locally" → "For faster iteration, symlink your plugin repository") claim that `ln -s … ~/.cursor/plugins/local/<name>` is supported, but the actual implementation in Cursor's plugin loader iterates `~/.cursor/plugins/local/` with `fs.readdir(..., { withFileTypes: true })` and skips any entry where `Dirent.isDirectory() === false`. Symlinks come back as `isSymbolicLink(): true, isDirectory(): false`, so they are silently skipped — `Cursor Plugins.log` records `loadUserLocalPlugins completed in N.Nms (0 plugins loaded)` and your rules / skills / agents never appear. See `docs/PLUGIN-ROADMAP.md` § "Cursor bug: local-plugin loader rejects symlinks" for the de-minified loader excerpt and reproduction notes.
+Canonical setup, pairing table (umbraculum-dev, OpenPLC, Magento under `/path/to/magento-workspace/`, default `umbraculum-toolset-common` only), hook skeleton, and verification checklist: **[`docs/WORKSPACE-PLUGIN-LOADING.md`](docs/WORKSPACE-PLUGIN-LOADING.md)**.
 
-The supported path today is **real folder copies** managed by the repo-local installer script:
+Summary:
+
+| Workspace | Plugins (from source via hook) |
+|---|---|
+| `/path/to/umbraculum-dev` | `umbraculum-toolset-common` + `umbraculum-node-react-cursor-assistant` + `umbraculum-platform-tsjs-cursor-assistant` |
+| OpenPLC brewery repo | `umbraculum-toolset-common` + `umbraculum-openplc-python-cursor-assistant` |
+| Magento under `/path/to/magento-workspace/` | `umbraculum-toolset-common` + `rf-magento-cursor-assistant` (from cursor-plugins source) |
+| Everything else | `umbraculum-toolset-common` only |
+
+Keep `~/.cursor/plugins/local/` **empty** for umbraculum and rf-magento plugins — anything there loads in every workspace regardless of the hook.
+
+### Legacy: global rsync into `~/.cursor/plugins/local/`
+
+Superseded by the hook approach above. Retained for rollback only:
 
 ```bash
-bash cursor-plugins/scripts/install-local.sh
+bash cursor-plugins/scripts/install-local.sh.legacy
 ```
 
-That script `rsync -a --delete`s **all four** plugin folders (the common plugin first, then the three domain plugins) into `~/.cursor/plugins/local/<plugin-name>/` (excluding `.git/` and `node_modules/`), removes any stale symlinks left over from a prior failed install, and prints the final inventory. Cursor's plugin loader does NOT consume a manifest-level dependency field (verified by enumerating the loader's destructure in the unpacked Cursor binary), so installing all four together is the simplest way to honor the "install `umbraculum-toolset-common` alongside any domain plugin" recommendation.
-
-Then in Cursor: **Ctrl+Shift+P → Developer: Reload Window** (or restart Cursor). Verify each plugin's rules / skills / agents appear in **Settings → Rules** and (where applicable) **Settings → Features → Model Context Protocol**. You can also confirm in `~/.config/Cursor/logs/<session>/window<N>/exthost/anysphere.cursor-agent-exec/Cursor Plugins.log` that the message has flipped from `loadUserLocalPlugins completed … (0 plugins loaded)` to `loadUserLocalPlugin <name> loaded in N.Nms` per plugin.
-
-**Refresh after a `git pull`** (this repo only — Cursor does NOT auto-update from the source folder once installed):
-
-```bash
-cd /path/to/umbraculum-toolset && git pull
-bash cursor-plugins/scripts/install-local.sh
-```
-
-then **Developer: Reload Window** in Cursor. If/when Cursor fixes the symlink-loader bug, the script can be retired in favor of three `ln -s` commands; until then the rsync copy is the only working mechanism.
+That script `rsync`s all four umbraculum plugins into `~/.cursor/plugins/local/` (global load). See `docs/PLUGIN-ROADMAP.md` §1b for why symlinks do not work. Do not run the legacy installer alongside the hook unless you are rolling back.
 
 ### Per-project enablement
 
-Once installed into `~/.cursor/plugins/local/` (whether by the script above or any other means), all four plugins are loaded **globally** for your user — there is no per-workspace `.cursor/` toggle for whole plugins. Two documented levers cover the realistic cases:
+With workspace-scoped hook loading, the pairing matrix below is enforced by `~/.cursor/hooks/register-workspace-plugins.sh`. Additional levers:
 
-- **Component-level toggles** in **Cursor Settings → Rules** (rules individually) and **Settings → Features → MCP** (MCP servers individually). Suitable when you want a plugin installed but want certain rules muted on a particular project.
-- **`workspaceOpen` hook** at `~/.cursor/hooks.json` that returns a `pluginPaths` array. Reach for this only if you want strict per-workspace plugin gating (e.g., load `umbraculum-openplc-python-cursor-assistant` ONLY in the openplc/brewery repo). If you go this route, do NOT also rsync that plugin into `~/.cursor/plugins/local/`, or it loads globally regardless. Note: `umbraculum-toolset-common` should be in every domain plugin's `pluginPaths` if you go this route — it carries the rules and skill the domain plugins delegate to.
+- **Component-level toggles** in **Cursor Settings → Rules** (rules individually) and **Settings → Features → MCP** (MCP servers individually). Mute specific rules when a plugin is loaded but some guidance should be off for a project.
+- **Marketplace plugins** (Figma, Prisma, Elastic, …) still apply per their own `state.vscdb` toggles.
 
-The pairing matrix below still applies — it's the recommended pattern, just enforced via the component toggles (or a `workspaceOpen` hook) rather than by selective install:
+The pairing matrix:
 
    - **Any TS/JS project** → `umbraculum-toolset-common` + `umbraculum-node-react-cursor-assistant`.
    - **umbraculum-dev (or any umbraculum-platform project)** → `umbraculum-toolset-common` + `umbraculum-node-react-cursor-assistant` + `umbraculum-platform-tsjs-cursor-assistant`. The platform-tsjs plugin depends on conventions also covered by the generic node-react one; both must be active.
@@ -59,7 +61,7 @@ Once published to a Git remote, install from the Git URL in Cursor (Settings →
 
 ### CLI install
 
-Cursor does **not** currently expose a `cursor` or `cursor-agent` subcommand for plugin install/update/list. The local install is the `cursor-plugins/scripts/install-local.sh` rsync-into-`~/.cursor/plugins/local/` recipe described above, followed by **Developer: Reload Window** in Cursor.
+Cursor does **not** currently expose a `cursor` or `cursor-agent` subcommand for plugin install/update/list. Local install is the `workspaceOpen` hook + source paths described in [`docs/WORKSPACE-PLUGIN-LOADING.md`](docs/WORKSPACE-PLUGIN-LOADING.md), followed by **Developer: Reload Window** in Cursor. Legacy global rsync: `install-local.sh.legacy`.
 
 ## Plugin pairing — which plugins together?
 
@@ -68,7 +70,7 @@ Cursor does **not** currently expose a `cursor` or `cursor-agent` subcommand for
 | Generic TS/JS / React | `umbraculum-toolset-common` + `umbraculum-node-react-cursor-assistant` |
 | Umbraculum-platform (umbraculum-dev) | `umbraculum-toolset-common` + `umbraculum-node-react-cursor-assistant` + `umbraculum-platform-tsjs-cursor-assistant` |
 | OpenPLC + Python sister-repo (openplc/brewery) | `umbraculum-toolset-common` + `umbraculum-openplc-python-cursor-assistant` |
-| Magento | Out of scope for umbraculum-toolset (no plugin shipped here) |
+| Magento (`/path/to/magento-workspace/…`) | `umbraculum-toolset-common` + `rf-magento-cursor-assistant` (hook registers both from source; Magento plugin lives outside this repo) |
 
 ### Recommended third-party plugins (not shipped here)
 
@@ -202,7 +204,7 @@ The plugins **do not auto-sync any of these files** into the workspace. The plug
 
 ### Gate behavior (rule `00-development-local-addendum-gate.mdc`)
 
-The gate rule and the `generate-development-local` skill both live in `umbraculum-toolset-common`. They are loaded once for any project that has the common plugin installed alongside a domain plugin (which the `install-local.sh` installer always does).
+The gate rule and the `generate-development-local` skill both live in `umbraculum-toolset-common`. They load when the `workspaceOpen` hook registers the common plugin for the workspace (every workspace gets at least common; domain plugins add path-specific extras).
 
 - **At session/task start**, if repo-root `DEVELOPMENT-LOCAL.md` exists, the assistant reads it early. If sibling `DEVELOPMENT-LOCAL-OLLAMA.md` also exists, it is read alongside (same precedence). These files are the source of truth for project-specific parameters (containers, paths, ports, OpenPLC Runtime URLs, serial-port paths for the RTU field profile, E2E defaults, command constraints, Ollama model id / endpoint).
 - **If `DEVELOPMENT-LOCAL.md` is absent**, the assistant proceeds normally and asks for project-specific values only when the requested task needs them.

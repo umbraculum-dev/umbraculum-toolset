@@ -18,7 +18,7 @@ scripts) live at the **repo root**, well outside any plugin's marketplace
 package boundary. **Two distribution channels operate independently**:
 
 - **Contributors** receive this guide and the hook via `git clone https://github.com/umbraculum-dev/umbraculum-toolset.git` — the path you're on if you're reading this file. One-time activation per clone: `git config core.hooksPath scripts/git-hooks` (see [§"What DOES work — the canonical setup"](#what-does-work--the-canonical-setup) below).
-- **Marketplace consumers** who install the plugins via Cursor's marketplace (or via `cursor-plugins/scripts/install-local.sh` from a clone) receive only the per-plugin payload under `cursor-plugins/<plugin-name>/` — they do NOT get this guide or the hook, and don't need them, since they're consuming the rules in their own projects rather than committing to this repo.
+- **Marketplace consumers** who install the plugins via Cursor's marketplace (or via the `workspaceOpen` hook + source paths documented in `cursor-plugins/docs/WORKSPACE-PLUGIN-LOADING.md`) receive only the per-plugin payload under `cursor-plugins/<plugin-name>/` — they do NOT get this guide or the maintainer hook script, and don't need them, since they're consuming the rules in their own projects rather than committing to this repo.
 
 In short: the contributor infrastructure does not bloat the marketplace plugins, and the marketplace plugins remain self-contained.
 

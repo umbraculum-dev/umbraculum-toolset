@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# LEGACY — superseded by workspaceOpen hook + source-path loading.
+# Primary install path: ~/.cursor/hooks.json + register-workspace-plugins.sh
+# (see cursor-plugins/docs/WORKSPACE-PLUGIN-LOADING.md).
+# Restore and run this script only if abandoning the hook approach (rollback).
+#
 # Install / refresh the four umbraculum-toolset Cursor plugins into Cursor's
 # user-local plugins folder.
 #
@@ -25,7 +30,7 @@
 # reason about during refresh).
 #
 # Usage: after a `git pull` in this repo, run:
-#     bash cursor-plugins/scripts/install-local.sh
+#     bash cursor-plugins/scripts/install-local.sh.legacy
 # then `Ctrl+Shift+P -> Developer: Reload Window` in Cursor.
 #
 # Optional `--prune` flag: after installing the four current plugins, remove
@@ -35,7 +40,7 @@
 # Cursor would load BOTH the old and the new copy and surface duplicate rules.
 # Off by default because the local plugins folder may host other user-installed
 # plugins unrelated to this toolset.
-#     bash cursor-plugins/scripts/install-local.sh --prune
+#     bash cursor-plugins/scripts/install-local.sh.legacy --prune
 
 set -euo pipefail
 

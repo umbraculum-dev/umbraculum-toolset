@@ -38,7 +38,7 @@ See the toolset-level [cursor-plugins/README.md](../README.md) § "Witness-rule 
 
 ## Install
 
-This plugin uses the same local-install mechanism as the other three. The `cursor-plugins/scripts/install-local.sh` at the toolset root installs all four plugins at once into `~/.cursor/plugins/local/`. See the toolset-level [cursor-plugins/README.md](../README.md) for the canonical install instructions and the pairing matrix.
+This plugin loads on every workspace via the `workspaceOpen` hook (at minimum). Domain plugins add path-specific extras. See toolset [cursor-plugins/README.md](../README.md) and [docs/WORKSPACE-PLUGIN-LOADING.md](../docs/WORKSPACE-PLUGIN-LOADING.md). Legacy global rsync: `install-local.sh.legacy`.
 
 ## Dependencies
 

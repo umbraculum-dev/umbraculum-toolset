@@ -42,7 +42,7 @@ This plugin requires the companion `umbraculum-toolset-common` plugin for the la
 - `00-development-local-addendum-gate.mdc`, `12-skill-contract.mdc`, `41-commit-message-ticket-prefix.mdc`
 - `skills/generate-development-local/`
 
-The `cursor-plugins/scripts/install-local.sh` installer installs all four umbraculum-toolset plugins together.
+Install via the `workspaceOpen` hook when the workspace matches the OpenPLC brewery repo path. See [docs/WORKSPACE-PLUGIN-LOADING.md](../docs/WORKSPACE-PLUGIN-LOADING.md). Legacy global rsync: `install-local.sh.legacy`.
 
 ### Skills (`skills/`) — 6 skills, one per subagent
 

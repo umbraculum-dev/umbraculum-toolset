@@ -5,7 +5,8 @@
 | **Status** | Living document |
 | **Owner** | umbraculum-toolset maintainers |
 | **Audience** | developers running these plugins alongside other Cursor plugins, and future maintainers preparing the umbraculum-toolset plugins for Cursor Marketplace publication |
-| **Last meaningful update** | 2026-06-11 (initial draft) |
+| **Last meaningful update** | 2026-06-11 (rollout: hook + empty `local/`; legacy `install-local.sh.legacy`) |
+| **Rollout status** | **Active** on maintainer machine — `~/.cursor/hooks.json` + `register-workspace-plugins.sh`; `~/.cursor/plugins/local/` empty for umbraculum and rf-magento plugins |
 
 This document complements [`PLUGIN-ROADMAP.md`](./PLUGIN-ROADMAP.md). The roadmap covers private-vs-marketplace transition (§3), the loader-consumed manifest field set (§5), and the symlink-loader bug (§1b). This document covers two adjacent, frequently-asked questions:
 
@@ -89,7 +90,7 @@ The `workspaceOpen` hook is the documented Cursor mechanism for per-workspace pl
 The docs phrase it as "additional plugin paths to load for the current workspace." Empirical implication:
 
 - Plugins still in `~/.cursor/plugins/local/<name>/` load **globally**, regardless of what the hook returns. The hook cannot deregister them.
-- To get strict per-workspace scoping for plugin X via the hook, X must be **removed from `~/.cursor/plugins/local/`** (i.e. not rsync'd by `cursor-plugins/scripts/install-local.sh`) AND registered by the hook only for the workspaces where it should load.
+- To get strict per-workspace scoping for plugin X via the hook, X must be **removed from `~/.cursor/plugins/local/`** (i.e. not rsync'd by `install-local.sh.legacy`) AND registered by the hook only for the workspaces where it should load.
 
 If your goal is "load `umbraculum-openplc-python-cursor-assistant` only in the openplc/brewery repo and nowhere else," the sequence is:
 
@@ -128,12 +129,18 @@ UMB_BASE="/path/to/umbraculum-toolset/cursor-plugins"
 # Adjust to your actual repo locations.
 UMBRACULUM_PLATFORM_REPO="/path/to/umbraculum-dev"
 OPENPLC_PROJECT_REPO="/path/to/openplc-brewery-project"
+MAGENTO_PLUGIN="/path/to/magento-workspace/cursor-rules/cursor-plugins/rf-magento-cursor-assistant"
+MAGENTO_WORKSPACE_PREFIX="/path/to/magento-workspace/"
 
 input="$(cat)"
 roots="$(printf '%s' "$input" | jq -r '.workspace_roots[]?')"
 
 paths=()
-add() { paths+=("$1"); }
+add() {
+  if [[ -d "$1" && -f "$1/.cursor-plugin/plugin.json" ]]; then
+    paths+=("$1")
+  fi
+}
 
 while IFS= read -r root; do
   case "$root" in
@@ -146,9 +153,15 @@ while IFS= read -r root; do
       add "$UMB_BASE/umbraculum-toolset-common"
       add "$UMB_BASE/umbraculum-openplc-python-cursor-assistant"
       ;;
-    # Other workspaces: register nothing. Plugins (if any) that should still
-    # load globally — e.g. plugins outside umbraculum-toolset scope — stay in
-    # ~/.cursor/plugins/local/ and load via the default discovery path.
+    "$MAGENTO_WORKSPACE_PREFIX"*)
+      # Magento pairing: common + rf-magento (v0.2.0+); NOT node-react/platform/openplc.
+      add "$UMB_BASE/umbraculum-toolset-common"
+      add "$MAGENTO_PLUGIN"
+      ;;
+    *)
+      # Default: meta-framework baseline on every other workspace.
+      add "$UMB_BASE/umbraculum-toolset-common"
+      ;;
   esac
 done <<<"$roots"
 

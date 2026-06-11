@@ -47,7 +47,7 @@ This plugin does not ship its own copies of the language-agnostic meta-framework
 - `41-commit-message-ticket-prefix.mdc`
 - `skills/generate-development-local/`
 
-The `cursor-plugins/scripts/install-local.sh` installer installs all four umbraculum-toolset plugins together. See the toolset-level [cursor-plugins/README.md](../README.md) for the pairing matrix and rationale.
+Install via the `workspaceOpen` hook + source paths (see toolset [cursor-plugins/README.md](../README.md) and [docs/WORKSPACE-PLUGIN-LOADING.md](../docs/WORKSPACE-PLUGIN-LOADING.md)). Legacy global rsync: `install-local.sh.legacy`.
 
 ## Notable skills
 

@@ -37,7 +37,7 @@ All four plugins are currently **private**: they're installed in Cursor from a l
 
 ## 1b. Cursor bug: local-plugin loader rejects symlinks (discovered 2026-05-18)
 
-**TL;DR.** Cursor's docs at `cursor.com/docs/plugins.md` → "Test plugins locally" tell you `ln -s /path/to/my-plugin ~/.cursor/plugins/local/my-plugin` is a supported "faster iteration" install method. **It does not work.** The plugin loader skips symlinks silently. Install via real folder copies (rsync) — see `cursor-plugins/scripts/install-local.sh`.
+**TL;DR.** Cursor's docs at `cursor.com/docs/plugins.md` → "Test plugins locally" tell you `ln -s /path/to/my-plugin ~/.cursor/plugins/local/my-plugin` is a supported "faster iteration" install method. **It does not work.** The plugin loader skips symlinks silently. **Primary install today:** `workspaceOpen` hook + source paths ([`WORKSPACE-PLUGIN-LOADING.md`](./WORKSPACE-PLUGIN-LOADING.md)). **Legacy rollback:** rsync via `cursor-plugins/scripts/install-local.sh.legacy`.
 
 ### Reproduction
 
@@ -81,7 +81,7 @@ The correct check would be either `(t.isDirectory() || t.isSymbolicLink())` or `
 
 ### Workaround in this repo
 
-`cursor-plugins/scripts/install-local.sh` rsyncs each of the four plugin folders (the common plugin first, then the three domain plugins) into `~/.cursor/plugins/local/<plugin-name>/` as a real directory (excluding `.git/` and `node_modules/`), removing any stale symlinks first. Re-run after every `git pull` in this repo. The README's "Local folder install" section documents this as the only working method.
+**Current (2026-06-11):** workspace-scoped loading via `~/.cursor/hooks/register-workspace-plugins.sh` reads plugins from source; `~/.cursor/plugins/local/` stays empty for umbraculum plugins. **Legacy:** `cursor-plugins/scripts/install-local.sh.legacy` rsyncs all four plugin folders into `~/.cursor/plugins/local/` (global load). See [`WORKSPACE-PLUGIN-LOADING.md`](./WORKSPACE-PLUGIN-LOADING.md).
 
 ### When to revisit
 
@@ -91,7 +91,7 @@ The correct check would be either `(t.isDirectory() || t.isSymbolicLink())` or `
 ### Cross-references
 
 - README's "Local folder install" section (what users need to do today).
-- `cursor-plugins/scripts/install-local.sh` (the workaround).
+- `cursor-plugins/scripts/install-local.sh.legacy` (legacy rsync workaround; hook is primary).
 - §3 of this roadmap ("Private plugin vs Cursor marketplace plugin") is unaffected; the marketplace install path uses Cursor's own clone-and-cache flow which produces real directories.
 
 ---
@@ -238,7 +238,7 @@ These are **not** in scope for the current refactor; they're future work to scop
 ### Now / next session
 
 - [ ] **Loader filename-collision smoke test**: temporarily re-add (under a throwaway tmp folder) a copy of `12-skill-contract.mdc` in `umbraculum-node-react-cursor-assistant/rules/`, reload, grep `Cursor Plugins.log` for any duplicate-rule warning or de-dup log line. Document the result here; remove the throwaway copy.
-- [ ] **After each Cursor update, re-test the symlink-loader bug** (see §1b). Repro: replace one of the four plugin entries under `~/.cursor/plugins/local/` with a symlink to its source, Reload Window, grep `Cursor Plugins.log` for `loadUserLocalPlugin <name> loaded`. If it appears, the bug is fixed — retire `cursor-plugins/scripts/install-local.sh` and revert the README to a clean `ln -s` recipe. Until then, the rsync workaround is mandatory.
+- [ ] **After each Cursor update, re-test the symlink-loader bug** (see §1b). Repro: replace one of the four plugin entries under `~/.cursor/plugins/local/` with a symlink to its source, Reload Window, grep `Cursor Plugins.log` for `loadUserLocalPlugin <name> loaded`. If it appears, the bug is fixed — symlinks may work for hook-free global install again. Primary path remains hook + source paths ([`WORKSPACE-PLUGIN-LOADING.md`](./WORKSPACE-PLUGIN-LOADING.md)).
 
 ### When a trigger fires (future common-plugin growth)
 

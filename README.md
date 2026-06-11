@@ -34,7 +34,7 @@ umbraculum-toolset/
     │   ├── PLUGIN-ROADMAP.md
     │   └── archive/
     │       └── foundation-hardening-plugin-pack.plan.md
-    ├── scripts/install-local.sh         (rsync-based local installer for all four plugins; --prune flag for orphan-folder cleanup after renames)
+    ├── scripts/install-local.sh.legacy  (legacy global rsync installer; superseded by workspaceOpen hook — see docs/WORKSPACE-PLUGIN-LOADING.md)
     ├── umbraculum-toolset-common/        (language-agnostic meta-framework rules + generate-development-local skill; install alongside any domain plugin)
     ├── umbraculum-node-react-cursor-assistant/    (generic TS/JS)
     ├── umbraculum-platform-tsjs-cursor-assistant/ (umbraculum-platform TS/JS half)

@@ -48,7 +48,7 @@ If in doubt, prefer the domain plugin — promotion to common is cheap; demotion
 
 Cursor's plugin loader does NOT consume any dependency / requires / recommends / extends field from `plugin.json`. Verified by enumerating the loader's destructure in the unpacked Cursor binary: only `displayName`, `description`, `authorName`, `variablesSchema`, `skills`, `rules`, `agents`, `commands`, `mcpConfig`, `hooks` are read. The marketplace-published plugins (Elastic, Figma, Prisma) confirm the same — none declares a dependency.
 
-Therefore: "install `umbraculum-toolset-common` alongside this plugin" is documented in each plugin's README and (locally) automated by `cursor-plugins/scripts/install-local.sh`. On the marketplace it will be a per-listing description note. Same UX both ways → marketplace-portable from day one, no future refactor.
+Therefore: "install `umbraculum-toolset-common` alongside this plugin" is documented in each plugin's README and (locally) enforced by the `workspaceOpen` hook (`cursor-plugins/docs/WORKSPACE-PLUGIN-LOADING.md`). On the marketplace it will be a per-listing description note. Same UX both ways → marketplace-portable from day one, no future refactor.
 
 ## Versioning
 
