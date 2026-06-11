@@ -339,7 +339,7 @@ The natural end state on a mature developer machine is therefore:
 
 ---
 
-## 6. Verification checklist
+## 5. Verification checklist
 
 After any change to `~/.cursor/plugins/local/`, `~/.cursor/hooks.json`, or `register-workspace-plugins.sh`:
 
@@ -351,7 +351,7 @@ After any change to `~/.cursor/plugins/local/`, `~/.cursor/hooks.json`, or `regi
 
 ---
 
-## 7. See also
+## 6. See also
 
 - [`PLUGIN-ROADMAP.md`](./PLUGIN-ROADMAP.md) §1b — Cursor symlink-loader bug (affects `~/.cursor/plugins/local/` only; not the `workspaceOpen` hook).
 - [`PLUGIN-ROADMAP.md`](./PLUGIN-ROADMAP.md) §3 — Private-vs-marketplace plugin transition (manifest schema gap, content hygiene, distribution mechanics, marketplace-realism per plugin, blockers before submission).
