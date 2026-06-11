@@ -1,0 +1,52 @@
+---
+description: Monorepo lockfile agent gate — agent-owned regen in node:20-slim, forbidden services/api/package-lock.json, npm run check:lockfiles before commit/push; never delegate to operator
+alwaysApply: true
+---
+
+# Monorepo lockfile agent gate (umbraculum-dev)
+
+**Audience:** agents only. The operator is an analyst — **you** enforce lockfile policy; do not tell them to "avoid X in the future."
+
+## When agents MUST run the gate
+
+Run skill **`monorepo-lockfile-gate`** when **any** of these apply:
+
+| Trigger | Examples |
+|---------|----------|
+| Root lockfile edit | `package-lock.json` changed (regen, merge, bump, Tamagui/native hoist refresh) |
+| Workspace dep bump | Any `package.json` under `apps/`, `services/`, `packages/` that affects root install |
+| Forbidden file present | `services/api/package-lock.json` on disk or in `git status` |
+| Pre-push with lockfile commit | Commit touches `package-lock.json` |
+| CI symptom | GHA `npm ci` / `Invalid: lock file's … does not satisfy …` on lint, typecheck, native-deps |
+
+**Skip** on pure docs-only prose with no manifest/lockfile surface (`apparatus: override` still valid).
+
+## Hard rules (agent-owned — not operator homework)
+
+1. **Root `package-lock.json` is the only lockfile for `@umbraculum/api` and all npm workspaces.** CI runs `npm ci` at repo root in **`node:20-slim` / npm 10**.
+2. **Never commit `services/api/package-lock.json`.** It is gitignored and forbidden. If it exists: **`rm -f services/api/package-lock.json`** — do not `git add` it (including `-f`).
+3. **Never regenerate root `package-lock.json` on the host** for commits. Use **`node:20-slim`** (skill commands). Host-only regen causes `@swc/helpers`-class drift and red GHA.
+4. **After any root lockfile change, before commit:** run **`npm run check:lockfiles`** (agent runs it — not the operator).
+5. **Before push** when the commit includes `package-lock.json`: **`npm run verify:pre-push`** on a **clean committed tree** (agent runs it).
+
+## Intentional extra lockfiles (do not delete)
+
+`apps/web/package-lock.json`, `apps/web/e2e/package-lock.json`, `packages/platform/test-mcp/package-lock.json`, `docs-site/vendor/brochure/package-lock.json` — see `DEVELOPMENT.md` § npm lockfiles.
+
+## Agent anti-patterns
+
+| Anti-pattern | Why it fails |
+|---|---|
+| Commit host-only `npm install` lockfile | GHA `npm ci` rejects sync (`@swc/helpers` drift) |
+| `git add services/api/package-lock.json` | Forbidden; pollutes review; not CI SoT |
+| Tell operator "regen lockfile before push" | Wrong paradigm — **agent** regens and verifies |
+| `verify:pre-push` green with empty diff vs `origin/master` only | Path-aware T2 may skip jobs; lockfile commits still need **`check:lockfiles`** in validate |
+| Rely on docs-readmes alone when pushing lockfile-only fix | Run **`check:lockfiles`** + **`npm ci`** proof in container |
+
+## Enforcement (umbraculum-dev)
+
+Plugin `alwaysApply` is **not reliably enforced** by Cursor. **umbraculum-dev** commits a verbatim copy at `.cursor/rules/80-monorepo-lockfile-agent-gate.mdc` — agents in that repo must treat **that file** as binding.
+
+Mechanical gates: `scripts/check-monorepo-lockfiles.sh`, `scripts/check-root-lockfile-sync.sh`, `npm run check:lockfiles`, **`verify-slice.sh` T2 validate** (always runs lockfile checks), ci-parity **`docs-readmes`** job.
+
+Runbook: skill **`monorepo-lockfile-gate`**. Human SoT: `DEVELOPMENT.md` § npm lockfiles.

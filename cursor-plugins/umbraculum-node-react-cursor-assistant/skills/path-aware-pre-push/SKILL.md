@@ -65,6 +65,8 @@ cd <REPO_ROOT> && npm run verify:pre-push
 
 Runs path-aware **parallel** ci-parity (`--parallel --isolated-install`) with native companions (`api-integration`, `expo-doctor`, …) **started in parallel with** ci-parity when `.umbraculum/gha-trigger-map.json` matches the diff — mirrors GHA separate workflows on one push.
 
+**Lockfile:** T2 validate always runs **`npm run check:lockfiles`** (forbidden `services/api/package-lock.json` + root sync in `node:20-slim`) before any ci-parity job. When the commit touches **`package-lock.json`**, agents must also have run skill **`monorepo-lockfile-gate`** before commit (rule **`80-monorepo-lockfile-agent-gate`**).
+
 ### 4. T2-release (manifest / pin / SDK tag prep only)
 
 ```bash
