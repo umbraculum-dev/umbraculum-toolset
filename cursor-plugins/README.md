@@ -15,13 +15,15 @@ See `docs/PLUGIN-ROADMAP.md` for: (a) the rationale for the common plugin and wh
 
 ## Install
 
-### Workspace-scoped loading (recommended for this repo)
+### Goto procedure (until Marketplace publication)
 
-**Primary path:** register plugins from their **source folders** via a user-level `workspaceOpen` hook. Plugins load per workspace path — not globally from `~/.cursor/plugins/local/`. After `git pull` in this repo (or in a paired domain repo such as `rf-magento-cursor-assistant`), reopen the workspace or **Developer: Reload Window** — no rsync mirror needed.
+**[`docs/WORKSPACE-PLUGIN-LOADING.md`](docs/WORKSPACE-PLUGIN-LOADING.md)** — canonical step-by-step install: clone source repos, create `~/.cursor/hooks.json` + `register-workspace-plugins.sh`, keep `~/.cursor/plugins/local/` empty, **manually reload Cursor**, verify per-workspace plugin list in Settings → Plugins.
 
-Canonical setup, pairing table (umbraculum-dev, OpenPLC, Magento under `/path/to/magento-workspace/`, default `umbraculum-toolset-common` only), hook skeleton, and verification checklist: **[`docs/WORKSPACE-PLUGIN-LOADING.md`](docs/WORKSPACE-PLUGIN-LOADING.md)**.
+Do **not** use `install-local.sh.legacy` for normal installs — it globalizes all four umbraculum plugins. Use the hook so each workspace gets only the plugins it needs (verified: umbraculum-dev vs OpenPLC brewery vs Magento example workspace show different Installed lists).
 
-Summary:
+After `git pull` here: **Developer: Reload Window** in affected workspaces (manual; no rsync).
+
+### Workspace pairing summary
 
 | Workspace | Plugins (from source via hook) |
 |---|---|

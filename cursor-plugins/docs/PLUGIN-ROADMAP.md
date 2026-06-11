@@ -37,7 +37,9 @@ All four plugins are currently **private**: they're installed in Cursor from a l
 
 ## 1b. Cursor bug: local-plugin loader rejects symlinks (discovered 2026-05-18)
 
-**TL;DR.** Cursor's docs at `cursor.com/docs/plugins.md` → "Test plugins locally" tell you `ln -s /path/to/my-plugin ~/.cursor/plugins/local/my-plugin` is a supported "faster iteration" install method. **It does not work.** The plugin loader skips symlinks silently. **Primary install today:** `workspaceOpen` hook + source paths ([`WORKSPACE-PLUGIN-LOADING.md`](./WORKSPACE-PLUGIN-LOADING.md)). **Legacy rollback:** rsync via `cursor-plugins/scripts/install-local.sh.legacy`.
+**TL;DR.** Cursor's docs at `cursor.com/docs/plugins.md` → "Test plugins locally" tell you `ln -s /path/to/my-plugin ~/.cursor/plugins/local/my-plugin` is a supported "faster iteration" install method. **It does not work.** The plugin loader skips symlinks silently.
+
+**Canonical install (until Marketplace):** follow [`WORKSPACE-PLUGIN-LOADING.md` §0](./WORKSPACE-PLUGIN-LOADING.md#0-canonical-install-procedure-until-marketplace-publication) — `workspaceOpen` hook, source repo paths, empty `~/.cursor/plugins/local/`, manual **Developer: Reload Window**. **Legacy rollback only:** `cursor-plugins/scripts/install-local.sh.legacy`.
 
 ### Reproduction
 
