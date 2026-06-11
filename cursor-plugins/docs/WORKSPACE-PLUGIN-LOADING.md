@@ -129,7 +129,7 @@ UMB_BASE="/path/to/umbraculum-toolset/cursor-plugins"
 # Adjust to your actual repo locations.
 UMBRACULUM_PLATFORM_REPO="/path/to/umbraculum-dev"
 OPENPLC_PROJECT_REPO="/path/to/openplc-brewery-project"
-MAGENTO_PLUGIN="/path/to/magento-workspace/cursor-rules/cursor-plugins/rf-magento-cursor-assistant"
+MAGENTO_PLUGIN="/path/to/rf-magento-cursor-assistant"
 MAGENTO_WORKSPACE_PREFIX="/path/to/magento-workspace/"
 
 input="$(cat)"
