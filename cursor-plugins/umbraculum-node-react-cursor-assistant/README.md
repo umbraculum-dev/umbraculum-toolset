@@ -70,6 +70,7 @@ Install via the `workspaceOpen` hook + source paths (see toolset [cursor-plugins
 
 ## Version history
 
+- **0.0.8** (2026-06-11) — Lockfile policy: composer install/update discipline (`npm run lock:install` / `lock:update:*` / `lock:revert`); always commit tracked `package-lock.json` when changed; web `npm ci` on compose boot; `check-web-lockfile-sync` in `check:lockfiles`.
 - **0.0.7** (2026-06-11) — Monorepo lockfile agent gate: rule `80-monorepo-lockfile-agent-gate.mdc` + skill `monorepo-lockfile-gate` (agent-owned root lockfile regen in `node:20-slim`, forbidden `services/api/package-lock.json`, `npm run check:lockfiles`). umbraculum-dev commits repo-side `.cursor/rules/` copy + `verify-slice` T2 always runs lockfile checks in validate.
 - **0.0.6** (2026-06-10) — Tamagui duplicate-instance gate: rule `79-tamagui-cli-monorepo-gate.mdc` + skill `tamagui-cli-check` (`npx @tamagui/cli check` via consuming-repo `scripts/check-tamagui-cli.sh`). umbraculum-dev commits a repo-side `.cursor/rules/` copy because plugin `alwaysApply` enforcement is unreliable.
 - **0.0.3** (2026-05-27) — Static brochure guardrail: rule `73-website-static-build-before-preview.mdc` (glob-scoped to `apps/website/public/**`); rebuild `dist/` before preview/verification after `public/` edits.
