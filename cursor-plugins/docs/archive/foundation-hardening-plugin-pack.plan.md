@@ -27,7 +27,7 @@ The umbraculum-dev project (`/path/to/umbraculum-dev/`) closed its four-slice fo
 
 This plan turns the §8 manifest into actionable tasks scoped to the `rf-node-react-cursor-assistant` plugin source.
 
-**Plan-drafting side-finding**: §8.4's "tighten `90-testing.mdc` `globs:` to PHPUnit paths only" task is a no-op — verified during plan drafting. `90-testing.mdc` lives in `rf-magento-cursor-assistant/rules/` (NOT in the TS/JS plugin), and its globs are already PHP-only (`app/code/*/*/Test/**/*.php` etc.). It does not apply to TS/JS work and never did. Task removed from this plan; the `FOUNDATION-HARDENING.md` §8.4 entry can be retired in the next update of that doc (low-priority housekeeping; not in scope of this plan).
+**Plan-drafting side-finding**: §8.4's "tighten `90-testing.mdc` `globs:` to PHPUnit paths only" task is a no-op — verified during plan drafting. `90-testing.mdc` lives in a PHP/Magento domain plugin's rules (NOT in the TS/JS plugin), and its globs are already PHP-only (`app/code/*/*/Test/**/*.php` etc.). It does not apply to TS/JS work and never did. Task removed from this plan; the `FOUNDATION-HARDENING.md` §8.4 entry can be retired in the next update of that doc (low-priority housekeeping; not in scope of this plan).
 
 ---
 
@@ -623,7 +623,7 @@ If a schema-library migration is proposed, treat it as an architecture decision:
 
 The §8.4 entry in `FOUNDATION-HARDENING.md` proposes "Tighten `90-testing.mdc` `globs:` to PHPUnit paths only so it does not apply to TS/JS work". Verification during plan drafting confirms:
 
-- `90-testing.mdc` lives in `rf-magento-cursor-assistant/rules/`, NOT in `rf-node-react-cursor-assistant/rules/`. So it does not appear in this plan's target plugin at all.
+- `90-testing.mdc` lives in a PHP/Magento domain plugin's rules, NOT in `rf-node-react-cursor-assistant/rules/`. So it does not appear in this plan's target plugin at all.
 - Its `globs:` in the Magento plugin source already restrict it to `app/code/*/*/Test/**/*.php`, `dev/tests/**/*.php`, `vendor/**/Test/**/*.php`, and `**/*Test.php`. No TS/JS file matches any of these globs.
 
 Conclusion: the proposed refinement is a no-op against the current plugin source. Skip the task. Optional housekeeping (not in this plan): retire the §8.4 task entry from `FOUNDATION-HARDENING.md` v1.0 in a future minor revision (not blocking).
@@ -708,7 +708,7 @@ REFINEMENTS:
   (the structured 6-criteria check).
 
 NO-OP (verified during plan drafting):
-- 90-testing.mdc — already PHP-globbed in rf-magento-cursor-assistant,
+- 90-testing.mdc — already PHP-globbed in the PHP/Magento domain plugin,
   does not apply to TS/JS work; FOUNDATION-HARDENING.md §8.4 task is
   retired (housekeeping, future minor doc revision).
 ```

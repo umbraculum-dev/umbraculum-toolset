@@ -84,7 +84,7 @@ Skills shipped in the `umbraculum-toolset` marketplace:
 - **TS/JS (Node, Fastify, Next.js, etc.)**: `umbraculum-node-react-cursor-assistant/skills/public-endpoint-verification/SKILL.md`
 - **Pi sidecar (FastAPI / OpenPLC)**: `umbraculum-openplc-python-cursor-assistant/skills/public-endpoint-verification/SKILL.md`
 
-Domain plugins outside this marketplace follow the same pattern at `<plugin>/skills/public-endpoint-verification/SKILL.md` (canonical out-of-marketplace example: `rf-magento-cursor-assistant`).
+Domain plugins outside this marketplace follow the same pattern at `<plugin>/skills/public-endpoint-verification/SKILL.md` in that plugin's source repo.
 
 If the active plugin set does not include a matching runbook, fall back to a bounded curl-from-container smoke; ask the developer to confirm `<CONTAINER>` and `<URL>` before executing.
 

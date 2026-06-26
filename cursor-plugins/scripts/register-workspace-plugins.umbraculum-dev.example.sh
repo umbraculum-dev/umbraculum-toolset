@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
-# EXAMPLE — multi-workspace maintainer layout: copy to ~/.cursor/hooks/register-workspace-plugins.sh
-# and chmod +x. umbraculum-dev-only contributors should prefer
-# register-workspace-plugins.umbraculum-dev.example.sh instead.
-# Canonical install doc: cursor-plugins/docs/WORKSPACE-PLUGIN-LOADING.md §0
+# EXAMPLE — umbraculum-dev contributors: copy to ~/.cursor/hooks/register-workspace-plugins.sh
+# and chmod +x. Canonical install doc: cursor-plugins/docs/WORKSPACE-PLUGIN-LOADING.md §0
 #
-# workspaceOpen hook — register Cursor plugins from source paths per workspace.
+# workspaceOpen hook — register the three umbraculum-dev apparatus plugins from source.
 # Reads workspace_roots (JSON) from stdin; returns pluginPaths (JSON) on stdout.
 set -euo pipefail
 
 UMB_BASE="/path/to/umbraculum-toolset/cursor-plugins"
 UMBRACULUM_PLATFORM_REPO="/path/to/umbraculum-dev"
-OPENPLC_PROJECT_REPO="/path/to/openplc-brewery-project"
 
 input="$(cat)"
 roots="$(printf '%s' "$input" | jq -r '.workspace_roots[]?')"
@@ -29,10 +26,6 @@ while IFS= read -r root; do
       add "$UMB_BASE/umbraculum-toolset-common"
       add "$UMB_BASE/umbraculum-node-react-cursor-assistant"
       add "$UMB_BASE/umbraculum-platform-tsjs-cursor-assistant"
-      ;;
-    "$OPENPLC_PROJECT_REPO"*)
-      add "$UMB_BASE/umbraculum-toolset-common"
-      add "$UMB_BASE/umbraculum-openplc-python-cursor-assistant"
       ;;
     *)
       add "$UMB_BASE/umbraculum-toolset-common"

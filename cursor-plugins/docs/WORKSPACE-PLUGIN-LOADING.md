@@ -5,10 +5,20 @@
 | **Status** | **Canonical install guide** (pre-marketplace) + reference for marketplace coexistence |
 | **Owner** | umbraculum-toolset maintainers |
 | **Audience** | every developer installing umbraculum-toolset Cursor plugins **before** they are published on the Cursor Marketplace |
-| **Last meaningful update** | 2026-06-11 (verified on three workspaces; Magento plugin repo at `/path/to/cursor-plugins/`) |
-| **Rollout status** | **Active** — `workspaceOpen` hook + source paths; `~/.cursor/plugins/local/` empty for umbraculum and rf-magento plugins |
+| **Last meaningful update** | 2026-06-26 |
+| **Rollout status** | **Active** — `workspaceOpen` hook + source paths; `~/.cursor/plugins/local/` empty for umbraculum plugins |
 
-> **Start here.** Until umbraculum-toolset plugins (and `rf-magento-cursor-assistant`) are available on the Cursor Marketplace, **this document is the goto installation procedure**. Do **not** rsync plugins into `~/.cursor/plugins/local/` for day-to-day use — that loads every plugin into every workspace. Use the `workspaceOpen` hook below instead.
+> **Start here.** Until umbraculum-toolset plugins are available on the Cursor Marketplace, **this document is the goto installation procedure**. Do **not** rsync plugins into `~/.cursor/plugins/local/` for day-to-day use — that loads every plugin into every workspace. Use the `workspaceOpen` hook below instead.
+
+> [!CAUTION]
+> **Why this matters — context budget.** Each plugin ships many `alwaysApply: true`
+> rules plus skills and subagents. If you load the **wrong** plugins for a workspace,
+> or load **all** plugins globally, Cursor injects unrelated guidance into every
+> prompt. Agents then **lose precision** on the rules that matter, apply the wrong
+> stack family, and maintainers report "the agent ignored the rule" when the real
+> issue is **plugin overload**. Match the [pairing matrix](#what-you-get) exactly —
+> three plugins for umbraculum-dev, two for OpenPLC, not every toolset plugin
+> everywhere.
 
 This document complements [`PLUGIN-ROADMAP.md`](./PLUGIN-ROADMAP.md). Later sections also answer:
 
@@ -29,19 +39,17 @@ Each workspace loads **only** the plugins that apply to that project. Marketplac
 |---|---|---|
 | `/path/to/umbraculum-dev` | `umbraculum-toolset-common` + `umbraculum-node-react-cursor-assistant` + `umbraculum-platform-tsjs-cursor-assistant` | e.g. Prisma |
 | `/path/to/openplc-brewery-project` | `umbraculum-toolset-common` + `umbraculum-openplc-python-cursor-assistant` | e.g. Prisma |
-| Magento under `/path/to/magento-workspace/` (e.g. `example-magento-workspace`) | `umbraculum-toolset-common` + `rf-magento-cursor-assistant` | e.g. Elastic |
 | **Everything else** | `umbraculum-toolset-common` **only** | per your Marketplace choices |
 
-**Must NOT appear** in Magento workspaces: `umbraculum-node-react-cursor-assistant`, `umbraculum-platform-tsjs-cursor-assistant`, `umbraculum-openplc-python-cursor-assistant`. **Must NOT appear** in umbraculum-dev: `rf-magento-cursor-assistant` or openplc-python.
+**Must NOT appear** in umbraculum-dev: extra toolset plugins beyond the three rows above (e.g. `umbraculum-openplc-python-cursor-assistant`).
 
-Every hook-loaded workspace includes **`umbraculum-toolset-common`** (DEVELOPMENT-LOCAL gate, Skill Contract, commit-message ticket prefix, `generate-development-local` skill). `rf-magento-cursor-assistant` v0.2.0+ **requires** it as companion.
+Every hook-loaded workspace includes **`umbraculum-toolset-common`** (DEVELOPMENT-LOCAL gate, Skill Contract, commit-message ticket prefix, `generate-development-local` skill).
 
 ### Source repositories (clone once)
 
 | Purpose | Path on disk |
 |---|---|
-| Umbraculum plugins (four folders) | `/path/to/umbraculum-toolset/cursor-plugins/` |
-| Magento plugin | `/path/to/rf-magento-cursor-assistant/` |
+| Umbraculum plugins (four folders in this repo) | `/path/to/umbraculum-toolset/cursor-plugins/` |
 
 Clone / pull these repos normally. The hook reads **source folders** — no copy step after `git pull`.
 
@@ -49,7 +57,7 @@ Clone / pull these repos normally. The hook reads **source folders** — no copy
 
 - **Cursor** with Hooks support (Settings → Hooks tab visible).
 - **`jq`** on PATH (hook script parses JSON stdin).
-- **Empty** `~/.cursor/plugins/local/` for umbraculum and rf-magento plugins (see step 3).
+- **Empty** `~/.cursor/plugins/local/` for umbraculum plugins (see step 3).
 
 ### First-time setup (one per machine)
 
@@ -66,25 +74,24 @@ Clone / pull these repos normally. The hook reads **source folders** — no copy
 }
 ```
 
-**2. Create the discriminator script** — copy `cursor-plugins/scripts/register-workspace-plugins.example.sh` from this repo to `~/.cursor/hooks/register-workspace-plugins.sh` (or use the [§3 skeleton](#skeleton-homecursorhooksregister-workspace-pluginssh) inline), then:
+**2. Create the discriminator script** — for **umbraculum-dev contributors**, copy `cursor-plugins/scripts/register-workspace-plugins.umbraculum-dev.example.sh`. For **multi-workspace maintainers** (umbraculum-dev + OpenPLC sister repo), copy `cursor-plugins/scripts/register-workspace-plugins.example.sh`. Install to `~/.cursor/hooks/register-workspace-plugins.sh` (or use the [§3 skeleton](#skeleton-homecursorhooksregister-workspace-pluginssh) inline), then:
 
 ```bash
 chmod +x ~/.cursor/hooks/register-workspace-plugins.sh
 ```
 
-Adjust path constants in the script if your clones live elsewhere (`UMB_BASE`, `UMBRACULUM_PLATFORM_REPO`, `OPENPLC_PROJECT_REPO`, `MAGENTO_PLUGIN`, `MAGENTO_WORKSPACE_PREFIX`). The example script ships with one maintainer's layout; **every developer must edit these constants** to match their machine before expecting the pairing matrix to work.
+Adjust path constants in the script if your clones live elsewhere (`UMB_BASE`, `UMBRACULUM_PLATFORM_REPO`, `OPENPLC_PROJECT_REPO`). The example scripts ship with one maintainer's layout; **every developer must edit these constants** to match their machine before expecting the pairing matrix to work.
 
 **3. Remove global copies** (if you previously used `install-local.sh` or rsync):
 
 ```bash
-rm -rf ~/.cursor/plugins/local/rf-magento-cursor-assistant
 rm -rf ~/.cursor/plugins/local/umbraculum-toolset-common
 rm -rf ~/.cursor/plugins/local/umbraculum-node-react-cursor-assistant
 rm -rf ~/.cursor/plugins/local/umbraculum-platform-tsjs-cursor-assistant
 rm -rf ~/.cursor/plugins/local/umbraculum-openplc-python-cursor-assistant
 ```
 
-`~/.cursor/plugins/local/` should contain **no** umbraculum or rf-magento plugin folders. Anything left there loads **globally** in every workspace, regardless of the hook.
+`~/.cursor/plugins/local/` should contain **no** umbraculum plugin folders. Anything left there loads **globally** in every workspace, regardless of the hook.
 
 **4. Reload Cursor manually (required).** The agent cannot do this for you.
 
@@ -103,20 +110,19 @@ After `git pull` in umbraculum-toolset or `cursor-plugins`:
 ### Smoke-test the hook without Cursor
 
 ```bash
-echo '{"workspace_roots":["/path/to/example-magento-workspace"]}' \
+echo '{"workspace_roots":["/path/to/umbraculum-dev"]}' \
   | ~/.cursor/hooks/register-workspace-plugins.sh
 ```
 
-Expect `pluginPaths` with `umbraculum-toolset-common` and `rf-magento-cursor-assistant` only.
+Expect `pluginPaths` with `umbraculum-toolset-common`, `umbraculum-node-react-cursor-assistant`, and `umbraculum-platform-tsjs-cursor-assistant` only.
 
 ### Legacy rollback (avoid unless abandoning hook)
 
 ```bash
 # 1. Comment out workspaceOpen in ~/.cursor/hooks.json
-# 2. Global rsync (loads all four umbraculum plugins everywhere):
+# 2. Global rsync (loads all umbraculum plugins everywhere):
 bash /path/to/umbraculum-toolset/cursor-plugins/scripts/install-local.sh.legacy
-# 3. Magento rsync — see rf-magento-cursor-assistant/README.md
-# 4. Developer: Reload Window
+# 3. Developer: Reload Window
 ```
 
 ---
@@ -235,8 +241,6 @@ UMB_BASE="/path/to/umbraculum-toolset/cursor-plugins"
 # Adjust to your actual repo locations.
 UMBRACULUM_PLATFORM_REPO="/path/to/umbraculum-dev"
 OPENPLC_PROJECT_REPO="/path/to/openplc-brewery-project"
-MAGENTO_PLUGIN="/path/to/rf-magento-cursor-assistant"
-MAGENTO_WORKSPACE_PREFIX="/path/to/magento-workspace/"
 
 input="$(cat)"
 roots="$(printf '%s' "$input" | jq -r '.workspace_roots[]?')"
@@ -258,11 +262,6 @@ while IFS= read -r root; do
     "$OPENPLC_PROJECT_REPO"*)
       add "$UMB_BASE/umbraculum-toolset-common"
       add "$UMB_BASE/umbraculum-openplc-python-cursor-assistant"
-      ;;
-    "$MAGENTO_WORKSPACE_PREFIX"*)
-      # Magento pairing: common + rf-magento (v0.2.0+); NOT node-react/platform/openplc.
-      add "$UMB_BASE/umbraculum-toolset-common"
-      add "$MAGENTO_PLUGIN"
       ;;
     *)
       # Default: meta-framework baseline on every other workspace.
@@ -295,6 +294,13 @@ The `workspaceOpen` hook returns **absolute paths to real directories**, not sym
 
 ## 4. Post-publication: marketplace install + `workspaceOpen` hook coexistence
 
+> [!CAUTION]
+> **Marketplace listings ≠ install every listing everywhere.** Each plugin
+> targets a different workspace type (umbraculum-platform, generic TS/JS,
+> OpenPLC). Enable **only the pairing row for the workspace you have open** —
+> otherwise you recreate global context noise and wrong guardrails.
+> See [§0 pairing matrix](#what-you-get).
+
 When any of the umbraculum-toolset plugins is eventually published to the Cursor Marketplace (see [`PLUGIN-ROADMAP.md` §3.F](./PLUGIN-ROADMAP.md#f-concrete-blockers-to-close-before-any-marketplace-submission) for the prerequisite blockers), a developer's machine may have **two independent sources** for the same plugin:
 
 | Source | Where the plugin loads from | How it is controlled |
@@ -317,7 +323,9 @@ If the marketplace version of plugin X is installed for workspace W **and** the 
 For each umbraculum-toolset plugin as it becomes available on the marketplace:
 
 1. Install it via **Cursor Marketplace** (the marketplace panel inside Cursor).
-2. Scope it per workspace using the Plugins panel: "Add for Myself" for user-scope inclusion across all workspaces, or per-workspace install for selective enablement. Per [`PLUGIN-ROADMAP.md`](./PLUGIN-ROADMAP.md) §2.1 the effective enablement per workspace is the union of the user-scope and workspace-scope `state.vscdb` rows.
+2. Enable it **for the target workspace only** — use the workspace filter chip in
+   **Settings → Plugins**. Avoid "Add for Myself" / all-workspaces enablement
+   unless you deliberately want that plugin in every project (usually you do not).
 3. Remove the corresponding `add "$UMB_BASE/<plugin-name>"` line from `~/.cursor/hooks/register-workspace-plugins.sh`.
 4. Restart Cursor (or **Developer: Reload Window**) and verify in Settings → Plugins that the plugin appears once, sourced from the marketplace cache path.
 
@@ -345,9 +353,9 @@ After any change to `~/.cursor/plugins/local/`, `~/.cursor/hooks.json`, or `regi
 
 1. **Reload Cursor manually** — **Ctrl+Shift+P → Developer: Reload Window**, or quit and reopen the workspace. This step cannot be automated; skipping it is the most common reason plugins look "missing" after setup.
 2. **Settings → Plugins** — use the workspace filter chip (workspace folder name). Confirm only the plugins from [§0 pairing matrix](#0-canonical-install-procedure-until-marketplace-publication) appear under **Installed**. Hook-loaded plugins show as **Extension** with subagent/skill/rule counts.
-3. **Settings → Hooks** — confirm `workspaceOpen` is registered and the last run's `pluginPaths` match the workspace (two paths for Magento, three for umbraculum-dev, two for OpenPLC brewery, one for generic repos).
+3. **Settings → Hooks** — confirm `workspaceOpen` is registered and the last run's `pluginPaths` match the workspace (three paths for umbraculum-dev, two for OpenPLC brewery, one for generic repos).
 4. **Plugin loader log** — `~/.config/Cursor/logs/<session>/window<N>/exthost/anysphere.cursor-agent-exec/Cursor Plugins.log` — each expected plugin name once; `loadUserLocalPlugins completed … (0 plugins loaded)` is **correct** when `local/` is empty (hook paths are separate from `local/` scan).
-5. **Agent smoke** — new chat in target workspace: Magento → `00-core.mdc` / no `verify:pre-push`; umbraculum-dev → witness / ci-parity rules, no Magento `final`-class quote.
+5. **Agent smoke** — new chat in umbraculum-dev: witness / ci-parity rules present; no unrelated domain-plugin guardrails.
 
 ---
 

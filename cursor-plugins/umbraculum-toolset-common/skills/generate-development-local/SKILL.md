@@ -9,7 +9,7 @@ Use this when the user explicitly asks for local context setup (e.g. "create my 
 
 The result is a per-developer file the developer may keep gitignored, prefilled with everything derivable from project-versioned sources, and explicitly flagged for the few values that must come from the developer.
 
-This skill is **ecosystem-agnostic**: the canonical shape of `DEVELOPMENT-LOCAL.md` comes from the consuming domain plugin's `docs/templates/DEVELOPMENT-LOCAL*.md` template (a JS/TS template, a Python+OpenPLC template, a Magento template, etc.). The consuming plugin's `00-development-local-addendum-gate.mdc` (if it ships ecosystem-specific addenda on top of the common one) and its template are the source of truth for which placeholders matter most.
+This skill is **ecosystem-agnostic**: the canonical shape of `DEVELOPMENT-LOCAL.md` comes from the consuming domain plugin's `docs/templates/DEVELOPMENT-LOCAL*.md` template (a JS/TS template, a Python+OpenPLC template, etc.). The consuming plugin's `00-development-local-addendum-gate.mdc` (if it ships ecosystem-specific addenda on top of the common one) and its template are the source of truth for which placeholders matter most.
 
 ## Inputs required (do not assume)
 

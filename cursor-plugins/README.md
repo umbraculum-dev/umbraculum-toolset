@@ -13,6 +13,16 @@ Multi-plugin discovery is defined in `.cursor-plugin/marketplace.json`.
 
 See `docs/PLUGIN-ROADMAP.md` for: (a) the rationale for the common plugin and what was deliberately NOT moved into it (Strategy C — only the trivially-neutralizable artifacts moved), and (b) the private-vs-marketplace (Cursor) plugin transition notes if any of these ever needs to be published publicly.
 
+> [!CAUTION]
+> **Install only the plugins each workspace needs — never the whole toolset globally.**
+> These plugins are **split by project type** on purpose. Loading all of them
+> (legacy `install-local.sh.legacy`, rsync into `~/.cursor/plugins/local/`, or
+> enabling every marketplace listing in every workspace) **degrades agent sessions**:
+> context noise from stacked `alwaysApply` rules, wrong guardrails, and missed
+> CI discipline. Use the [`workspaceOpen` hook`](https://cursor.com/docs/hooks#workspaceopen)
+> + [`WORKSPACE-PLUGIN-LOADING.md`](docs/WORKSPACE-PLUGIN-LOADING.md) so each
+> open folder gets **only** its pairing row below.
+
 ## Install
 
 ### Goto procedure (until Marketplace publication)
@@ -21,7 +31,7 @@ See `docs/PLUGIN-ROADMAP.md` for: (a) the rationale for the common plugin and wh
 
 Official Cursor reference: [`workspaceOpen` hook](https://cursor.com/docs/hooks#workspaceopen) — per-workspace `pluginPaths` on workspace open.
 
-Do **not** use `install-local.sh.legacy` for normal installs — it globalizes all four umbraculum plugins. Use the hook so each workspace gets only the plugins it needs (verified: umbraculum-dev vs OpenPLC brewery vs Magento example workspace show different Installed lists).
+Do **not** use `install-local.sh.legacy` for normal installs — it globalizes all umbraculum plugins. Use the hook so each workspace gets only the plugins it needs (verified: umbraculum-dev vs OpenPLC brewery show different Installed lists).
 
 After `git pull` here: **Developer: Reload Window** in affected workspaces (manual; no rsync).
 
@@ -31,10 +41,11 @@ After `git pull` here: **Developer: Reload Window** in affected workspaces (manu
 |---|---|
 | `/path/to/umbraculum-dev` | `umbraculum-toolset-common` + `umbraculum-node-react-cursor-assistant` + `umbraculum-platform-tsjs-cursor-assistant` |
 | OpenPLC brewery repo | `umbraculum-toolset-common` + `umbraculum-openplc-python-cursor-assistant` |
-| Magento under `/path/to/magento-workspace/` | `umbraculum-toolset-common` + `rf-magento-cursor-assistant` (from cursor-plugins source) |
 | Everything else | `umbraculum-toolset-common` only |
 
-Keep `~/.cursor/plugins/local/` **empty** for umbraculum and rf-magento plugins — anything there loads in every workspace regardless of the hook.
+Keep `~/.cursor/plugins/local/` **empty** for umbraculum plugins — anything there loads in every workspace regardless of the hook.
+
+**umbraculum-dev contributors:** prefer `scripts/register-workspace-plugins.umbraculum-dev.example.sh` (three plugins only).
 
 ### Legacy: global rsync into `~/.cursor/plugins/local/`
 
@@ -74,7 +85,6 @@ Cursor does **not** currently expose a `cursor` or `cursor-agent` subcommand for
 | Generic TS/JS / React | `umbraculum-toolset-common` + `umbraculum-node-react-cursor-assistant` |
 | Umbraculum-platform (umbraculum-dev) | `umbraculum-toolset-common` + `umbraculum-node-react-cursor-assistant` + `umbraculum-platform-tsjs-cursor-assistant` |
 | OpenPLC + Python sister-repo (openplc/brewery) | `umbraculum-toolset-common` + `umbraculum-openplc-python-cursor-assistant` |
-| Magento (`/path/to/magento-workspace/…`) | `umbraculum-toolset-common` + `rf-magento-cursor-assistant` (hook registers both from source; Magento plugin lives outside this repo) |
 
 ### Recommended third-party plugins (not shipped here)
 
