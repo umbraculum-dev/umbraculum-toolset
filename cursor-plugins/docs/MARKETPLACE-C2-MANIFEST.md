@@ -53,6 +53,8 @@ Omitting OpenPLC from the manifest does **not** uninstall or block hook loading.
 
 ## Submit checklist (maintainer)
 
+**Publisher account (SoT):** sign in at Cursor with **GitHub OAuth** — GitHub org context [`umbraculum-dev`](https://github.com/umbraculum-dev), login email **`umbraculum-dev@proton.me`**. Algolia DocSearch uses the **same** identity. Canonical matrix: [umbraculum-dev `maintainer-external-service-accounts.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/design/maintainer-external-service-accounts.md). Public listing contact remains **`toolset@umbraculum.dev`**.
+
 1. Read [Cursor Publisher Terms](https://cursor.com/marketplace-publisher-terms).
 2. Run [Verification](#verification-local-pre-commit) below — all OK.
 3. Open [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish) (signed into Cursor account).
