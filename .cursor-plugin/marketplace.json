@@ -2,7 +2,7 @@
   "name": "umbraculum-toolset-cursor-plugins",
   "owner": {
     "name": "umbraculum-toolset",
-    "email": "security@umbraculum.dev"
+    "email": "toolset@umbraculum.dev"
   },
   "metadata": {
     "description": "Three Cursor marketplace plugins for the umbraculum-dev apparatus: common meta-framework rules, generic Node/TypeScript/React assistant, and umbraculum-platform TS/JS foundation-hardening assistant. Install all three together for umbraculum-dev. OpenPLC plugin remains hook-only in this repo until its sister repo is public (not listed here).",

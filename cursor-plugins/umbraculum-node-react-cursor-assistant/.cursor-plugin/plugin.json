@@ -6,6 +6,7 @@
   "author": {
     "name": "umbraculum-toolset"
   },
+  "logo": "assets/umbi.svg",
   "license": "MIT",
   "homepage": "https://github.com/umbraculum-dev/umbraculum-toolset",
   "repository": "https://github.com/umbraculum-dev/umbraculum-toolset",

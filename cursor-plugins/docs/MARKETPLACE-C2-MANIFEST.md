@@ -90,6 +90,7 @@ jq -r '.metadata.pluginRoot' .cursor-plugin/marketplace.json
 # Listed plugin manifests exist
 for p in umbraculum-toolset-common umbraculum-node-react-cursor-assistant umbraculum-platform-tsjs-cursor-assistant; do
   test -f "cursor-plugins/$p/.cursor-plugin/plugin.json" && test -f "cursor-plugins/$p/LICENSE" && echo "OK $p"
+  test -f "cursor-plugins/$p/assets/umbi.svg" && jq -e '.logo == "assets/umbi.svg"' "cursor-plugins/$p/.cursor-plugin/plugin.json" >/dev/null && echo "OK $p logo"
 done
 
 # Hook-only OpenPLC still on disk
@@ -158,6 +159,7 @@ When the three marketplace listings go live:
 
 | Date | Change |
 |---|---|
+| 2026-06-27 | Marketplace logos: `docs/media/umbi.{png,svg}`; each listed plugin `assets/umbi.svg` + `"logo": "assets/umbi.svg"` in `plugin.json` |
 | 2026-06-27 | C2 prep: repo-root `.cursor-plugin/marketplace.json` with `pluginRoot: cursor-plugins`; three plugins only; nested manifest removed; per-plugin LICENSE + enriched `plugin.json` on listed three |
 
 ## Related docs
