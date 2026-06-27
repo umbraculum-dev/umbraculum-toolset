@@ -1,10 +1,14 @@
 {
   "name": "umbraculum-toolset-common",
+  "displayName": "Umbraculum Toolset Common",
   "version": "0.0.2",
-  "description": "Common meta-framework rules + skills shared by the umbraculum-toolset Cursor plugins. Install alongside any of umbraculum-node-react-cursor-assistant / umbraculum-platform-tsjs-cursor-assistant / umbraculum-openplc-python-cursor-assistant.",
+  "description": "Common meta-framework rules + skills shared by the umbraculum-toolset Cursor plugins. Install alongside umbraculum-node-react-cursor-assistant and umbraculum-platform-tsjs-cursor-assistant for umbraculum-dev (all three required). Not stand-alone.",
   "author": {
     "name": "umbraculum-toolset"
   },
+  "license": "MIT",
+  "homepage": "https://github.com/umbraculum-dev/umbraculum-toolset",
+  "repository": "https://github.com/umbraculum-dev/umbraculum-toolset",
   "keywords": [
     "umbraculum",
     "cursor",
@@ -13,5 +17,7 @@
     "common",
     "rules",
     "skills"
-  ]
+  ],
+  "rules": "./rules",
+  "skills": "./skills"
 }

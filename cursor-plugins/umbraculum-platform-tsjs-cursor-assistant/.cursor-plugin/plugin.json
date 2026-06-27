@@ -1,10 +1,14 @@
 {
   "name": "umbraculum-platform-tsjs-cursor-assistant",
+  "displayName": "Umbraculum Platform Tsjs Cursor Assistant",
   "version": "0.0.1",
   "description": "Umbraculum-platform-specific Cursor assistant for the TS/JS half of the platform: encodes the four-slice foundation-hardening discipline (lint + types + tests + docs) and multi-tenant workspace-scoped architectural patterns. Pair with umbraculum-node-react-cursor-assistant for full ecosystem coverage, and with umbraculum-toolset-common for the language-agnostic meta-framework rules.",
   "author": {
     "name": "umbraculum-toolset"
   },
+  "license": "MIT",
+  "homepage": "https://github.com/umbraculum-dev/umbraculum-toolset",
+  "repository": "https://github.com/umbraculum-dev/umbraculum-toolset",
   "keywords": [
     "umbraculum",
     "typescript",

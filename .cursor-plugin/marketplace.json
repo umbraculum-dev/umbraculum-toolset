@@ -1,0 +1,28 @@
+{
+  "name": "umbraculum-toolset-cursor-plugins",
+  "owner": {
+    "name": "umbraculum-toolset",
+    "email": "security@umbraculum.dev"
+  },
+  "metadata": {
+    "description": "Three Cursor marketplace plugins for the umbraculum-dev apparatus: common meta-framework rules, generic Node/TypeScript/React assistant, and umbraculum-platform TS/JS foundation-hardening assistant. Install all three together for umbraculum-dev. OpenPLC plugin remains hook-only in this repo until its sister repo is public (not listed here).",
+    "pluginRoot": "cursor-plugins"
+  },
+  "plugins": [
+    {
+      "name": "umbraculum-toolset-common",
+      "source": "umbraculum-toolset-common",
+      "description": "Common meta-framework rules + skills shared by the umbraculum-toolset Cursor plugins. Install alongside umbraculum-node-react-cursor-assistant and/or umbraculum-platform-tsjs-cursor-assistant for umbraculum-dev (all three required)."
+    },
+    {
+      "name": "umbraculum-node-react-cursor-assistant",
+      "source": "umbraculum-node-react-cursor-assistant",
+      "description": "Generic Node/TypeScript/React/E2E Cursor assistant with rules, skills, and agents. Suitable for any TS/JS project (the umbraculum- brand prefix is for marketplace name-uniqueness, not because the plugin is umbraculum-specific). Install alongside umbraculum-toolset-common."
+    },
+    {
+      "name": "umbraculum-platform-tsjs-cursor-assistant",
+      "source": "umbraculum-platform-tsjs-cursor-assistant",
+      "description": "Umbraculum-platform-specific Cursor assistant for the TS/JS half of the platform: encodes the four-slice foundation-hardening discipline (lint + types + tests + docs) and the multi-tenant workspace-scoped architectural patterns used in umbraculum-dev. Install alongside umbraculum-toolset-common and umbraculum-node-react-cursor-assistant."
+    }
+  ]
+}

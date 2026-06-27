@@ -5,7 +5,7 @@
 | **Status** | **Canonical install guide** (pre-marketplace) + reference for marketplace coexistence |
 | **Owner** | umbraculum-toolset maintainers |
 | **Audience** | every developer installing umbraculum-toolset Cursor plugins **before** they are published on the Cursor Marketplace |
-| **Last meaningful update** | 2026-06-26 |
+| **Last meaningful update** | 2026-06-27 |
 | **Rollout status** | **Active** — `workspaceOpen` hook + source paths; `~/.cursor/plugins/local/` empty for umbraculum plugins |
 
 > **Start here.** Until umbraculum-toolset plugins are available on the Cursor Marketplace, **this document is the goto installation procedure**. Do **not** rsync plugins into `~/.cursor/plugins/local/` for day-to-day use — that loads every plugin into every workspace. Use the `workspaceOpen` hook below instead.
@@ -20,10 +20,12 @@
 > three plugins for umbraculum-dev, two for OpenPLC, not every toolset plugin
 > everywhere.
 
-This document complements [`PLUGIN-ROADMAP.md`](./PLUGIN-ROADMAP.md). Later sections also answer:
+This document complements [`PLUGIN-ROADMAP.md`](./PLUGIN-ROADMAP.md) and [`MARKETPLACE-C2-MANIFEST.md`](./MARKETPLACE-C2-MANIFEST.md). Later sections also answer:
 
 1. **What the plugin manifest can express** (§2) — short answer: not workspace gating.
 2. **How this setup interacts with Marketplace installs** (§4) — after publication.
+
+> **Marketplace manifest vs hook paths.** Cursor marketplace indexing reads [repo-root `.cursor-plugin/marketplace.json`](../../.cursor-plugin/marketplace.json) (`pluginRoot: cursor-plugins`, three listings for C2). The `workspaceOpen` hook loads plugins by **absolute path** under `cursor-plugins/` and never reads that file. OpenPLC stays on disk for hooks but is omitted from marketplace `plugins[]`. Details: [`MARKETPLACE-C2-MANIFEST.md`](./MARKETPLACE-C2-MANIFEST.md).
 
 ---
 

@@ -16,6 +16,8 @@ Future tooling (CLI helpers, schema generators, project scaffolds, etc.) will la
 ```
 umbraculum-toolset/
 ├── README.md                            (this file)
+├── .cursor-plugin/
+│   └── marketplace.json                 (Cursor marketplace SoT — three listings; pluginRoot → cursor-plugins/)
 ├── CONTRIBUTING.md                      (DCO sign-off + Cursor co-author trailer + commit/PR conventions; root-level only — does NOT ship with the marketplace plugins)
 ├── CODE_OF_CONDUCT.md                   (Contributor Covenant 2.1 — repo root only)
 ├── SECURITY.md                          (vulnerability reporting — repo root only)
@@ -27,9 +29,8 @@ umbraculum-toolset/
 ├── scripts/
 │   └── git-hooks/
 │       └── prepare-commit-msg           (canonical DCO + Cursor co-author hook; activate per-clone via `git config core.hooksPath scripts/git-hooks` — see CONTRIBUTING.md)
-└── cursor-plugins/                      (multi-plugin Cursor package — see its own README)
+└── cursor-plugins/                      (plugin pack root — four folders on disk; see its own README)
     ├── README.md
-    ├── .cursor-plugin/marketplace.json
     ├── docs/
     │   ├── WORKSPACE-PLUGIN-LOADING.md      (canonical install until Marketplace — workspaceOpen hook)
     │   ├── PLUGIN-ROADMAP.md
@@ -45,6 +46,7 @@ umbraculum-toolset/
 
 ## Quick links
 
+- **Cursor marketplace C2 manifest (submit + rollback)**: [`cursor-plugins/docs/MARKETPLACE-C2-MANIFEST.md`](./cursor-plugins/docs/MARKETPLACE-C2-MANIFEST.md)
 - **Cursor plugins — canonical install (pre-marketplace)**: [`cursor-plugins/docs/WORKSPACE-PLUGIN-LOADING.md`](./cursor-plugins/docs/WORKSPACE-PLUGIN-LOADING.md) — `workspaceOpen` hook + source paths; manual IDE reload required
 - **Cursor plugins overview + pairing rationale**: [`cursor-plugins/README.md`](./cursor-plugins/README.md)
 - **`@umbraculum/ci-parity`** (npm CLI sibling to plugins — CI parity runner): [`packages/ci-parity/README.md`](./packages/ci-parity/README.md); consumer docs in [umbraculum-dev `docs/CI-PARITY.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/CI-PARITY.md); publish runbook in [`docs/design/ci-parity-npm-publish.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/design/ci-parity-npm-publish.md)

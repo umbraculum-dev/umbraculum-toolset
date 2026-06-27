@@ -7,7 +7,9 @@ This directory packages four Cursor plugins in a multi-plugin repository:
 - **`umbraculum-platform-tsjs-cursor-assistant`** — umbraculum-platform-specific Cursor assistant. Encodes the four-slice foundation-hardening discipline (lint + types + tests + docs) closed in umbraculum-dev on 2026-05-18, plus the umbraculum-specific architectural patterns (multi-tenant workspace-scoped routes, `scripts/docs/check-readmes.py` structural-README checker, dockerized typecheck pattern, `@brewery/*` → `@umbraculum/*` package-scope rename discipline).
 - **`umbraculum-openplc-python-cursor-assistant`** — OpenPLC + Python + FastAPI + Modbus + hardware-doc Cursor assistant for the industrial-automation sister-repo (`/path/to/openplc-brewery-project/`). Encodes the IEC-61131-3 source-vs-build discipline, the `PI_*` Modbus mailbox contract, the FastAPI/Jinja/SQLite Pi-sidecar conventions, the bench-vs-field transport profile distinction, the hardware-doc filename-suffix + scope-tag taxonomy, and the EM-fields pamphlet ASCII-diagram authoring rules.
 
-Multi-plugin discovery is defined in `.cursor-plugin/marketplace.json`.
+**Four plugin folders** live under this directory; **three** are listed for Cursor marketplace C2 (umbraculum-dev apparatus). OpenPLC remains hook-only until its sister repo is public.
+
+Marketplace manifest (SoT): [repo-root `.cursor-plugin/marketplace.json`](../.cursor-plugin/marketplace.json) with `metadata.pluginRoot: cursor-plugins`. Submit and rollback: [`docs/MARKETPLACE-C2-MANIFEST.md`](docs/MARKETPLACE-C2-MANIFEST.md).
 
 **Sibling npm tooling (not a Cursor plugin):** [`packages/ci-parity`](../packages/ci-parity/) ships **`@umbraculum/ci-parity`** — manifest-driven local/CI **static-analysis** parity. Consumer repos pin `.umbraculum/ci-parity.json` and call `npx @umbraculum/ci-parity`; the node-react plugin's rule `72-ci-parity-local-vs-ci-divergence` and skill `ci-parity-local-reproduction` reference it. The GHA **`api`** vitest workflow is **out of ci-parity scope** — use skill **`api-integration-tests-pre-push`** and rule **`75-api-integration-pre-push-gate`**.
 

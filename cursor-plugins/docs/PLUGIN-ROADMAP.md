@@ -153,12 +153,13 @@ The skill `generate-development-local` moved by the same test: the neutralized c
 |---|---|---|
 | Inter-plugin dependency in `plugin.json` | NOT used. README-level "install alongside X" only. | Cursor loader source: no `dependsOn` / `requires` / `recommends` field is consumed. The published marketplace plugins (Elastic, Figma, Prisma) confirm — none declares one. See § 5 below. |
 | 4th plugin individually publishable | Yes — same `.cursor-plugin/plugin.json` shape as the existing three. | Structurally identical to elastic / figma / prisma plugins. |
-| `marketplace.json` carries the 4th entry | Yes. | `cursor-plugins/.cursor-plugin/marketplace.json` updated. |
+| Marketplace manifest location (C2) | Repo-root `.cursor-plugin/marketplace.json` with `metadata.pluginRoot: cursor-plugins`. | See [`MARKETPLACE-C2-MANIFEST.md`](./MARKETPLACE-C2-MANIFEST.md). Nested `cursor-plugins/.cursor-plugin/marketplace.json` removed 2026-06-27. |
+| Marketplace lists three plugins (C2) | common + node-react + platform-tsjs only. | OpenPLC omitted from `plugins[]`; hook-only on disk until sister repo public. |
 | Name uniqueness for marketplace | `umbraculum-toolset-common` is brand-prefixed; should be globally unique. | § 3.A below — name-availability check deferred to actual submission. |
 | Hardcoded paths / user-specific values | Common plugin's neutralized rules have NO hardcoded paths. Per-plugin copies that stayed retain their hardcoded examples; closed when each plugin is individually prepared for marketplace per § 3.F. | This section + § 3.B. |
 | "Install Y alongside X" UX in marketplace | Documented in each plugin's description + README. Same UX as today. | Pattern: Elastic plugin's description references Kibana/Cloud companions. |
 
-**Net: the public baseline is marketplace-portable. No future refactor required when we eventually publish.** Per-plugin LICENSE files and a name-availability check are still future work (tracked in § 3.F).
+**Net: the public baseline is marketplace-portable.** C2 manifest relocation and three-plugin listing landed 2026-06-27 ([`MARKETPLACE-C2-MANIFEST.md`](./MARKETPLACE-C2-MANIFEST.md)). Per-plugin LICENSE on the three listed plugins ✅; name-availability check still deferred to submission (§ 3.F).
 
 ### What's still open
 
@@ -223,15 +224,15 @@ Today all four plugins are **private**. If we ever want to publish any of them t
 
 ### F. Concrete blockers to close before any marketplace submission
 
-1. Pick the target plugin (likely `umbraculum-node-react-cursor-assistant` first).
-2. Audit for hardcoded paths and project-specific names — sweep all rules, skills, agents, READMEs.
-3. Add a `LICENSE` file (MIT or Apache-2.0 are the usual defaults for tooling plugins).
-4. Move the plugin's git history into a public GitHub repo (private plugins can live in any private repo; marketplace plugins typically want a public source).
-5. Verify the plugin name is marketplace-unique. All four public-baseline plugin names are brand-prefixed by construction, but verify at submission time.
-6. Run a clean smoke-test against 2-3 representative projects that aren't ours.
-7. Verify Cursor's current marketplace submission process — likely a form / PR / API call.
+**C2 prep (2026-06-27):** repo-root manifest + three-plugin listing — see [`MARKETPLACE-C2-MANIFEST.md`](./MARKETPLACE-C2-MANIFEST.md). Remaining before/ at submit:
 
-These are **not** in scope for the current refactor; they're future work to scope if we ever decide to submit.
+1. ~~Pick the target plugin~~ — **three plugins** for umbraculum-dev (common, node-react, platform-tsjs); OpenPLC deferred.
+2. Audit for hardcoded paths and project-specific names — sweep listed three (ongoing hygiene; not a folder move).
+3. ~~Add a `LICENSE` file~~ — **done** for the three listed plugins (MIT copy from repo root).
+4. ~~Public GitHub repo~~ — **done** (`github.com/umbraculum-dev/umbraculum-toolset`).
+5. Verify plugin names are marketplace-unique at submission time.
+6. Run a clean smoke-test against 2–3 representative projects that aren't ours (optional pre-submit).
+7. Submit at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish) with manifest path noted in application.
 
 ---
 
@@ -250,7 +251,8 @@ These are **not** in scope for the current refactor; they're future work to scop
 
 - [ ] **Dedicated org GitHub machine user (optional).** Use a separate SSH identity for org repo pushes so commit author (`umbraculum-dev@proton.me`) and GitHub push attribution stay aligned with the `umbraculum-dev` org — not a personal account. Estimated effort: 15–30 min once decided.
 - [ ] **Generalize `umbraculum-node-react-cursor-assistant` for marketplace publication** (see §3.F).
-- [ ] **Audit each plugin folder for a per-plugin LICENSE file** before any marketplace submission (the repo-root `LICENSE` covers the monorepo; per-plugin marketplace submissions may require a license file inside each plugin folder).
+- [x] **Per-plugin LICENSE on three C2 listings (2026-06-27).** MIT copied into common, node-react, platform-tsjs plugin folders. OpenPLC hook-only — optional symmetry later.
+- [x] **Repo-root marketplace manifest (2026-06-27).** [`MARKETPLACE-C2-MANIFEST.md`](./MARKETPLACE-C2-MANIFEST.md); nested manifest removed.
 - [ ] **Document the smoke-test procedure** for each plugin.
 - [x] **Public visibility hygiene (2026-06-27).** Maintainer-specific paths and personal GitHub identity notes scrubbed from tree + git history before org repos flip public.
 
