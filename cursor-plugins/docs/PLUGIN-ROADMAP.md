@@ -232,7 +232,7 @@ Today all four plugins are **private**. If we ever want to publish any of them t
 4. ~~Public GitHub repo~~ — **done** (`github.com/umbraculum-dev/umbraculum-toolset`).
 5. Verify plugin names are marketplace-unique at submission time.
 6. Run a clean smoke-test against 2–3 representative projects that aren't ours (optional pre-submit).
-7. Submit at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish) with manifest path noted in application.
+7. ~~Submit at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish) with manifest path noted in application.~~ **Done 2026-06-27** — await Cursor; see [`MARKETPLACE-C2-MANIFEST.md`](./MARKETPLACE-C2-MANIFEST.md) § Submission log + Review response.
 
 ---
 

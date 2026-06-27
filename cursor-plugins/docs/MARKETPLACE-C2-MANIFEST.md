@@ -65,7 +65,25 @@ Omitting OpenPLC from the manifest does **not** uninstall or block hook loading.
    - License: MIT (repo root + per listed plugin)
 6. Wait for manual review (no SLA). **C2 closure for flip runbook:** submission started; **live listings** may trail by days/weeks.
 
-Consumer install doc (post-approval): [umbraculum-dev `docs/CURSOR-PLUGINS.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/CURSOR-PLUGINS.md).
+## Review response (Cursor feedback)
+
+When **`marketplace-publishing@cursor.com`** (or the dashboard thread) replies:
+
+| Outcome | Action |
+|---------|--------|
+| **Approved / listed** | Follow [Post-approval migration](#post-approval-migration); update [`public-alpha-flip-day-runbook.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/design/public-alpha-flip-day-runbook.md) **C6** |
+| **Change requests** | Edit **`umbraculum-toolset`** only — manifest, per-plugin `plugin.json`, logos, descriptions — **match Cursor’s stated requirements**; re-run [Verification](#verification-local-pre-commit); commit; reply on their thread if asked |
+| **Rejected** | Same as change requests if they allow resubmit; otherwise keep hook-only install; document outcome in [Submission log](#submission-log) below |
+
+Do **not** pre-emptively refactor plugin content beyond what Cursor asks for.
+
+## Submission log
+
+| Date | Actor | Notes |
+|------|-------|-------|
+| 2026-06-27 | Maintainer | Application submitted at [cursor.com/marketplace/publish](https://cursor.com/marketplace/publish). Org `umbraculum-dev`; repo `https://github.com/umbraculum-dev/umbraculum-toolset`; logotype `https://umbraculum.dev/img/umbi.png`; public contact `toolset@umbraculum.dev`. Await **`marketplace-publishing@cursor.com`**. |
+
+Post-approval consumer install doc: [umbraculum-dev `docs/CURSOR-PLUGINS.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/CURSOR-PLUGINS.md).
 
 ## Verification (local, pre-commit)
 
@@ -159,6 +177,7 @@ When the three marketplace listings go live:
 
 | Date | Change |
 |---|---|
+| 2026-06-27 | C2 application submitted — await Cursor review; see [Submission log](#submission-log) |
 | 2026-06-27 | Marketplace logos: `docs/media/umbi.{png,svg}`; each listed plugin `assets/umbi.svg` + `"logo": "assets/umbi.svg"` in `plugin.json` |
 | 2026-06-27 | C2 prep: repo-root `.cursor-plugin/marketplace.json` with `pluginRoot: cursor-plugins`; three plugins only; nested manifest removed; per-plugin LICENSE + enriched `plugin.json` on listed three |
 
