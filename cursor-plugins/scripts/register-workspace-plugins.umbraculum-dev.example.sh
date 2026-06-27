@@ -6,8 +6,8 @@
 # Reads workspace_roots (JSON) from stdin; returns pluginPaths (JSON) on stdout.
 set -euo pipefail
 
-UMB_BASE="/path/to/umbraculum-toolset/cursor-plugins"
-UMBRACULUM_PLATFORM_REPO="/path/to/umbraculum-dev"
+UMB_BASE="${UMB_TOOLSET_ROOT:-/path/to/umbraculum-toolset}/cursor-plugins"
+UMBRACULUM_PLATFORM_REPO="${UMBRACULUM_DEV_ROOT:-/path/to/umbraculum-dev}"
 
 input="$(cat)"
 roots="$(printf '%s' "$input" | jq -r '.workspace_roots[]?')"

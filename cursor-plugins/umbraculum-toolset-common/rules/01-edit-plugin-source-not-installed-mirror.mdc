@@ -43,7 +43,7 @@ Why bad: the substring `/.cursor/plugins/local/` appears in the path → this is
 ## Correct pattern
 
 ```text
-StrReplace path=/path/to/umbraculum-toolset/cursor-plugins/umbraculum-node-react-cursor-assistant/rules/22-typescript-contracts-runtime-validation.mdc ...
+StrReplace path=/home/<user>/.cursor/plugins/local/umbraculum-node-react-cursor-assistant/rules/22-typescript-contracts-runtime-validation.mdc ...
 # then cp the file to ~/.cursor/plugins/local/<same-relative-path> so the active session sees it
 # then git add + commit in /path/to/umbraculum-toolset
 ```

@@ -187,7 +187,7 @@ Today all four plugins are **private**. If we ever want to publish any of them t
 | Concern | Private (today) | Marketplace |
 |---|---|---|
 | Absolute local paths | OK if labeled `Example:` | Forbidden; must be relative or env-driven |
-| User-specific paths (`/path/to/…`) | Removed 2026-06-27 — skills/examples use `/path/to/…` placeholders | Must be removed or templated |
+| User-specific paths (maintainer home-directory trees) | **Removed 2026-06-27** — skills/examples use `/path/to/…` placeholders | Forbidden; must be relative or env-driven |
 | Project-specific names (`brewery`, `umbraculum-dev`, vessel IDs `F1`/`F2`/`B1`) | OK in umbraculum plugins | Domain plugins like `umbraculum-platform-tsjs-cursor-assistant` and `umbraculum-openplc-python-cursor-assistant` would be **non-marketable as-is** — they encode our project specifics. Only `umbraculum-node-react-cursor-assistant` and `umbraculum-toolset-common` are generic enough to consider |
 | Secrets / tokens / private URLs | Already forbidden by our policy | Forbidden + actively scanned by marketplace tooling |
 | Trademarks / brand names | Used loosely (`Tamagui`, `Prisma`, `Magento`) | OK to reference; not OK to imply official endorsement |
@@ -248,11 +248,11 @@ These are **not** in scope for the current refactor; they're future work to scop
 
 ### Long-term / aspirational
 
-- [ ] **Create a cleaner GitHub identity for umbraculum-dev work.** Use a separate SSH identity for org repo pushes so commit author (`umbraculum-dev@proton.me`) and GitHub push attribution stay aligned with the `umbraculum-dev` org — not a personal account. Estimated effort: 15–30 min once decided.
+- [ ] **Dedicated org GitHub machine user (optional).** Use a separate SSH identity for org repo pushes so commit author (`umbraculum-dev@proton.me`) and GitHub push attribution stay aligned with the `umbraculum-dev` org — not a personal account. Estimated effort: 15–30 min once decided.
 - [ ] **Generalize `umbraculum-node-react-cursor-assistant` for marketplace publication** (see §3.F).
 - [ ] **Audit each plugin folder for a per-plugin LICENSE file** before any marketplace submission (the repo-root `LICENSE` covers the monorepo; per-plugin marketplace submissions may require a license file inside each plugin folder).
 - [ ] **Document the smoke-test procedure** for each plugin.
-- [ ] **If the GitHub repo is ever flipped from private to public**: audit for any path / secret / project-name leakage one last time.
+- [x] **Public visibility hygiene (2026-06-27).** Maintainer-specific paths and personal GitHub identity notes scrubbed from tree + git history before org repos flip public.
 
 ### Cleanup follow-ups (low priority)
 

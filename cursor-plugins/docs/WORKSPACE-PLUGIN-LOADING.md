@@ -80,7 +80,7 @@ Clone / pull these repos normally. The hook reads **source folders** — no copy
 chmod +x ~/.cursor/hooks/register-workspace-plugins.sh
 ```
 
-Adjust path constants in the script if your clones live elsewhere (`UMB_BASE`, `UMBRACULUM_PLATFORM_REPO`, `OPENPLC_PROJECT_REPO`). The example scripts ship with one maintainer's layout; **every developer must edit these constants** to match their machine before expecting the pairing matrix to work.
+Adjust path constants in the script if your clones live elsewhere (`UMB_TOOLSET_ROOT`, `UMBRACULUM_DEV_ROOT`, `OPENPLC_PROJECT_ROOT` — or edit the default `/path/to/…` literals). The example scripts ship generic placeholders; **every developer must set these** to match their machine before expecting the pairing matrix to work.
 
 **3. Remove global copies** (if you previously used `install-local.sh` or rsync):
 
@@ -236,11 +236,11 @@ The relative path `./hooks/register-workspace-plugins.sh` resolves to `~/.cursor
 set -euo pipefail
 
 # Adjust to wherever you keep the umbraculum-toolset source repo on this machine.
-UMB_BASE="/path/to/umbraculum-toolset/cursor-plugins"
+UMB_BASE="${UMB_TOOLSET_ROOT:-/path/to/umbraculum-toolset}/cursor-plugins"
 
 # Adjust to your actual repo locations.
-UMBRACULUM_PLATFORM_REPO="/path/to/umbraculum-dev"
-OPENPLC_PROJECT_REPO="/path/to/openplc-brewery-project"
+UMBRACULUM_PLATFORM_REPO="${UMBRACULUM_DEV_ROOT:-/path/to/umbraculum-dev}"
+OPENPLC_PROJECT_REPO="${OPENPLC_PROJECT_ROOT:-/path/to/openplc-brewery-project}"
 
 input="$(cat)"
 roots="$(printf '%s' "$input" | jq -r '.workspace_roots[]?')"
