@@ -89,6 +89,22 @@ Keep this file short and high-signal. Put reusable procedures in plugin **Skills
 - `hardware-doc-consistency-check` — `make check-connections` (BOM + mapping sheet + electrician-handout consistency)
 - `em-fields-pamphlet-pdf-build` — `make reference-pdfs` (full or `--skip-figures`)
 - `plc-variable-prefix-verification` — static scan for `pous/**` variables that violate the prefix convention
+- `openplc-bugbot-review` — opt-in local pre-push Bugbot (main-gated, readonly)
+- `ci-watch-loop` — umbraculum-toolset-common; read-only CI watch when `.cursor/LOOP.md` adopted
+
+## Bugbot (only if project adopted `.cursor/BUGBOT.md`)
+
+- Cloud trigger: manual only (`bugbot run` on PR); dashboard "run only when mentioned"
+- Autofix: OFF
+- Default PR base for local review: `<fill_me>` (example: `main`)
+- Review template: `umbraculum-openplc-python-cursor-assistant` `docs/templates/BUGBOT.md`
+
+## Loop (only if project adopted `.cursor/LOOP.md`)
+
+- CI watch: read-only `/loop` or `ci-watch-loop` skill (umbraculum-toolset-common); interval ≥ 5m
+- Default PR base: `<fill_me>` (example: `main`)
+- Policy template: `umbraculum-toolset-common` `docs/templates/LOOP.md`
+- Note: often `SKIPPED (reason: no-gha)` until GitHub Actions workflows exist
 
 ## Useful plugin Agents (this plugin)
 

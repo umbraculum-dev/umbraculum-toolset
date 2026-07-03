@@ -72,10 +72,31 @@ After a successful `git push`, GitHub's `git-receive-pack` emits a hint line in 
 - A project's `DEVELOPMENT.md` / `DEVELOPMENT-LOCAL.md` (or a project-local `plugin rules (`rules/*.mdc`)`) MAY **tighten** the rules above (e.g. forbid commits entirely in this project, expand the sensitive-branch list).
 - They MUST NOT **loosen** the sensitive-branch or production guardrails — those are part of the upstream contract.
 
-## Codebase navigation / Magento module location
-- When analyzing a theme override under `app/design/frontend/*/<Vendor_Module>/...`, ALWAYS locate the base module template first:
-  - Check `app/code/<Vendor>/<Module>/view/*/templates/...`
-  - If not present, check Composer vendor packages (e.g. `vendor/<composer-vendor>/<composer-package>/view/*/templates/...`), especially `vendor/alpenite/*`, `vendor/magento/*`, `vendor/smile/*`, etc.
-- Do NOT assume module code lives only under `app/code`.
-- When searching in `vendor/`, search by Composer path patterns (e.g. `vendor/alpenite/omnibus`) not by Magento module name (`Alpenite_Omnibus`).
-- For price templates and other renderer templates, always look for the controlling layout mapping, typically `**/view/**/layout/catalog_product_prices.xml` and confirm where it maps to.
+## Codebase navigation / TS monorepo layout
+
+- Shared contracts and validation live under `packages/**` — prefer package APIs over copying into `apps/**`.
+- API routes live under `services/api/src/routes/` — check Fastify schema wiring before changing handler types.
+- Web UI: `apps/web/`; native: `apps/native/` — respect `docs/CROSS-PLATFORM-BOUNDARIES.md` for shared vs app-specific code.
+- Verification entry points: `docs/VERIFICATION-TIERS.md`, `npm run verify:from-diff`, `npm run verify:pre-push`.
+
+## TS PR review (Bugbot — opt-in)
+
+When the project has adopted Bugbot (`.cursor/BUGBOT.md` at repo root):
+
+- Before push to a **`master`** PR: **suggest once** `typescript-bugbot-review` or `/review-bugbot` — opt-in, non-blocking
+- After master PR is open: **suggest** manual `bugbot run` comment for cloud review — never post automatically
+- Cloud Bugbot requires dashboard "run only when mentioned"; Autofix OFF
+- Missing `.cursor/BUGBOT.md` → skip entirely; see `umbraculum-toolset-common` `56-bugbot-checks-only.mdc`
+
+Workflow: local suggest → push → path-filtered GHA → optional manual cloud `bugbot run` → T0/T1 verification done gate.
+
+## TS PR CI watch (Loop — opt-in, read-only)
+
+When the project has adopted Loop policy (`.cursor/LOOP.md` at repo root):
+
+- While waiting on **master** PR GHA checks: **suggest once** `ci-watch-loop` (toolset-common) or read-only `/loop 5m …` — opt-in, non-blocking
+- **Read-only only** — no push, `gh run rerun`, or fix-until-green inside loop prompts
+- Missing `.cursor/LOOP.md` → skip entirely; see `umbraculum-toolset-common` `57-loop-readonly-guardrails.mdc`
+- **`/babysit`** is user-invoked only — do not suggest when suggesting loops
+
+Workflow: push → GHA CI → optional read-only loop watch → stop when terminal → foreground fix or explicit `/babysit` → verification done gate.

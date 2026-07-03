@@ -1,0 +1,45 @@
+---
+description: Bugbot checks-only guardrail — opt-in per project via .cursor/BUGBOT.md; suggest pre-PR review; never block
+alwaysApply: true
+---
+
+# Bugbot checks-only (opt-in per project)
+
+## Adoption gate
+
+Bugbot review applies **only when** the repository root contains **`.cursor/BUGBOT.md`** (committed project rules).
+
+If `.cursor/BUGBOT.md` is **absent**:
+
+- Do **not** invoke `/review-bugbot` or domain `*-bugbot-review` skills proactively
+- Do **not** fail the verification gate or block task completion
+- Emit `Bugbot review: SKIPPED (reason: no-bugbot-md)` if Bugbot is relevant to the conversation
+
+## Policy (hard)
+
+- **Autofix OFF** — never enable or recommend Bugbot Autofix; findings are advisory only
+- **Cloud manual only** — never post `bugbot run` or `cursor review` on a PR automatically; developer triggers cloud review
+- **Not a done gate** — Bugbot does not replace project verification in `DEVELOPMENT.md` (tests, curl, ci-parity, Makefile, etc.)
+- **Triage in foreground** — validate Bugbot findings before fixing; do not delegate iterative fix loops to subagents
+
+## Suggest-not-block (when adopted)
+
+When `.cursor/BUGBOT.md` exists, changes touch the project's primary code surface, and work is heading to a **`<BASE_BRANCH>`** PR (from `DEVELOPMENT-LOCAL.md`):
+
+- **Suggest once** before push: consider the domain `<BUGBOT_REVIEW_SKILL>` or `/review-bugbot` (opt-in)
+- After a PR to `<BASE_BRANCH>` is open: **suggest** commenting `bugbot run` if cloud review is wanted
+- If the developer declines or ignores, **continue** — do not block
+
+Local domain skills gate non-`<BASE_BRANCH>` bases with `SKIPPED (reason: not-<base>-pr)`.
+
+## Pointers
+
+- Architecture: `umbraculum-toolset-common` `docs/BUGBOT-ARCHITECTURE.md`
+- Setup: `umbraculum-toolset-common` `docs/BUGBOT-SETUP.md`
+- Review rules template: domain plugin `docs/templates/BUGBOT.md`
+- Domain skills: `magento-bugbot-review`, `typescript-bugbot-review`, `openplc-bugbot-review`
+
+## System fit
+
+- **Frontier now:** guardrail + pointers; no runbook steps (domain skill owns procedure)
+- **Local subagents:** existence check on `.cursor/BUGBOT.md` is a deterministic skip gate

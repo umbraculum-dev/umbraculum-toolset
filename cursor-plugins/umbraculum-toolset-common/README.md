@@ -19,10 +19,23 @@ This plugin is **not stand-alone**. It carries language- and domain-agnostic dis
 - `48-rfc-companion-documentation-gate.mdc` — when implementing or reviewing code tied to an accepted RFC, read the RFC summary plus linked companion docs before shipping consumers.
 - `49-plan-documentation-context.mdc` — when authoring a multi-phase Cursor/plan file for feature work, open with Standards & governance context (RFCs, `docs/CODING-STANDARDS.md`, foundation gates, plugin rules) then the Documentation context table per the repo template.
 - `50-operator-attachment-readability-gate.mdc` — if an operator-supplied attachment is not readable, stop and ask for a clearer replacement; only the operator may explicitly skip (never the agent).
+- `56-bugbot-checks-only.mdc` — Bugbot checks-only guardrail; opt-in via `.cursor/BUGBOT.md`; suggest-not-block; never a done gate.
+- `57-loop-readonly-guardrails.mdc` — Loop read-only guardrail; opt-in via `.cursor/LOOP.md`; no fix-until-green; `/babysit` user-only.
 
 ### Skills
 
 - `generate-development-local` — bootstraps a per-developer `DEVELOPMENT-LOCAL.md` from the project's `DEVELOPMENT.md` (and `DEVELOPMENT-LOCAL-OLLAMA.md` if present) on explicit user request. The consuming plugin's `docs/templates/DEVELOPMENT-LOCAL*.md` template is the canonical shape.
+- `ci-watch-loop` — opt-in read-only `/loop` CI watch when `.cursor/LOOP.md` exists; arms Cursor `/loop` once; never push or fix-until-green.
+
+### Bugbot / Loop (portable policy)
+
+Architecture, setup, and the generic LOOP template live here — **not** in domain plugins:
+
+- `docs/BUGBOT-ARCHITECTURE.md`, `docs/BUGBOT-SETUP.md`
+- `docs/LOOP-ARCHITECTURE.md`, `docs/LOOP-SETUP.md`
+- `docs/templates/LOOP.md`
+
+**Language-specific review checklists** stay in each domain plugin's `docs/templates/BUGBOT.md` plus thin `*-bugbot-review` skills. Install **toolset-common alongside** the domain plugin for any workspace using Bugbot or Loop.
 
 ## What's NOT in it
 

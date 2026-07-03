@@ -30,6 +30,10 @@ This plugin **assumes** `umbraculum-node-react-cursor-assistant` is also install
 - `l2-cross-workspace-isolation-test/SKILL.md` — scaffolds the canonical 6-axis L2 (route-integration) test pattern for workspace-scoped routes. No paired subagent (this is a write-side skill).
 - `package-scope-migration-preflight/SKILL.md` — per-slot file inventory + classification gate + hard-stop flags for the umbraculum-dev sub-plan #9 `@brewery/*` → `@umbraculum/*` package-scope rename. Codified after slots 1 + 2 of the migration (the "codify on second use" cadence); designed for reuse across slots 3–14. Read-only.
 
+### Bugbot (optional review rows)
+
+For umbraculum-platform PR review, bootstrap `.cursor/BUGBOT.md` from **`umbraculum-node-react-cursor-assistant`** `docs/templates/BUGBOT.md`. Optional extra rows for this plugin's rules: Prisma multischema (`47-prisma-multischema-module-schemas.mdc`), module README standard (`45-tsjs-module-readme-standard.mdc`), foundation-hardening slice discipline (`02-foundation-hardening.mdc`). Portable Bugbot/Loop policy: **`umbraculum-toolset-common`** v0.0.3+.
+
 ## Witness rule
 
 The witness rule registered for this plugin in the umbraculum-toolset's witness-rule registry is **`02-foundation-hardening.mdc`** (the first rule listed under "Rules" above). Its frontmatter is `alwaysApply: true` (no `globs:`), so it is an **unconditional** witness — Cursor loads it into the agent's context in every conversation regardless of which files are open, and rule-list introspection in a downstream `AGENTS.md` apparatus self-check is sufficient verification.

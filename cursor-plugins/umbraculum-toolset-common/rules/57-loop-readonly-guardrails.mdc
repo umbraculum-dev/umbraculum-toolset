@@ -1,0 +1,51 @@
+---
+description: Loop read-only guardrail — opt-in per project via .cursor/LOOP.md; suggest CI watch; never fix-until-green
+alwaysApply: true
+---
+
+# Loop read-only (opt-in per project)
+
+## Adoption gate
+
+Loop CI monitoring applies **only when** the repository root contains **`.cursor/LOOP.md`** (committed project rules).
+
+If `.cursor/LOOP.md` is **absent**:
+
+- Do **not** arm `/loop` or `ci-watch-loop` proactively
+- Do **not** fail the verification gate or block task completion
+- Emit `Loop watch: SKIPPED (reason: no-loop-md)` if loops are relevant to the conversation
+
+## Policy (hard)
+
+- **Read-only in loops** — no `git push`, `git commit`, `gh workflow run`, `gh run rerun`, or file edits inside `/loop` prompts
+- **No fix-until-green loops** — do not loop until CI passes; fix in foreground or user invokes `/babysit` explicitly
+- **No auto-start** — never arm a loop without user opt-in
+- **Not a done gate** — loops do not replace project verification in `DEVELOPMENT.md`
+- **Local session only** — `/loop` does not run in cloud agents
+
+## Suggest-not-block (when adopted)
+
+When `.cursor/LOOP.md` exists, a PR to **`<BASE_BRANCH>`** is open, CI checks are pending, and the user is waiting:
+
+- **Suggest once**: consider `ci-watch-loop` skill or a read-only `/loop 5m …` prompt — opt-in
+- If the developer declines or ignores, **continue** — do not block
+- Do **not** suggest `/babysit` in the same suggestion as `/loop`
+
+Local skill gates non-`<BASE_BRANCH>` bases with `SKIPPED (reason: not-<base>-pr)`.
+
+## Babysit boundary
+
+- **`/loop`** — read-only monitoring (this rule)
+- **`/babysit`** — active merge prep with pushes; **user-invoked only** — do not suggest proactively when suggesting loops
+
+## Pointers
+
+- Architecture: `umbraculum-toolset-common` `docs/LOOP-ARCHITECTURE.md`
+- Setup: `umbraculum-toolset-common` `docs/LOOP-SETUP.md`
+- Policy template: `umbraculum-toolset-common` `docs/templates/LOOP.md`
+- Skill: `ci-watch-loop`
+
+## System fit
+
+- **Frontier now:** guardrail + pointers; no runbook steps (skill owns procedure)
+- **Local subagents:** existence check on `.cursor/LOOP.md` is a deterministic skip gate

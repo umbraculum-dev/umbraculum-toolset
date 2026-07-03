@@ -2,7 +2,7 @@
 
 This directory packages four Cursor plugins in a multi-plugin repository:
 
-- **`umbraculum-toolset-common`** — small shared plugin that carries the language-agnostic meta-framework rules (DEVELOPMENT-LOCAL gate, Skill Contract, commit-message ticket-prefix discipline) and the `generate-development-local` skill. Install alongside any of the three domain plugins below. Not stand-alone — see [umbraculum-toolset-common/README.md](umbraculum-toolset-common/README.md).
+- **`umbraculum-toolset-common`** — shared plugin for language-agnostic meta-framework rules (DEVELOPMENT-LOCAL gate, Skill Contract, commit-message discipline, **Bugbot/Loop portable policy** rules 56/57, `ci-watch-loop` skill) and `generate-development-local`. Install alongside any domain plugin. See [umbraculum-toolset-common/README.md](umbraculum-toolset-common/README.md).
 - **`umbraculum-node-react-cursor-assistant`** — generic Node/TypeScript/React/E2E Cursor assistant. Suitable for any TS/JS project; encodes ecosystem-wide guardrails (lint hygiene, contracts/runtime-validation, accessibility, Playwright runner conventions, container-only Node/npm discipline, etc.).
 - **`umbraculum-platform-tsjs-cursor-assistant`** — umbraculum-platform-specific Cursor assistant. Encodes the four-slice foundation-hardening discipline (lint + types + tests + docs) closed in umbraculum-dev on 2026-05-18, plus the umbraculum-specific architectural patterns (multi-tenant workspace-scoped routes, `scripts/docs/check-readmes.py` structural-README checker, dockerized typecheck pattern, `@brewery/*` → `@umbraculum/*` package-scope rename discipline).
 - **`umbraculum-openplc-python-cursor-assistant`** — OpenPLC + Python + FastAPI + Modbus + hardware-doc Cursor assistant for the industrial-automation sister-repo (`/path/to/openplc-brewery-project/`). Encodes the IEC-61131-3 source-vs-build discipline, the `PI_*` Modbus mailbox contract, the FastAPI/Jinja/SQLite Pi-sidecar conventions, the bench-vs-field transport profile distinction, the hardware-doc filename-suffix + scope-tag taxonomy, and the EM-fields pamphlet ASCII-diagram authoring rules.
@@ -163,7 +163,7 @@ If a plugin needs a stable, always-introspectable witness, prefer one of the plu
 | `umbraculum-toolset-common` | `00-development-local-addendum-gate.mdc` | unconditional |
 | `umbraculum-node-react-cursor-assistant` | `22-typescript-contracts-runtime-validation.mdc` | conditional |
 | `umbraculum-platform-tsjs-cursor-assistant` | `02-foundation-hardening.mdc` | unconditional |
-| `umbraculum-openplc-python-cursor-assistant` | _(not yet declared; downstream `AGENTS.md` files in OpenPLC consumers should choose an `alwaysApply: true` rule from the plugin's `rules/` directory and add it here when they wire up an apparatus self-check)_ | _(future)_ |
+| `umbraculum-openplc-python-cursor-assistant` | `15-subagent-delegation-guardrails.mdc` | unconditional |
 
 If a plugin author renames or recategorizes a witness rule (e.g. promoting a conditional rule to unconditional, or renaming the file), bump the plugin's `version` in its `.cursor-plugin/plugin.json`, update this table, and notify downstream `AGENTS.md` maintainers — the contract here is part of the plugin's public surface area.
 

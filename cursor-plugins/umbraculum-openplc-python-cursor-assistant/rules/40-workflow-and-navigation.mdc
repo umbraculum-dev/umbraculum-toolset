@@ -1,0 +1,40 @@
+---
+description: Workflow + OpenPLC PR navigation; Bugbot and Loop opt-in pointers
+alwaysApply: true
+globs:
+  - "**/*.py"
+  - "**/*.md"
+  - "**/*.ld"
+  - "**/*.st"
+  - "pous/**"
+  - "pi-sidecar/**"
+---
+
+# Workflow & navigation rules (OpenPLC)
+
+## Codebase navigation
+
+- PLC source of truth: `pous/programs/`, `pous/function-blocks/`, `pous/functions/` — not `build/`.
+- External contract: `PI_*` Modbus mailbox — see `docs/runtime/OPENPLC-RUNTIME-UPLOAD-AND-PI-MODBUS-INTERFACE.md`.
+- Sidecar: `pi-sidecar/app/` layering — routes thin; domain in `app/domain/`.
+- Hardware docs: filename suffixes and scope tags per rule `45-hardware-doc-naming-and-scope-tags.mdc`.
+
+## OpenPLC PR review (Bugbot — opt-in)
+
+When the project has adopted Bugbot (`.cursor/BUGBOT.md` at repo root):
+
+- Before push to a **`main`** PR: **suggest once** `openplc-bugbot-review` or `/review-bugbot` — opt-in, non-blocking
+- After main PR is open: **suggest** manual `bugbot run` comment for cloud review — never post automatically
+- Missing `.cursor/BUGBOT.md` → skip entirely; see `umbraculum-toolset-common` `56-bugbot-checks-only.mdc`
+
+## OpenPLC PR CI watch (Loop — opt-in, read-only)
+
+When the project has adopted Loop policy (`.cursor/LOOP.md` at repo root):
+
+- While waiting on PR CI: **suggest once** `ci-watch-loop` (toolset-common) or read-only `/loop 5m …` — opt-in, non-blocking
+- **No GHA yet:** skill may emit `Loop watch: SKIPPED (reason: no-gha)` — policy still applies; optional Makefile/log appendix in `.cursor/LOOP.md` for bench work
+- **Read-only only** — no push, `gh run rerun`, or fix-until-green inside loop prompts
+- Missing `.cursor/LOOP.md` → skip entirely; see `umbraculum-toolset-common` `57-loop-readonly-guardrails.mdc`
+- **`/babysit`** is user-invoked only — do not suggest when suggesting loops
+
+Workflow: push → optional CI or local Makefile verification → optional read-only loop watch → foreground fix → project verification done gate.

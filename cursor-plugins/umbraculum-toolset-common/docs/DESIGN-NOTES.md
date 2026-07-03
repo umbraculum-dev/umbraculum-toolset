@@ -6,6 +6,8 @@ The three domain plugins (`umbraculum-node-react-cursor-assistant`, `umbraculum-
 
 This plugin holds the rules and skills where the **core principle is shared across all consumers AND the per-ecosystem differences are trivial enough to neutralize without losing tone or accuracy**.
 
+As of 2026-07, **Bugbot and Loop portable policy** (architecture docs, rules 56/57, `ci-watch-loop` skill, generic `templates/LOOP.md`) lives here. Domain plugins supply only ecosystem-specific `templates/BUGBOT.md` and thin `*-bugbot-review` skills — they must not duplicate common policy files.
+
 ## Why this plugin is intentionally small
 
 The original `PLUGIN-ROADMAP.md` § 2 anticipated ~12 rules moving here. The actual count is **3 rules + 1 skill**. The reason is captured by the refactor's Strategy C decision: **only truly-identical (or trivially-different) artifacts move to common; rules with substantive plugin-specific additions stay in their plugins.**

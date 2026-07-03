@@ -59,20 +59,30 @@ Playwright: before any suite run, agents must execute the **quick gates** in `pl
 ## Useful plugin Skills
 
 - `runtime-commands-containers` skill
-- `docker-compose-debugging` skill
-- `curl-exception-verification` skill
 - `node-npm-container-only` skill
+- `verify-slice-runbook` skill
 - `playwright-runner-docs-gate` skill
-- `phpunit-unit-runbook` skill
-- `magento-integration-tests-runbook` skill
+- `typescript-bugbot-review` skill (when `.cursor/BUGBOT.md` adopted)
+- `ci-watch-loop` skill (umbraculum-toolset-common; when `.cursor/LOOP.md` adopted)
 
 ## Useful plugin Agents
 
 - `verifier` agent
-- `magento-debugger` agent
-- `phpunit-runner` agent
-- `template-refactor-verifier` agent
 - `e2e-smoke` agent
+- `contracts-zod-auditor` agent
+
+## Bugbot (only if project adopted `.cursor/BUGBOT.md`)
+
+- Cloud trigger: manual only (`bugbot run` on PR); dashboard "run only when mentioned"
+- Autofix: OFF
+- Default PR base for local review: `<fill_me>` (example: `master`)
+- Review template: `umbraculum-node-react-cursor-assistant` `docs/templates/BUGBOT.md`
+
+## Loop (only if project adopted `.cursor/LOOP.md`)
+
+- CI watch: read-only `/loop` or `ci-watch-loop` skill (umbraculum-toolset-common); interval ≥ 5m
+- Default PR base: `<fill_me>` (example: `master`)
+- Policy template: `umbraculum-toolset-common` `docs/templates/LOOP.md`
 
 ## Project notes
 

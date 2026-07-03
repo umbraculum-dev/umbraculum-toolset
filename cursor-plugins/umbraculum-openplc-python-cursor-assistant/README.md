@@ -52,6 +52,7 @@ Install via the `workspaceOpen` hook when the workspace matches the OpenPLC brew
 - `hardware-doc-consistency-check/SKILL.md` — bounded runbook for `make check-connections` + the `tools/check_connections_consistency.py` SoT checker; what to do when it fails
 - `em-fields-pamphlet-pdf-build/SKILL.md` — bounded runbook for `make reference-pdfs` (and the diagram-only `--skip-figures` variant); the two visual checks (no page-split, no margin-clip) required after every pamphlet edit
 - `plc-variable-prefix-verification/SKILL.md` — bounded static-scan runbook (ripgrep) for variable identifiers in `pous/**` and `project.json` that violate the `I_/Q_/M_/AI_/AI_RAW_/CFG_/SVC_/P_/PI_` prefix convention (rule `04`); max 10 violation lines per run
+- `openplc-bugbot-review/SKILL.md` — opt-in local pre-push Bugbot (main-gated, readonly)
 
 ### Agents (`agents/`) — 5 subagents
 
@@ -63,17 +64,24 @@ Install via the `workspaceOpen` hook when the workspace matches the OpenPLC brew
 
 ### Templates (`docs/templates/`)
 
-- `DEVELOPMENT-LOCAL.openplc.example.md` — project-owned local-context template; encodes the inputs the skills/agents need (canonical repo root, OpenPLC Runtime URL, Pi-sidecar container name, serial port for RTU profile, etc.). Read by the common plugin's `00-development-local-addendum-gate.mdc` rule.
+- `DEVELOPMENT-LOCAL.openplc.example.md` — project-owned local-context template.
+- `BUGBOT.md` — OpenPLC-specific Cursor Bugbot review rules (bootstrap to `<REPO_ROOT>/.cursor/BUGBOT.md`).
+
+Portable Bugbot/Loop **policy** lives in **`umbraculum-toolset-common` v0.0.3+** — rules 56/57, architecture docs, `ci-watch-loop` skill, generic LOOP template.
+
+## Bugbot (checks only)
+
+Opt-in via `.cursor/BUGBOT.md`. Local: `openplc-bugbot-review` or `/review-bugbot` (main-gated). Policy: toolset-common `56-bugbot-checks-only.mdc`.
+
+## Loop (read-only CI watch)
+
+Opt-in via `.cursor/LOOP.md` (bootstrap from toolset-common `docs/templates/LOOP.md`). Skill: `ci-watch-loop`. Often `SKIPPED (reason: no-gha)` until GHA exists. Policy: toolset-common `57-loop-readonly-guardrails.mdc`.
 
 ## Witness rule
 
-This plugin **does not yet have a declared witness rule** in the umbraculum-toolset's witness-rule registry (the registry table in [`cursor-plugins/README.md`](../README.md#todays-witness-rule-registry-this-toolset) currently lists this plugin's row as `_(not yet declared)_`). Downstream `AGENTS.md` authors in the OpenPLC + Python sister-repo who want to wire up an apparatus self-check for this plugin should:
+The witness rule registered for this plugin in the umbraculum-toolset's witness-rule registry is **`15-subagent-delegation-guardrails.mdc`**. Its frontmatter is `alwaysApply: true` (no restrictive `globs:` on the rule body scope for witness purposes — the rule applies to markdown delegation policy globally). Downstream `AGENTS.md` authors performing an apparatus self-check for this plugin may verify presence via rule-list introspection.
 
-1. Pick an `alwaysApply: true` rule from this plugin's `rules/` directory whose content is generic enough that always-loading it is not a context tax (e.g. `00-workflow.mdc`, `14-subagent-contract.mdc`, or `15-subagent-delegation-guardrails.mdc`). This makes the witness an **unconditional** witness, verifiable by rule-list introspection in any conversation.
-2. Document the choice in the downstream `AGENTS.md`'s witness-rule table.
-3. Open a PR against this repo to add the choice to the toolset-level registry so plugin authors are notified if the rule is ever renamed or recategorized — the witness-rule contract is part of the plugin's public surface area.
-
-See the toolset-level [`cursor-plugins/README.md` § "Witness-rule contract for downstream `AGENTS.md` consumers"](../README.md#witness-rule-contract-for-downstream-agentsmd-consumers) for the full contract, the two-category model (unconditional vs conditional), and the anti-pattern warning against "fixing" a failing witness check by flipping `alwaysApply: true` on a rule whose content is genuinely file-scoped.
+See the toolset-level [`cursor-plugins/README.md` § "Witness-rule contract for downstream `AGENTS.md` consumers"](../README.md#witness-rule-contract-for-downstream-agentsmd-consumers) for the full contract.
 
 ## Provenance
 
@@ -90,6 +98,7 @@ If those upstream docs evolve, the rules SHOULD be re-derived rather than blindl
 
 ## Version history
 
+- **0.0.2** (2026-07) — Bugbot/Loop: `docs/templates/BUGBOT.md`, `openplc-bugbot-review` skill, `40-workflow-and-navigation.mdc`; witness rule declared (`15-subagent-delegation-guardrails.mdc`). Portable policy in toolset-common v0.0.3+.
 - **0.0.1** (2026-05-25) — public baseline after the repository history reset. Includes the current OpenPLC + Python + Modbus + hardware-doc rules, skills, subagents, and local-context template.
 
 ## See also

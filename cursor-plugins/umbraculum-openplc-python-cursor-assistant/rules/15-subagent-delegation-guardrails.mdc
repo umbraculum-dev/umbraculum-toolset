@@ -36,6 +36,7 @@ Do **not** delegate:
 - **Tasks whose spawn prompt pre-commits the subagent to a specific solution path** ("write the new PI_* coil at address 9XX without reading the existing mailbox first"). The subagent's narrower context window cannot re-question the premise.
 - **Anything that touches PLC source files (`pous/**`, `project.json`, `devices/configuration.json`)** without explicit authorization in the spawn prompt. PLC source is brittle; the OpenPLC editor's reload behavior amplifies any accidental edit (see `02-openplc-project-structure.mdc`). Read-only inspection is fine; writes are not.
 - **Modbus writes** — any Modbus `write_coil` / `write_register` against the live PLC, especially in the bench profile where the sidecar may be polling concurrently. Default subagent posture is read-only Modbus.
+- **Autonomous CI-fix loops** — "fix until CI is green", `/loop` prompts that push or rerun workflows, or delegating iterative CI repair to subagents. Use read-only `/loop` for monitoring; fix in foreground or user-invoked `/babysit` only. See `umbraculum-toolset-common` `57-loop-readonly-guardrails.mdc`.
 - **Generated-artifact regeneration** under `build/` from inside a subagent. The OpenPLC editor compile step is the canonical regeneration path; a subagent running it can race the developer's editor.
 - **Commits, pushes, `git --amend`, force-pushes, branch creation/deletion** — unless the parent's spawn prompt explicitly authorizes the exact operation. The default is "report; let the parent commit".
 
@@ -74,6 +75,12 @@ The parent must `interrupt: true` and `resume` the subagent (or kill the underly
 - Subagent has been running for >5 minutes without observable progress signals (file writes, log lines, status updates).
 
 When interrupting, ask the subagent to **report** before exiting (list of touched files, last command run, any commits/pushes, any Modbus writes, processes still alive in containers), so cleanup can be scoped. Never assume a wedged subagent did nothing.
+
+## Bugbot / Autofix (policy)
+
+- **Autofix is disabled** — triage Bugbot findings in the foreground; never delegate auto-fix loops to subagents
+- Bugbot review is **not** a done gate and does not replace Makefile/pytest verification
+- Portable policy: `umbraculum-toolset-common` `56-bugbot-checks-only.mdc`; OpenPLC review: `openplc-bugbot-review` skill
 
 ## Anti-patterns (do not ship)
 
