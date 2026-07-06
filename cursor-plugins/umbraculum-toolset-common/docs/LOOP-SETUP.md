@@ -27,7 +27,9 @@ Operational runbook for read-only `/loop` CI monitoring. Rationale: [`LOOP-ARCHI
 !.cursor/LOOP.md
 ```
 
-4. Add optional pointers in `AGENTS.md`.
+4. Add optional pointers in `AGENTS.md` or `CONTRIBUTING.md`.
+
+**Example:** [umbraculum-toolset](https://github.com/umbraculum-dev/umbraculum-toolset) adopts LOOP with base branch **`master`** (`.cursor/LOOP.md` at repo root). Plugin-only PRs may have no GHA checks until path filters match — read-only polling is still safe.
 
 ## Arming a CI watch loop
 

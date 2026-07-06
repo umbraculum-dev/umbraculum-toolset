@@ -36,8 +36,8 @@ Local domain skills gate non-`<BASE_BRANCH>` bases with `SKIPPED (reason: not-<b
 
 - Architecture: `umbraculum-toolset-common` `docs/BUGBOT-ARCHITECTURE.md`
 - Setup: `umbraculum-toolset-common` `docs/BUGBOT-SETUP.md`
-- Review rules template: domain plugin `docs/templates/BUGBOT.md`
-- Domain skills: `magento-bugbot-review`, `typescript-bugbot-review`, `openplc-bugbot-review`
+- Review rules template: domain plugin `docs/templates/BUGBOT.md`; plugin-pack repos: `docs/templates/BUGBOT.plugin-pack.md`
+- Domain skills: `magento-bugbot-review`, `typescript-bugbot-review`, `openplc-bugbot-review`, `plugin-pack-bugbot-review`
 
 ## System fit
 

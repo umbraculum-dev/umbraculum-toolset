@@ -1,0 +1,52 @@
+# Loop policy — read-only CI watch (umbraculum-toolset)
+
+Feature work merges via PRs to **`master`**. Use **`/loop`** for read-only monitoring while CI runs. Use **`/babysit`** only when you explicitly want active fix-and-push merge prep.
+
+**Policy:** Read-only inside loops. No pushes, reruns, or file edits unless you switched to `/babysit`.
+
+---
+
+## Allowed commands in `/loop` prompts
+
+- `gh pr checks` — check rollup for current PR
+- `gh pr view --json baseRefName,number,statusCheckRollup,state`
+- `gh run view <run-id> --json status,conclusion,name` — read-only run status
+- Brief human-readable summary of changes since last tick
+
+## Forbidden in `/loop` prompts
+
+- `git push`, `git commit`, `git merge`, `git rebase`
+- `gh workflow run`, `gh run rerun`, `gh pr merge`, `gh pr review --approve`
+- File edits, runtime install/migrate commands, config dumps
+- Subagent or Task-tool delegation for iterative fixes
+- Prompts containing "fix until green", "keep trying until CI passes", or equivalent
+
+## Defaults
+
+| Setting | Value |
+|---------|-------|
+| Interval | **≥ 5m** |
+| Max duration | **2h** |
+| PR base | **`master`** |
+| Stop when | All checks terminal (success, failure, cancelled) or max duration reached |
+
+## Escalation when checks fail
+
+1. **Stop the loop** — do not loop-fix in the same session
+2. Report failing check names and one-line evidence each
+3. Fix in the **foreground**, or user explicitly runs **`/babysit`**
+4. Do not suggest `/babysit` proactively when suggesting `/loop`
+
+## GHA safety
+
+Polling `gh pr checks` does **not** enqueue GitHub Actions. Only **push** and **workflow_dispatch** trigger new runs. Read-only loops are safe for shared CI used by the team.
+
+**Note:** `ci-parity-package` GHA runs only when the PR touches `packages/ci-parity/**`, root `package.json`, or root `package-lock.json`. Plugin-only PRs may show few or no checks — that is expected.
+
+---
+
+## References
+
+- `umbraculum-toolset-common` `docs/LOOP-ARCHITECTURE.md`
+- Skill: `ci-watch-loop`
+- Bugbot (review, separate): `.cursor/BUGBOT.md`

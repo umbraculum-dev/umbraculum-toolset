@@ -26,16 +26,18 @@ This plugin is **not stand-alone**. It carries language- and domain-agnostic dis
 
 - `generate-development-local` — bootstraps a per-developer `DEVELOPMENT-LOCAL.md` from the project's `DEVELOPMENT.md` (and `DEVELOPMENT-LOCAL-OLLAMA.md` if present) on explicit user request. The consuming plugin's `docs/templates/DEVELOPMENT-LOCAL*.md` template is the canonical shape.
 - `ci-watch-loop` — opt-in read-only `/loop` CI watch when `.cursor/LOOP.md` exists; arms Cursor `/loop` once; never push or fix-until-green.
+- `plugin-pack-bugbot-review` — opt-in local pre-push Bugbot for plugin-pack repos with `.cursor/BUGBOT.md`; master-gated; readonly.
 
 ### Bugbot / Loop (portable policy)
 
-Architecture, setup, and the generic LOOP template live here — **not** in domain plugins:
+Architecture, setup, and templates live here — **not** in domain plugins:
 
 - `docs/BUGBOT-ARCHITECTURE.md`, `docs/BUGBOT-SETUP.md`
 - `docs/LOOP-ARCHITECTURE.md`, `docs/LOOP-SETUP.md`
 - `docs/templates/LOOP.md`
+- `docs/templates/BUGBOT.plugin-pack.md` — review checklist for plugin-pack / meta repos (rules, skills, agents)
 
-**Language-specific review checklists** stay in each domain plugin's `docs/templates/BUGBOT.md` plus thin `*-bugbot-review` skills. Install **toolset-common alongside** the domain plugin for any workspace using Bugbot or Loop.
+**Language-specific review checklists** stay in each domain plugin's `docs/templates/BUGBOT.md` plus thin `*-bugbot-review` skills. **Plugin-pack repos** use `BUGBOT.plugin-pack.md` + `plugin-pack-bugbot-review` here. Install **toolset-common alongside** the domain plugin for any workspace using Bugbot or Loop.
 
 ## What's NOT in it
 

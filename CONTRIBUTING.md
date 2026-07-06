@@ -192,6 +192,20 @@ These fallbacks are mentioned for completeness; the canonical
   witness-rule contract, etc.) are described in
   [`cursor-plugins/README.md`](./cursor-plugins/README.md).
 
+## Bugbot and Loop
+
+This repo adopts committed [`.cursor/BUGBOT.md`](./.cursor/BUGBOT.md) (from
+`umbraculum-toolset-common` `docs/templates/BUGBOT.plugin-pack.md`) and
+[`.cursor/LOOP.md`](./.cursor/LOOP.md) (from toolset-common `docs/templates/LOOP.md`).
+Merge target for feature PRs is **`master`**.
+
+- **Local Bugbot (opt-in):** `plugin-pack-bugbot-review` skill or `/review-bugbot` before push — suggest-not-block; never a done gate
+- **Cloud Bugbot (opt-in):** comment `bugbot run` on the PR after dashboard setup — **Run only when mentioned**, **Autofix OFF** (see toolset-common `docs/BUGBOT-SETUP.md`)
+- **Loop (opt-in):** read-only `ci-watch-loop` or `/loop 5m …` while waiting on GHA — no fix-until-green; use `/babysit` only when you want active fix-and-push
+- **CI note:** `ci-parity-package` GHA runs only when the PR touches `packages/ci-parity/**` or root lockfiles; plugin-only PRs may show zero checks
+
+After pulling plugin changes: **Developer: Reload Window** (hook-based workspaces) or re-sync `~/.cursor/plugins/local/` if using legacy rsync install.
+
 ## Where the canonical authoritative discipline lives
 
 The DCO + Cursor co-author discipline this contributor guide encodes
