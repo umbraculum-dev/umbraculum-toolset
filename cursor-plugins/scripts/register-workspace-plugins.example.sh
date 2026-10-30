@@ -4,6 +4,14 @@
 # register-workspace-plugins.umbraculum-dev.example.sh instead.
 # Canonical install doc: cursor-plugins/docs/WORKSPACE-PLUGIN-LOADING.md §0
 #
+# Magento + Hyvä (optional sibling plugins from rf-cursor-assistant-plugins monorepo):
+# When you also maintain Magento shops, extend this example like the live machine hook:
+#   MAGENTO_PLUGIN=.../cursor-plugins/rf-magento-cursor-assistant
+#   HYVA_PLUGIN=.../cursor-plugins/rf-hyva-cursor-assistant
+# On Magento path match: always add Magento; add Hyvä only if workspace_has_hyva
+# (composer.json/lock under root or html/ contains hyva-themes/, or vendor/hyva-themes exists).
+# Do not install those plugins into ~/.cursor/plugins/local/ (double-load risk).
+#
 # workspaceOpen hook — register Cursor plugins from source paths per workspace.
 # Reads workspace_roots (JSON) from stdin; returns pluginPaths (JSON) on stdout.
 set -euo pipefail
