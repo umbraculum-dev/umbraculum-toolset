@@ -19,7 +19,7 @@ Agents routinely treat a green HTTP check (curl, `public-endpoint-verification`,
 1. **Curl / endpoint 200 ≠ tested** for any user-visible UI (storefront, Admin/backoffice, SPA screen, control-panel page, PLC HMI). Report endpoint lines as coding hygiene only.
 2. **Draft a bounded test plan** before claiming UI/Admin work done: scenario IDs (or an explicit short list), what will be checked in browser vs CLI, and any skips with reason tokens.
 3. **Authorize or execute:** interactive → same-turn operator authorization when required by the project; non-interactive → draft in the reply, execute, report pass/fail per ID.
-4. **Browser required** for UI (integrated browser or project E2E). Prefer project `flows/` / journey packs when they exist (e.g. Magento `AgentDocs/flows/` `SF-*` / `BLOG-*` / `ADM-*`).
+4. **Browser required** for UI (integrated browser or project E2E). Prefer project `flows/` / journey packs when they exist (scenario ID prefixes are project-defined).
 5. **Stop / skip tokens** (use verbatim when skipping): `no-ui-change`, `flows-absent`, `container-not-running`, `user-declined-browser`, `auth-required`.
 
 ## Must not
@@ -27,14 +27,15 @@ Agents routinely treat a green HTTP check (curl, `public-endpoint-verification`,
 - Declare storefront/Admin/SPA “done” from curl or `Endpoint verification: PASSED … 200` alone.
 - Invent credentials, hosts, or scenario packs inside shared plugins — those stay in the consumer repo (`DEVELOPMENT-LOCAL.md`, project `flows/`).
 - Duplicate Magento compile/reindex/cache recipes here — domain skill / project Ansible skip tokens own that.
+- Embed operator identity, emails, or merchant/project codenames in shared plugin artifacts.
 
 ## Pointers
 
 - Companion: `45-public-endpoint-verification.mdc` (running endpoint smoke — complementary, not a substitute).
 - Magento Admin/local pack drafting: `rf-magento-cursor-assistant` skill `draft-local-admin-test-plan`.
-- Project example (not required): gacom `html/AGENTS.md` Rule #0 + `app/code/AgentDocs/flows/`.
+- Consumer projects: repo-root `AGENTS.md` / `DEVELOPMENT.md` plus any local journey `flows/` packs.
 
 ## Fits the system
 
-- **Frontier now:** always-on cross-ecosystem guardrail (Magento, Node/React, OpenPLC, WP consumers that install this plugin).
+- **Frontier now:** always-on cross-ecosystem guardrail for workspaces that install this plugin.
 - **Local-subagent-future:** fail closed on “done” claims that cite only HTTP 200 for UI work; domain skills supply bounded plan templates.
