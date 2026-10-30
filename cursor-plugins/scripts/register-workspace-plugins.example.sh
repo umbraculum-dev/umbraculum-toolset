@@ -8,8 +8,10 @@
 # When you also maintain Magento shops, extend this example like the live machine hook:
 #   MAGENTO_PLUGIN=.../cursor-plugins/rf-magento-cursor-assistant
 #   HYVA_PLUGIN=.../cursor-plugins/rf-hyva-cursor-assistant
-# On Magento path match: always add Magento; add Hyvä only if workspace_has_hyva
-# (composer.json/lock under root or html/ contains hyva-themes/, or vendor/hyva-themes exists).
+# On Magento path match: always add umbraculum-toolset-common FIRST (a dedicated Magento
+# case/elif replaces the default `*)` arm, so common is not inherited automatically),
+# then Magento; add Hyvä only if workspace_has_hyva (composer.json/lock under root or
+# html/ contains hyva-themes/, or vendor/hyva-themes exists).
 # Do not install those plugins into ~/.cursor/plugins/local/ (double-load risk).
 #
 # workspaceOpen hook — register Cursor plugins from source paths per workspace.
