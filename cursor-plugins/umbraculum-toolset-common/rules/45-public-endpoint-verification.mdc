@@ -92,6 +92,7 @@ If the active plugin set does not include a matching runbook, fall back to a bou
 
 - `20-tests-must-follow-changes` says "run/update the test layer." This rule says "and after green, hit the URL too."
 - `52-verify-url-exceptions-via-curl` is a narrower special case (URL+exception input). When that rule fires, it runs in addition to this gate (the `Endpoint verification: ...` summary line is still required).
+- `58-curl-not-ui-test-plan-gate` — this rule’s 200/PASSED line is **not** a UI/Admin journey pass; draft a test plan + browser when the surface is user-visible.
 - `66-experimental-agentic-e2e` keeps its `signal-only` framing for the heavyweight agentic stack. The minimum required by this rule is one bounded curl; the agentic stack stays optional unless the team has gated it.
 - `71-browser-tools-preferred` keeps its preference for browser tools on UI behavior; this rule generalizes the principle to backend/API endpoints.
 

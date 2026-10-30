@@ -1,0 +1,40 @@
+---
+description: Curl / Endpoint verification 200 is not a UI or Admin test — draft a bounded test plan; browser required for user-visible surfaces; project flows packs win when present
+alwaysApply: true
+---
+
+# Curl ≠ UI/Admin test (stack-agnostic hygiene)
+
+## Classification (authoring gate)
+
+- **Artifact:** Rule (guardrail + pointer — no scenario runbook in this file).
+- **Local-subagent / Ollama readiness:** Deterministic checks — (a) final summary must not treat curl/`Endpoint verification: PASSED … 200` alone as UI/Admin done; (b) when UI changed, require a drafted plan ID list or an explicit skip token. Procedure for Magento Admin packs lives in domain skills / project `flows/`.
+
+## Why
+
+Agents routinely treat a green HTTP check (curl, `public-endpoint-verification`, healthz) as proof the **user-visible** surface works. That skips Admin forms, storefront layout, browser JS, store-scope, and “Use Default”-class regressions. Rule `45-public-endpoint-verification` remains required for **running-service** smoke; it does **not** replace UI/Admin journey tests.
+
+## Rule (hard)
+
+1. **Curl / endpoint 200 ≠ tested** for any user-visible UI (storefront, Admin/backoffice, SPA screen, control-panel page, PLC HMI). Report endpoint lines as coding hygiene only.
+2. **Draft a bounded test plan** before claiming UI/Admin work done: scenario IDs (or an explicit short list), what will be checked in browser vs CLI, and any skips with reason tokens.
+3. **Authorize or execute:** interactive → same-turn operator authorization when required by the project; non-interactive → draft in the reply, execute, report pass/fail per ID.
+4. **Browser required** for UI (integrated browser or project E2E). Prefer project `flows/` / journey packs when they exist (e.g. Magento `AgentDocs/flows/` `SF-*` / `BLOG-*` / `ADM-*`).
+5. **Stop / skip tokens** (use verbatim when skipping): `no-ui-change`, `flows-absent`, `container-not-running`, `user-declined-browser`, `auth-required`.
+
+## Must not
+
+- Declare storefront/Admin/SPA “done” from curl or `Endpoint verification: PASSED … 200` alone.
+- Invent credentials, hosts, or scenario packs inside shared plugins — those stay in the consumer repo (`DEVELOPMENT-LOCAL.md`, project `flows/`).
+- Duplicate Magento compile/reindex/cache recipes here — domain skill / project Ansible skip tokens own that.
+
+## Pointers
+
+- Companion: `45-public-endpoint-verification.mdc` (running endpoint smoke — complementary, not a substitute).
+- Magento Admin/local pack drafting: `rf-magento-cursor-assistant` skill `draft-local-admin-test-plan`.
+- Project example (not required): gacom `html/AGENTS.md` Rule #0 + `app/code/AgentDocs/flows/`.
+
+## Fits the system
+
+- **Frontier now:** always-on cross-ecosystem guardrail (Magento, Node/React, OpenPLC, WP consumers that install this plugin).
+- **Local-subagent-future:** fail closed on “done” claims that cite only HTTP 200 for UI work; domain skills supply bounded plan templates.

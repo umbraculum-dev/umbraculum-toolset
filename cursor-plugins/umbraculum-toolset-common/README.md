@@ -21,6 +21,7 @@ This plugin is **not stand-alone**. It carries language- and domain-agnostic dis
 - `50-operator-attachment-readability-gate.mdc` — if an operator-supplied attachment is not readable, stop and ask for a clearer replacement; only the operator may explicitly skip (never the agent).
 - `56-bugbot-checks-only.mdc` — Bugbot checks-only guardrail; opt-in via `.cursor/BUGBOT.md`; suggest-not-block; never a done gate.
 - `57-loop-readonly-guardrails.mdc` — Loop read-only guardrail; opt-in via `.cursor/LOOP.md`; no fix-until-green; `/babysit` user-only.
+- `58-curl-not-ui-test-plan-gate.mdc` — curl / `Endpoint verification` 200 ≠ UI or Admin done; draft a bounded test plan; browser required for user-visible surfaces; project `flows/` packs win when present. Complements `45-public-endpoint-verification` (does not replace it).
 
 ### Skills
 
