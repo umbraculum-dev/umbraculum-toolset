@@ -16,6 +16,7 @@ type ParsedArgs = {
   jobs: string[] | null;
   parallel: boolean;
   isolatedInstall: boolean;
+  maxParallel: number | null;
 };
 
 function printHelp(): void {
@@ -33,6 +34,7 @@ Options:
   --ci                CI mode: use checkout mount instead of git archive
   --jobs <a,b,c>      Comma-separated job ids subset
   --parallel          Run each job in a separate container (requires --jobs or subset)
+  --max-parallel <n>  Cap concurrent job containers under --parallel (default: 2 local)
   --isolated-install  Skip shared /repo/node_modules volume (safe for --parallel)
   --keep              Keep /tmp/ci-parity-* snapshot and logs
   --strict            validate: fail on undocumented nested workspaces
@@ -40,8 +42,13 @@ Options:
 
 Resource safety (laptop defaults; GITHUB_ACTIONS/CI use a higher profile):
   Docker --memory/--cpus on every job container; --parallel capped (default max 2 locally).
-  Env overrides: CI_PARITY_DOCKER_MEMORY, CI_PARITY_DOCKER_CPUS, CI_PARITY_MAX_PARALLEL,
+  Raise concurrency when you know the laptop has headroom:
+    ci-parity run --parallel --isolated-install --jobs lint,typecheck --max-parallel 4
+  Or for npm run verify:pre-push:
+    CI_PARITY_MAX_PARALLEL=4 npm run verify:pre-push
+  Also: CI_PARITY_DOCKER_MEMORY, CI_PARITY_DOCKER_CPUS,
   CI_PARITY_NO_RESOURCE_LIMITS=1 (escape hatch — not for juniors/laptops).
+  Precedence for maxParallel: --max-parallel > CI_PARITY_MAX_PARALLEL > manifest > default.
 
 Host prerequisites: git, bash, Docker (jobs run inside manifest runtime image).
 `);
@@ -67,6 +74,7 @@ function parseArgs(argv: string[]): ParsedArgs {
   let jobs: string[] | null = null;
   let parallel = false;
   let isolatedInstall = false;
+  let maxParallel: number | null = null;
   let explicitRepo: string | null = null;
 
   for (let i = 0; i < args.length; i++) {
@@ -89,6 +97,12 @@ function parseArgs(argv: string[]): ParsedArgs {
       parallel = true;
     } else if (arg === "--isolated-install") {
       isolatedInstall = true;
+    } else if (arg === "--max-parallel" && args[i + 1]) {
+      const n = Number(args[++i]);
+      if (Number.isFinite(n) && n >= 1) maxParallel = Math.floor(n);
+    } else if (arg?.startsWith("--max-parallel=")) {
+      const n = Number(arg.slice("--max-parallel=".length));
+      if (Number.isFinite(n) && n >= 1) maxParallel = Math.floor(n);
     }
   }
 
@@ -108,6 +122,7 @@ function parseArgs(argv: string[]): ParsedArgs {
     jobs,
     parallel,
     isolatedInstall,
+    maxParallel,
   };
 }
 
@@ -159,6 +174,7 @@ async function main(): Promise<void> {
     jobFilter: parsed.jobs,
     parallel: parsed.parallel,
     isolatedInstall: parsed.isolatedInstall,
+    ...(parsed.maxParallel != null ? { maxParallel: parsed.maxParallel } : {}),
   });
 
   process.exit(output.exitCode);

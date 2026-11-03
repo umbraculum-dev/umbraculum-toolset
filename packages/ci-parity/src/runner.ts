@@ -24,6 +24,8 @@ export type RunOptions = {
   jobFilter: string[] | null;
   parallel?: boolean;
   isolatedInstall?: boolean;
+  /** CLI `--max-parallel N` — concurrent job containers when `--parallel`. */
+  maxParallel?: number;
 };
 
 export type RunOutput = {
@@ -383,6 +385,7 @@ export async function runCiParity(options: RunOptions): Promise<RunOutput> {
     ...(options.manifest.docker.resources
       ? { manifestResources: options.manifest.docker.resources }
       : {}),
+    ...(options.maxParallel != null ? { cliMaxParallel: options.maxParallel } : {}),
   });
 
   console.log(`=== @umbraculum/ci-parity — running against ${options.sha} (${short}) ===`);

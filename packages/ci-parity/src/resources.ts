@@ -6,11 +6,13 @@
  * GHA reusable workflows run one job set per runner without `--parallel`, so
  * laptop-safe defaults are the critical path for juniors.
  *
- * Overrides (env, always win when set):
+ * Overrides (highest wins):
+ * - CLI `--max-parallel <n>` (one-shot; see cli.ts → RunOptions.maxParallel)
  * - `CI_PARITY_NO_RESOURCE_LIMITS=1` — omit Docker memory/cpu caps
  * - `CI_PARITY_DOCKER_MEMORY` — e.g. `2560m`, `3g`
  * - `CI_PARITY_DOCKER_CPUS` — e.g. `2`
  * - `CI_PARITY_MAX_PARALLEL` — positive int; concurrent job containers when `--parallel`
+ * - manifest `docker.resources.maxParallel`
  */
 
 export type ManifestDockerResources = {
@@ -105,6 +107,8 @@ export function resolveDockerResources(options: {
     cpus?: string | undefined;
     maxParallel?: number | undefined;
   };
+  /** CLI `--max-parallel N` — wins over env and manifest when ≥ 1. */
+  cliMaxParallel?: number;
   env?: NodeJS.ProcessEnv;
 } = {}): ResolvedDockerResources {
   const env = options.env ?? process.env;
@@ -141,7 +145,10 @@ export function resolveDockerResources(options: {
   const cpus = cpusRaw && cpusRaw.length > 0 ? cpusRaw : null;
 
   let maxParallel = baseMaxParallel;
-  if (env["CI_PARITY_MAX_PARALLEL"]?.trim()) {
+  const cliMax = options.cliMaxParallel;
+  if (cliMax != null && Number.isFinite(cliMax) && cliMax >= 1) {
+    maxParallel = Math.floor(cliMax);
+  } else if (env["CI_PARITY_MAX_PARALLEL"]?.trim()) {
     const n = Number(env["CI_PARITY_MAX_PARALLEL"].trim());
     if (Number.isFinite(n) && n >= 1) maxParallel = Math.floor(n);
   } else if (
@@ -156,6 +163,7 @@ export function resolveDockerResources(options: {
   const nodeOptions = clampNodeOptionsHeap(options.manifestNodeOptions, heapCap);
 
   const custom =
+    (cliMax != null && Number.isFinite(cliMax) && cliMax >= 1) ||
     Boolean(env["CI_PARITY_DOCKER_MEMORY"]?.trim()) ||
     Boolean(env["CI_PARITY_DOCKER_CPUS"]?.trim()) ||
     Boolean(env["CI_PARITY_MAX_PARALLEL"]?.trim()) ||

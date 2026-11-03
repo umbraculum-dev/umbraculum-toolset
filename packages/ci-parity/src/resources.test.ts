@@ -64,6 +64,16 @@ describe("resolveDockerResources", () => {
     // 3g ≈ 3072 MiB → heap cap 3072-512 = 2560, but laptop base heap is 2048
     expect(parseMaxOldSpaceSizeMb(r.nodeOptions)).toBe(2048);
   });
+
+  it("CLI maxParallel wins over env and manifest", () => {
+    const r = resolveDockerResources({
+      env: { CI_PARITY_MAX_PARALLEL: "3" },
+      manifestResources: { maxParallel: 2 },
+      cliMaxParallel: 4,
+    });
+    expect(r.profile).toBe("custom");
+    expect(r.maxParallel).toBe(4);
+  });
 });
 
 describe("helpers", () => {
