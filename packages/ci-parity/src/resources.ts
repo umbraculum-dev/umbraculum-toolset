@@ -34,10 +34,16 @@ export type ResolvedDockerResources = {
   profile: "laptop" | "ci" | "unlimited" | "custom";
 };
 
-const LAPTOP_MEMORY = "2560m";
+/**
+ * Per-container RAM: umbraculum-dev `npm ci` + `build:packages` + eslint needs ~7 GiB.
+ * Default maxParallel=1 so a 16 GiB junior laptop keeps headroom for OS/IDE; raise via
+ * `--max-parallel` / `CI_PARITY_MAX_PARALLEL` on 32 GiB+ machines.
+ */
+const LAPTOP_MEMORY = "7168m";
 const LAPTOP_CPUS = "2";
-const LAPTOP_MAX_PARALLEL = 2;
-const LAPTOP_HEAP_MB = 2048;
+const LAPTOP_MAX_PARALLEL = 1;
+/** Preferred heap when no cgroup (unlimited profile / missing memory string). */
+const LAPTOP_HEAP_MB = 6144;
 
 const CI_MEMORY = "6144m";
 const CI_MAX_PARALLEL = 8;
@@ -62,12 +68,18 @@ export function parseMaxOldSpaceSizeMb(nodeOptions: string | undefined): number 
   return Number.isFinite(n) ? n : null;
 }
 
-/** Ensure NODE_OPTIONS has max-old-space-size ≤ heapCapMb (replace or append). */
+/**
+ * Ensure NODE_OPTIONS has max-old-space-size ≤ heapCapMb.
+ * Preserves a lower requested heap; only raises when NODE_OPTIONS omits the flag
+ * (then uses heapCapMb as the default for this profile).
+ */
 export function clampNodeOptionsHeap(
   nodeOptions: string | undefined,
   heapCapMb: number,
 ): string {
-  const capped = `--max-old-space-size=${heapCapMb}`;
+  const existing = parseMaxOldSpaceSizeMb(nodeOptions);
+  const target = existing != null ? Math.min(existing, heapCapMb) : heapCapMb;
+  const capped = `--max-old-space-size=${target}`;
   if (!nodeOptions || !nodeOptions.trim()) {
     return capped;
   }
@@ -90,12 +102,14 @@ export function dockerMemoryToApproxMiB(memory: string): number | null {
 
 /**
  * Heap should stay under cgroup memory (leave ~512 MiB for npm/apt/OS in the container).
+ * Do **not** clamp to the laptop preferred heap when the cgroup is larger — that OOMs
+ * eslint/`npm ci` while Docker still reports headroom.
  */
 export function heapCapForMemory(memory: string | null, fallbackHeapMb: number): number {
   if (!memory) return fallbackHeapMb;
   const mi = dockerMemoryToApproxMiB(memory);
   if (mi == null) return fallbackHeapMb;
-  return Math.max(512, Math.min(fallbackHeapMb, mi - 512));
+  return Math.max(512, mi - 512);
 }
 
 export function resolveDockerResources(options: {

@@ -17,10 +17,11 @@ describe("resolveDockerResources", () => {
       manifestNodeOptions: "--max-old-space-size=6144",
     });
     expect(r.profile).toBe("laptop");
-    expect(r.memory).toBe("2560m");
+    expect(r.memory).toBe("7168m");
     expect(r.cpus).toBe("2");
-    expect(r.maxParallel).toBe(2);
-    expect(parseMaxOldSpaceSizeMb(r.nodeOptions)).toBe(2048);
+    expect(r.maxParallel).toBe(1);
+    // 7168m cgroup → heap ≤ 6656; manifest 6144 fits unchanged
+    expect(parseMaxOldSpaceSizeMb(r.nodeOptions)).toBe(6144);
   });
 
   it("uses ci profile under GITHUB_ACTIONS", () => {
@@ -61,7 +62,15 @@ describe("resolveDockerResources", () => {
     expect(r.memory).toBe("3g");
     expect(r.cpus).toBe("1.5");
     expect(r.maxParallel).toBe(1);
-    // 3g ≈ 3072 MiB → heap cap 3072-512 = 2560, but laptop base heap is 2048
+    // 3g ≈ 3072 MiB → heap cap 3072-512 = 2560
+    expect(parseMaxOldSpaceSizeMb(r.nodeOptions)).toBe(2560);
+  });
+
+  it("preserves a lower requested heap under a larger cgroup", () => {
+    const r = resolveDockerResources({
+      env: { CI_PARITY_DOCKER_MEMORY: "6144m" },
+      manifestNodeOptions: "--max-old-space-size=2048",
+    });
     expect(parseMaxOldSpaceSizeMb(r.nodeOptions)).toBe(2048);
   });
 
@@ -89,8 +98,9 @@ describe("helpers", () => {
     expect(clampNodeOptionsHeap(undefined, 2048)).toBe("--max-old-space-size=2048");
   });
 
-  it("heapCapForMemory leaves headroom", () => {
+  it("heapCapForMemory leaves headroom from cgroup only", () => {
     expect(heapCapForMemory("2560m", 4096)).toBe(2048);
+    expect(heapCapForMemory("4096m", 2048)).toBe(3584);
   });
 
   it("dockerResourceArgs emits memory-swap hard cap", () => {

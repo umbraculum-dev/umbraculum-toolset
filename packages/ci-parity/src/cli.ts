@@ -34,18 +34,19 @@ Options:
   --ci                CI mode: use checkout mount instead of git archive
   --jobs <a,b,c>      Comma-separated job ids subset
   --parallel          Run each job in a separate container (requires --jobs or subset)
-  --max-parallel <n>  Cap concurrent job containers under --parallel (default: 2 local)
+  --max-parallel <n>  Cap concurrent job containers under --parallel (default: 1 local)
   --isolated-install  Skip shared /repo/node_modules volume (safe for --parallel)
   --keep              Keep /tmp/ci-parity-* snapshot and logs
   --strict            validate: fail on undocumented nested workspaces
   -h, --help          Show help
 
 Resource safety (laptop defaults; GITHUB_ACTIONS/CI use a higher profile):
-  Docker --memory/--cpus on every job container; --parallel capped (default max 2 locally).
-  Raise concurrency when you know the laptop has headroom:
-    ci-parity run --parallel --isolated-install --jobs lint,typecheck --max-parallel 4
+  Docker --memory/--cpus on every job container (default 7168m / 2 cpus locally);
+  --parallel capped (default max 1 — lint/npm ci need ~7GiB each). Heap clamps to
+  memory-512 MiB. Raise concurrency on 32GiB+ hosts:
+    ci-parity run --parallel --isolated-install --jobs lint,typecheck --max-parallel 2
   Or for npm run verify:pre-push:
-    CI_PARITY_MAX_PARALLEL=4 npm run verify:pre-push
+    CI_PARITY_MAX_PARALLEL=2 npm run verify:pre-push
   Also: CI_PARITY_DOCKER_MEMORY, CI_PARITY_DOCKER_CPUS,
   CI_PARITY_NO_RESOURCE_LIMITS=1 (escape hatch — not for juniors/laptops).
   Precedence for maxParallel: --max-parallel > CI_PARITY_MAX_PARALLEL > manifest > default.

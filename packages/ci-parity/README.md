@@ -33,7 +33,7 @@ Each consumer repo ships `.umbraculum/ci-parity.json` as the single source of tr
 
 Optional **`docker.volumes`** (since 1.0.8) — array of `{ "name", "containerPath" }` mounted on the parity container for **local** warm npm cache / `node_modules` persistence (Linux + Docker Desktop macOS). Example names in umbraculum-dev: `umbraculum_npm_cache`, `umbraculum_root_node_modules`. See umbraculum-dev [`docs/DEVELOPMENT-NPM-VOLUMES.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/DEVELOPMENT-NPM-VOLUMES.md). GHA runners remain ephemeral per job.
 
-Optional **`docker.resources`** (since **1.0.13**) — `{ memory, cpus, maxParallel }` for laptop-safe Docker caps. Even without this block, **local hosts** get defaults (`2560m` / `2` cpus / max **2** parallel jobs) and `NODE_OPTIONS` heap is clamped under the memory cgroup. Raise concurrency on a strong laptop: `--max-parallel 4` (CLI) or `CI_PARITY_MAX_PARALLEL=4` (env). Precedence: CLI → env → manifest → default. Also: `CI_PARITY_DOCKER_MEMORY`, `CI_PARITY_DOCKER_CPUS`, `CI_PARITY_NO_RESOURCE_LIMITS=1`.
+Optional **`docker.resources`** (since **1.0.13**; laptop defaults tuned in **1.0.14**) — `{ memory, cpus, maxParallel }` for laptop-safe Docker caps. Even without this block, **local hosts** get defaults (`7168m` / `2` cpus / max **1** parallel job — monorepo lint/`npm ci` need ~7 GiB) and `NODE_OPTIONS` heap is clamped under the memory cgroup. Raise concurrency on 32 GiB+ hosts: `--max-parallel 2` (CLI) or `CI_PARITY_MAX_PARALLEL=2` (env). Precedence: CLI → env → manifest → default. Also: `CI_PARITY_DOCKER_MEMORY`, `CI_PARITY_DOCKER_CPUS`, `CI_PARITY_NO_RESOURCE_LIMITS=1`.
 
 Canonical guide: [umbraculum-dev `docs/CI-PARITY.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/CI-PARITY.md).
 
@@ -42,8 +42,8 @@ Canonical guide: [umbraculum-dev `docs/CI-PARITY.md`](https://github.com/umbracu
 | Command | Description |
 |---------|-------------|
 | `ci-parity run` | Run all manifest jobs (default) |
-| `ci-parity run --parallel --isolated-install --jobs lint,typecheck` | Parallel job containers; skip shared `/repo/node_modules` volume (T2-PR safe; max 2 concurrent locally by default) |
-| `… --max-parallel 4` | Same, but up to 4 concurrent job containers (opt-in when the host has headroom) |
+| `ci-parity run --parallel --isolated-install --jobs lint,typecheck` | Parallel job containers; skip shared `/repo/node_modules` volume (T2-PR safe; max 1 concurrent locally by default) |
+| `… --max-parallel 2` | Same, up to 2 concurrent job containers (opt-in on 32 GiB+ hosts) |
 | `ci-parity run --jobs lint,typecheck` | Subset of jobs |
 | `ci-parity run --ci` | CI mode: mount checkout instead of `git archive` |
 | `ci-parity run --sha <ref>` | Snapshot ref for local runs (default `HEAD`) |
