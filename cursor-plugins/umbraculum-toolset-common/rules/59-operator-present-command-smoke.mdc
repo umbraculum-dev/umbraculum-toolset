@@ -1,0 +1,35 @@
+---
+description: At task start, smoke allowlist-sensitive docker/network command shapes while the operator is present; prefer those shapes for unattended work; never invent alternate network access when approval is missing
+alwaysApply: true
+---
+
+# Operator-present command smoke (allowlist hygiene)
+
+## Classification (authoring gate)
+
+- **Artifact:** Rule (guardrail + pointer — no long runbook).
+- **Local-subagent / Ollama readiness:** Deterministic — when allowlist-sensitive work is planned, announce + run a small smoke of the **same** command shapes the task will reuse; no loops; no inventing alternate network paths.
+
+## Why
+
+Cursor often prompts for approval / Always Allow on docker, compose, and network commands. Unattended stretches are normal. The failure mode: the agent skips early approval while the operator is present, then invents host npm, scrapers, or other bypasses because allowlisting was never granted.
+
+## Rule (hard)
+
+1. **When it fires:** non-trivial tasks that will need docker, compose, `node:*-slim` one-shots, registry/network pulls, or other commands that commonly require operator approval.
+2. **Early in the task** (after `DEVELOPMENT.md` / apparatus self-check, before long unattended loops), say explicitly: *Smoke checks with operator present before possible non-interactive work.*
+3. **Smoke:** run a **small** set of the **same command shapes** the task will reuse later — enough for Allow / Always Allow while the operator is at the keyboard. Not a full verify suite.
+4. **Prefer** those approved shapes for the rest of the task and later unattended work.
+5. **Must not** invent alternate ways to reach the network, registries, or containers to bypass a missing allow (host npm when container is required, scraping, private proxies, etc.). If a needed shape is still blocked → **stop and ask** the operator.
+6. **Skip:** pure docs/prose with no shell; or when the operator already confirmed the relevant shapes are Always Allowed for this session.
+
+## Pointers (mid-task blocks)
+
+- `noninteractive-allowlist-fallback` — keep moving with workspace edits when a command is blocked.
+- `allowlist-docker-exec-strategy` — narrow stable `docker exec` / container shapes for allowlisting.
+- Domain: `00-shared-node-npm-container-only.mdc` — container npm remains the project surface.
+
+## Fits the system
+
+- **Frontier now:** always-on convention that front-loads allowlist prerequisites for unattended stretches.
+- **Local-subagent-future:** announce string + bounded smoke command count is regex-checkable; fail closed on network-bypass inventions.

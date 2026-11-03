@@ -7,14 +7,14 @@ description: Reproduce the GHA native-deps workflow (root npm ci + check-native-
 
 ## Why this skill exists
 
-`npx @umbraculum/ci-parity` runs **`typecheck`** but does **not** execute [`.github/workflows/native-deps.yml`](../../umbraculum-dev/.github/workflows/native-deps.yml). That workflow runs root **`npm ci`**, [`scripts/check-native-expo-doctor.sh`](../../umbraculum-dev/scripts/check-native-expo-doctor.sh) (stale-tree cleanup + `expo install --check` + `expo-doctor` 18/18), then **`npm run typecheck -w @umbraculum/native-brewery`**.
+`npx @umbraculum/ci-parity` runs **`typecheck`** but does **not** execute [`.github/workflows/native-deps.yml`](../../umbraculum-dev/.github/workflows/native-deps.yml). That workflow runs root **`npm ci`**, [`scripts/check-native-expo-doctor.sh`](../../umbraculum-dev/scripts/check-native-expo-doctor.sh) (stale-tree cleanup + `expo install --check` + `expo-doctor` 20/20), then **`npm run typecheck -w @umbraculum/native-brewery`**.
 
 Local gaps this skill closes:
 
 | Missed locally | CI symptom |
 |---|---|
 | Phantom `expo@56` at root from loose peers | Doctor duplicate dependencies |
-| `apps/web` on React `19.2.x` while brewery on `19.1.0` | Doctor duplicate `react` (Path A forbids this) |
+| `apps/web` on React `19.2.x` while brewery on `19.3.0` | Doctor duplicate `react` (Path A forbids this) |
 | Stale `apps/native/node_modules` | Third `expo@54` copy in doctor output |
 | `app.config.js` not spreading `app.json` | Doctor Expo config check fail |
 
@@ -50,7 +50,7 @@ If FAIL, append up to 3 lines from `expo-doctor` or `expo install --check` outpu
 ## Bounds (hard)
 
 - Max **3** commands.
-- Use **`docker run node:20-slim`** with repo bind-mount (EAS-like) — not host npm, not brewery-only install.
+- Use **`docker run node:22-slim`** with repo bind-mount (EAS-like) — not host npm, not brewery-only install.
 - No loops; no "push and see what CI says".
 - Read-only w.r.t. tracked tree (does not commit).
 
@@ -65,7 +65,7 @@ If FAIL, append up to 3 lines from `expo-doctor` or `expo install --check` outpu
 ### 1. Full native-deps parity (preferred — matches GHA)
 
 ```bash
-cd <REPO_ROOT> && docker run --rm -v "$PWD:/repo" -w /repo node:20-slim \
+cd <REPO_ROOT> && docker run --rm -v "$PWD:/repo" -w /repo node:22-slim \
   bash -lc "npm ci --no-audit --no-fund && ./scripts/check-native-expo-doctor.sh && npm run typecheck -w @umbraculum/native-brewery"
 ```
 
@@ -89,7 +89,7 @@ Expect `native-deps` in `matchedWorkflows` and `expo-doctor` in `nativeSteps` wh
 
 ## Stop conditions
 
-- Attempting to bump `apps/web` `react` past root `overrides` (`19.1.0`) without Path B plan → halt; read `docs/design/expo-doctor-monorepo-assessment.md` §5.
+- Attempting to bump `apps/web` `react` past root `overrides` (`19.3.0`) without Path B plan → halt; read `docs/design/expo-doctor-monorepo-assessment.md` §5.
 - Proposed `native-shell` peer `expo: ">=54"` → reject; use `~54.0.35`.
 - Doctor fails on duplicates after remediation → run cleanup script path manually; do not delete overrides.
 

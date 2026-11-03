@@ -22,6 +22,7 @@ This plugin is **not stand-alone**. It carries language- and domain-agnostic dis
 - `56-bugbot-checks-only.mdc` — Bugbot checks-only guardrail; opt-in via `.cursor/BUGBOT.md`; suggest-not-block; never a done gate.
 - `57-loop-readonly-guardrails.mdc` — Loop read-only guardrail; opt-in via `.cursor/LOOP.md`; no fix-until-green; `/babysit` user-only.
 - `58-curl-not-ui-test-plan-gate.mdc` — curl / `Endpoint verification` 200 ≠ UI or Admin done; draft a bounded test plan; browser required for user-visible surfaces; project `flows/` packs win when present. Complements `45-public-endpoint-verification` (does not replace it).
+- `59-operator-present-command-smoke.mdc` — early in allowlist-sensitive tasks, smoke the **same** docker/network command shapes while the operator is present; prefer those shapes for unattended work; do not invent alternate network access when approval is missing (ask instead). Complements `noninteractive-allowlist-fallback` / `allowlist-docker-exec-strategy`.
 
 ### Skills
 
