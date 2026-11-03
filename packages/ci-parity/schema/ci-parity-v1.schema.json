@@ -31,6 +31,19 @@
             }
           },
           "default": []
+        },
+        "resources": {
+          "type": "object",
+          "description": "Optional Docker / parallel caps (laptop defaults apply when omitted)",
+          "properties": {
+            "memory": { "type": "string", "description": "Docker --memory (e.g. 2560m)" },
+            "cpus": { "type": "string", "description": "Docker --cpus (e.g. 2)" },
+            "maxParallel": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Max concurrent job containers under --parallel"
+            }
+          }
         }
       },
       "default": { "volumes": [] }

@@ -38,6 +38,11 @@ Options:
   --strict            validate: fail on undocumented nested workspaces
   -h, --help          Show help
 
+Resource safety (laptop defaults; GITHUB_ACTIONS/CI use a higher profile):
+  Docker --memory/--cpus on every job container; --parallel capped (default max 2 locally).
+  Env overrides: CI_PARITY_DOCKER_MEMORY, CI_PARITY_DOCKER_CPUS, CI_PARITY_MAX_PARALLEL,
+  CI_PARITY_NO_RESOURCE_LIMITS=1 (escape hatch — not for juniors/laptops).
+
 Host prerequisites: git, bash, Docker (jobs run inside manifest runtime image).
 `);
 }

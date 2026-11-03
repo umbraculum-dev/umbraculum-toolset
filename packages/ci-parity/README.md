@@ -33,6 +33,8 @@ Each consumer repo ships `.umbraculum/ci-parity.json` as the single source of tr
 
 Optional **`docker.volumes`** (since 1.0.8) — array of `{ "name", "containerPath" }` mounted on the parity container for **local** warm npm cache / `node_modules` persistence (Linux + Docker Desktop macOS). Example names in umbraculum-dev: `umbraculum_npm_cache`, `umbraculum_root_node_modules`. See umbraculum-dev [`docs/DEVELOPMENT-NPM-VOLUMES.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/DEVELOPMENT-NPM-VOLUMES.md). GHA runners remain ephemeral per job.
 
+Optional **`docker.resources`** (since **1.0.13**) — `{ memory, cpus, maxParallel }` for laptop-safe Docker caps. Even without this block, **local hosts** get defaults (`2560m` / `2` cpus / max **2** parallel jobs) and `NODE_OPTIONS` heap is clamped under the memory cgroup. Env overrides: `CI_PARITY_DOCKER_MEMORY`, `CI_PARITY_DOCKER_CPUS`, `CI_PARITY_MAX_PARALLEL`, `CI_PARITY_NO_RESOURCE_LIMITS=1`.
+
 Canonical guide: [umbraculum-dev `docs/CI-PARITY.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/CI-PARITY.md).
 
 ## Commands

@@ -57,6 +57,15 @@ const DockerVolumeSchema = z.object({
   containerPath: z.string().min(1),
 });
 
+/** Optional per-manifest Docker caps (env + laptop/ci defaults still apply). */
+const DockerResourcesSchema = z
+  .object({
+    memory: z.string().min(1).optional(),
+    cpus: z.string().min(1).optional(),
+    maxParallel: z.number().int().positive().optional(),
+  })
+  .optional();
+
 export const CiParityManifestSchema = z.object({
   schemaVersion: z.literal(1),
   profile: z.enum(["ts-npm-monorepo", "python", "magento-php"]),
@@ -67,6 +76,7 @@ export const CiParityManifestSchema = z.object({
   docker: z
     .object({
       volumes: z.array(DockerVolumeSchema).default([]),
+      resources: DockerResourcesSchema,
     })
     .default({ volumes: [] }),
   snapshot: z.object({

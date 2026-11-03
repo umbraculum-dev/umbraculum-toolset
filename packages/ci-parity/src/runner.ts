@@ -3,6 +3,12 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import { join, resolve } from "node:path";
 
 import type { CiParityManifest, CiParityJob } from "./manifest.js";
+import {
+  dockerResourceArgs,
+  mapPool,
+  resolveDockerResources,
+  type ResolvedDockerResources,
+} from "./resources.js";
 
 export type JobResult = {
   id: string;
@@ -223,21 +229,17 @@ function copySnapshotForJob(baseDir: string, jobId: string): string {
   return jobDir;
 }
 
-function runSingleJobContainer(
-  snapshotDir: string,
+function buildJobDockerArgs(
+  jobSnapshot: string,
   manifest: CiParityManifest,
-  job: CiParityJob,
+  jobId: string,
   isolatedInstall: boolean,
-  parallel = false,
-): number {
-  const jobSnapshot = parallel ? copySnapshotForJob(snapshotDir, job.id) : snapshotDir;
-  const containerScript = buildContainerScript(manifest, [job]);
-  const scriptPath = join(jobSnapshot, `.ci-parity-run-${job.id}.sh`);
-  writeFileSync(scriptPath, `#!/usr/bin/env bash\n${containerScript}\n`, "utf8");
-
+  resources: ResolvedDockerResources,
+): string[] {
   const dockerArgs = [
     "run",
     "--rm",
+    ...dockerResourceArgs(resources),
     "-v",
     `${jobSnapshot}:/repo`,
     "-w",
@@ -245,11 +247,34 @@ function runSingleJobContainer(
     ...dockerVolumeArgs(manifest, isolatedInstall),
   ];
 
-  if (manifest.runtime.nodeOptions) {
-    dockerArgs.push("-e", `NODE_OPTIONS=${manifest.runtime.nodeOptions}`);
+  if (resources.nodeOptions) {
+    dockerArgs.push("-e", `NODE_OPTIONS=${resources.nodeOptions}`);
   }
 
-  dockerArgs.push(manifest.runtime.image, "bash", `/repo/.ci-parity-run-${job.id}.sh`);
+  dockerArgs.push(manifest.runtime.image, "bash", `/repo/.ci-parity-run-${jobId}.sh`);
+  return dockerArgs;
+}
+
+function runSingleJobContainer(
+  snapshotDir: string,
+  manifest: CiParityManifest,
+  job: CiParityJob,
+  isolatedInstall: boolean,
+  resources: ResolvedDockerResources,
+  parallel = false,
+): number {
+  const jobSnapshot = parallel ? copySnapshotForJob(snapshotDir, job.id) : snapshotDir;
+  const containerScript = buildContainerScript(manifest, [job]);
+  const scriptPath = join(jobSnapshot, `.ci-parity-run-${job.id}.sh`);
+  writeFileSync(scriptPath, `#!/usr/bin/env bash\n${containerScript}\n`, "utf8");
+
+  const dockerArgs = buildJobDockerArgs(
+    jobSnapshot,
+    manifest,
+    job.id,
+    isolatedInstall,
+    resources,
+  );
 
   const dockerResult = spawnSync("docker", dockerArgs, { stdio: "inherit", encoding: "utf8" });
   return dockerResult.status ?? 1;
@@ -260,6 +285,7 @@ function runSingleJobContainerAsync(
   manifest: CiParityManifest,
   job: CiParityJob,
   isolatedInstall: boolean,
+  resources: ResolvedDockerResources,
   parallel = false,
 ): Promise<JobResult> {
   const jobSnapshot = parallel ? copySnapshotForJob(snapshotDir, job.id) : snapshotDir;
@@ -267,21 +293,13 @@ function runSingleJobContainerAsync(
   const scriptPath = join(jobSnapshot, `.ci-parity-run-${job.id}.sh`);
   writeFileSync(scriptPath, `#!/usr/bin/env bash\n${containerScript}\n`, "utf8");
 
-  const dockerArgs = [
-    "run",
-    "--rm",
-    "-v",
-    `${jobSnapshot}:/repo`,
-    "-w",
-    "/repo",
-    ...dockerVolumeArgs(manifest, isolatedInstall),
-  ];
-
-  if (manifest.runtime.nodeOptions) {
-    dockerArgs.push("-e", `NODE_OPTIONS=${manifest.runtime.nodeOptions}`);
-  }
-
-  dockerArgs.push(manifest.runtime.image, "bash", `/repo/.ci-parity-run-${job.id}.sh`);
+  const dockerArgs = buildJobDockerArgs(
+    jobSnapshot,
+    manifest,
+    job.id,
+    isolatedInstall,
+    resources,
+  );
 
   return new Promise((resolve) => {
     const proc = spawn("docker", dockerArgs, { stdio: "inherit" });
@@ -356,6 +374,17 @@ export async function runCiParity(options: RunOptions): Promise<RunOutput> {
 
   ensureDockerImage(options.manifest.runtime.image);
 
+  // Resource profile follows the host (GITHUB_ACTIONS/CI), not `--ci` snapshot mode.
+  // Local archive/WIP both use laptop caps; GHA runners use the ci profile.
+  const resources = resolveDockerResources({
+    ...(options.manifest.runtime.nodeOptions
+      ? { manifestNodeOptions: options.manifest.runtime.nodeOptions }
+      : {}),
+    ...(options.manifest.docker.resources
+      ? { manifestResources: options.manifest.docker.resources }
+      : {}),
+  });
+
   console.log(`=== @umbraculum/ci-parity — running against ${options.sha} (${short}) ===`);
   console.log(`snapshot: ${snapshotDir}`);
   console.log(`jobs: ${jobs.map((j) => j.id).join(", ")}`);
@@ -365,16 +394,35 @@ export async function runCiParity(options: RunOptions): Promise<RunOutput> {
   if (isolatedInstall) {
     console.log("install: isolated (/repo/node_modules not shared across containers)");
   }
+  const memLabel = resources.memory ?? "unlimited";
+  const cpuLabel = resources.cpus ?? "unlimited";
+  const parallelLabel = Number.isFinite(resources.maxParallel)
+    ? String(resources.maxParallel)
+    : "unlimited";
+  console.log(
+    `resources: profile=${resources.profile} memory=${memLabel} cpus=${cpuLabel} maxParallel=${parallelLabel}`,
+  );
+  if (resources.nodeOptions) {
+    console.log(`NODE_OPTIONS: ${resources.nodeOptions}`);
+  }
   console.log("");
 
   let results: JobResult[];
   let exitCode: number;
 
   if (parallel && jobs.length > 1) {
-    const parallelResults = await Promise.all(
-      jobs.map((job) =>
-        runSingleJobContainerAsync(snapshotDir, options.manifest, job, isolatedInstall, true),
-      ),
+    const parallelResults = await mapPool(
+      jobs,
+      resources.maxParallel,
+      (job) =>
+        runSingleJobContainerAsync(
+          snapshotDir,
+          options.manifest,
+          job,
+          isolatedInstall,
+          resources,
+          true,
+        ),
     );
     results = parallelResults;
     for (const job of jobs) {
@@ -382,7 +430,14 @@ export async function runCiParity(options: RunOptions): Promise<RunOutput> {
     }
     exitCode = printSummary(short, logDir, results);
   } else if (parallel && jobs.length === 1) {
-    const code = runSingleJobContainer(snapshotDir, options.manifest, jobs[0]!, isolatedInstall, true);
+    const code = runSingleJobContainer(
+      snapshotDir,
+      options.manifest,
+      jobs[0]!,
+      isolatedInstall,
+      resources,
+      true,
+    );
     results = [{ id: jobs[0]!.id, exitCode: code }];
     copyJobLog(`${snapshotDir}-${jobs[0]!.id}`, logDir, jobs[0]!.id);
     exitCode = printSummary(short, logDir, results);
@@ -394,6 +449,7 @@ export async function runCiParity(options: RunOptions): Promise<RunOutput> {
     const dockerArgs = [
       "run",
       "--rm",
+      ...dockerResourceArgs(resources),
       "-v",
       `${snapshotDir}:/repo`,
       "-w",
@@ -401,8 +457,8 @@ export async function runCiParity(options: RunOptions): Promise<RunOutput> {
       ...dockerVolumeArgs(options.manifest, isolatedInstall),
     ];
 
-    if (options.manifest.runtime.nodeOptions) {
-      dockerArgs.push("-e", `NODE_OPTIONS=${options.manifest.runtime.nodeOptions}`);
+    if (resources.nodeOptions) {
+      dockerArgs.push("-e", `NODE_OPTIONS=${resources.nodeOptions}`);
     }
 
     dockerArgs.push(options.manifest.runtime.image, "bash", "/repo/.ci-parity-run.sh");
