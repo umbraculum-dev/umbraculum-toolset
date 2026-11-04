@@ -37,7 +37,7 @@ Use this when you need to suggest or run runtime commands in a **containerized N
 2) Prefer `docker compose exec <service> …` for in-stack work, or `docker run … <NODE_IMAGE>` for one-shots matching CI.
 3) For npm/install/build/test: run inside the container/image — never host npm for verification that must match CI.
 4) For E2E: follow `playwright-runner-docs-gate` (quick gates before Playwright).
-5) For static-analysis parity: prefer `npx @umbraculum/ci-parity` / project `./scripts/ci-parity-check.sh` when the repo ships them.
+5) For pre-push static analysis (umbraculum-class): prefer `npm run verify:pre-push` / skill **`path-aware-pre-push`**. Use bare `npx @umbraculum/ci-parity` only for WIP/historical job reproduction (skill **`ci-parity-local-reproduction`**), not as the sole push gate.
 
 ## Stop conditions
 - Container/service name or workdir is unknown or ambiguous.
