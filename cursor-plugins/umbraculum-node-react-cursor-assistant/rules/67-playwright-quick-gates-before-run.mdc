@@ -3,7 +3,6 @@ description: Playwright — run stack health gates before any suite invocation; 
 alwaysApply: false
 globs:
   - "**/apps/web/e2e/**"
-  - "**/e2e/playwright/**"
   - "**/playwright.config.*"
 ---
 
@@ -11,14 +10,13 @@ globs:
 
 Before proposing or running **any** Playwright command (`npx playwright test`, export/render smoke, trace viewer), run the stack health gates from repo root. **Do not** launch Playwright when gates fail — auth/timeouts are usually upstream (502 API, 500 web, missing seed, stale `.auth` cookies).
 
-## Layout detection
+## Layout
 
-| Repo layout | Suite README (read first) |
+| Suite root | Suite README (read first) |
 |---|---|
 | `apps/web/e2e/**` | `apps/web/e2e/README.md` |
-| `e2e/playwright/**` | `e2e/playwright/README-maintainers.md` (+ captcha todos if present) |
 
-Platform test map (when present): `docs/TESTING.md` § L5.
+Platform test map (when present): `docs/TESTING.md` § L5. Other TS/JS consumers: use the suite README named in `DEVELOPMENT.md` / `DEVELOPMENT-LOCAL.md`.
 
 ## Procedure
 

@@ -4,9 +4,9 @@
 |---|---|
 | **Status** | **Canonical install guide** (pre-marketplace) + reference for marketplace coexistence |
 | **Owner** | umbraculum-toolset maintainers |
-| **Audience** | every developer installing umbraculum-toolset Cursor plugins **before** they are published on the Cursor Marketplace |
-| **Last meaningful update** | 2026-06-27 |
-| **Rollout status** | **Active** — `workspaceOpen` hook + source paths; `~/.cursor/plugins/local/` empty for umbraculum plugins |
+| **Audience** | every developer installing umbraculum-toolset Cursor plugins **before** they are published on the Cursor Marketplace — especially juniors joining umbraculum-dev after the **1.0.0 testing** stack (Tamagui 3 + Expo SDK 58) |
+| **Last meaningful update** | 2026-11-04 |
+| **Rollout status** | **Active** — `workspaceOpen` hook + source paths; `~/.cursor/plugins/local/` empty for umbraculum plugins. Marketplace C2 submitted 2026-06-27; **listings not yet live** → this hook path remains canonical. |
 
 > **Start here.** Until umbraculum-toolset plugins are available on the Cursor Marketplace, **this document is the goto installation procedure**. Do **not** rsync plugins into `~/.cursor/plugins/local/` for day-to-day use — that loads every plugin into every workspace. Use the `workspaceOpen` hook below instead.
 
@@ -43,9 +43,19 @@ Each workspace loads **only** the plugins that apply to that project. Marketplac
 | `/path/to/openplc-brewery-project` | `umbraculum-toolset-common` + `umbraculum-openplc-python-cursor-assistant` | e.g. Prisma |
 | **Everything else** | `umbraculum-toolset-common` **only** | per your Marketplace choices |
 
-**Must NOT appear** in umbraculum-dev: extra toolset plugins beyond the three rows above (e.g. `umbraculum-openplc-python-cursor-assistant`).
+**Must NOT appear** in umbraculum-dev: extra toolset plugins beyond the three rows above (e.g. `umbraculum-openplc-python-cursor-assistant`). Sibling PHP / Mage-OS (or other non-TS) domain plugins must also stay out of this workspace.
 
 Every hook-loaded workspace includes **`umbraculum-toolset-common`** (DEVELOPMENT-LOCAL gate, Skill Contract, commit-message ticket prefix, `generate-development-local` skill).
+
+**After plugins load (umbraculum-dev juniors):** optional per-developer `DEVELOPMENT-LOCAL.md` at the umbraculum-dev repo root (gitignored). Ask the agent to generate it (`generate-development-local` skill) so containers, base URL, and PR base are filled once per machine/worktree. Sibling `DEVELOPMENT-LOCAL-OLLAMA.md` is project-versioned when used.
+
+**Witness rules** (apparatus self-check in umbraculum-dev `AGENTS.md`):
+
+| Plugin | Witness |
+|---|---|
+| `umbraculum-toolset-common` | `00-development-local-addendum-gate.mdc` (unconditional) |
+| `umbraculum-node-react-cursor-assistant` | `22-typescript-contracts-runtime-validation.mdc` (conditional — verify via Read) |
+| `umbraculum-platform-tsjs-cursor-assistant` | `02-foundation-hardening.mdc` (unconditional) |
 
 ### Source repositories (clone once)
 
@@ -357,7 +367,19 @@ After any change to `~/.cursor/plugins/local/`, `~/.cursor/hooks.json`, or `regi
 2. **Settings → Plugins** — use the workspace filter chip (workspace folder name). Confirm only the plugins from [§0 pairing matrix](#0-canonical-install-procedure-until-marketplace-publication) appear under **Installed**. Hook-loaded plugins show as **Extension** with subagent/skill/rule counts.
 3. **Settings → Hooks** — confirm `workspaceOpen` is registered and the last run's `pluginPaths` match the workspace (three paths for umbraculum-dev, two for OpenPLC brewery, one for generic repos).
 4. **Plugin loader log** — `~/.config/Cursor/logs/<session>/window<N>/exthost/anysphere.cursor-agent-exec/Cursor Plugins.log` — each expected plugin name once; `loadUserLocalPlugins completed … (0 plugins loaded)` is **correct** when `local/` is empty (hook paths are separate from `local/` scan).
-5. **Agent smoke** — new chat in umbraculum-dev: witness / ci-parity rules present; no unrelated domain-plugin guardrails.
+5. **Agent smoke** — new chat in umbraculum-dev: witness / ci-parity rules present; no unrelated domain-plugin guardrails (no OpenPLC, no PHP/Mage-OS domain plugins).
+6. **Optional Prisma** — Settings → Plugins → Marketplace → official **Prisma** plugin enabled for this workspace only (not a witness).
+7. **Optional `DEVELOPMENT-LOCAL.md`** — present at umbraculum-dev root when you want per-machine container/URL defaults; otherwise agents ask when needed.
+
+### Junior pass/fail (umbraculum-dev)
+
+| Check | Pass |
+|---|---|
+| Hook `pluginPaths` for umbraculum-dev | Exactly the three apparatus plugins |
+| Settings → Plugins (this workspace) | Those three (+ optional Prisma); **not** OpenPLC |
+| `~/.cursor/plugins/local/` | No `umbraculum-*` folders |
+| Fresh agent session | Witness self-check in `AGENTS.md` succeeds (or after Reload Window) |
+| Stack guidance agents follow | Node **`node:22-slim`** / engines ≥22.13, Tamagui **3.2**, Expo SDK **58** (consumer SoT) |
 
 ---
 

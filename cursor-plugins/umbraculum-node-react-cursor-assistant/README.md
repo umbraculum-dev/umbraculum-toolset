@@ -8,7 +8,7 @@ This plugin is one of the four umbraculum-toolset Cursor plugins. The companion 
 
 - `rules/*.mdc`: Node/TypeScript/React/E2E and shared workflow guardrails.
 - `skills/*/SKILL.md`: bounded runbook skills for Node, Playwright/E2E, browser checks, containers, and test-MCP patterns.
-- `agents/*.md`: focused Cursor agents for E2E smoke and general verification.
+- `agents/*.md`: focused Cursor agents for Playwright smoke and general verification.
 - `docs/templates/DEVELOPMENT-LOCAL.md`: optional repo-local addendum template.
 - `docs/templates/BUGBOT.md`: TS-specific Cursor Bugbot review rules (bootstrap to `<REPO_ROOT>/.cursor/BUGBOT.md`).
 
@@ -31,7 +31,6 @@ Opt-in via `.cursor/LOOP.md` (bootstrap from toolset-common `docs/templates/LOOP
 - `23a-eslint-fixall-discipline.mdc`
 - `24-react-accessibility-first.mdc`
 - `26-typescript-strict-flags.mdc`
-- `30-e2e-no-hardcoded-paths.mdc`
 - `67-playwright-quick-gates-before-run.mdc`
 - `40-workflow-and-navigation.mdc`
 - `44-tsjs-project-docs-first.mdc`
@@ -67,7 +66,6 @@ Install via the `workspaceOpen` hook + source paths (see toolset [cursor-plugins
 - `build-workspace-packages-dist-in-container`
 - `npm-workspaces-package-lock-invalid-version`
 - `playwright-runner-docs-gate`
-- `agentic-e2e-runbook`
 - `agentic-browser-web-app`
 - `test-mcp-server`
 - `native-expo-doctor-pre-push`
@@ -83,8 +81,10 @@ Install via the `workspaceOpen` hook + source paths (see toolset [cursor-plugins
 
 ## Version history
 
-- **0.0.8** (2026-07) — Bugbot/Loop: TS `docs/templates/BUGBOT.md`, `typescript-bugbot-review` skill; fixed Magento drift in `15-subagent-delegation-guardrails.mdc`; Bugbot/Loop workflow sections in `40-workflow-and-navigation.mdc`. Portable policy in toolset-common v0.0.3+.
-- **0.0.7** (2026-06-11) — Monorepo lockfile agent gate: rule `80-monorepo-lockfile-agent-gate.mdc` + skill `monorepo-lockfile-gate` (agent-owned root lockfile regen in `node:20-slim`, forbidden `services/api/package-lock.json`, `npm run check:lockfiles`). umbraculum-dev commits repo-side `.cursor/rules/` copy + `verify-slice` T2 always runs lockfile checks in validate.
+- **0.0.10** (2026-11) — **TS/JS only:** delete Magento residue (`21-preferences…`, `30-e2e-no-hardcoded-paths`, `66-experimental-agentic-e2e`, skill `agentic-e2e-runbook`). Rewrite `runtime-commands-containers`, `playwright-runner-docs-gate`, `e2e-smoke` agent for Node/compose/Playwright. Rewrite rule `52-verify-url-exceptions-via-curl` + skill `curl-exception-verification` (no PHP/`setup:di:compile`). Magento workspaces use `umbraculum-toolset-common` + Magento plugins — never this plugin.
+- **0.0.9** (2026-11) — Path B expo-doctor / Expo SDK **58** + React **19.3.0** (rule `78` + skill `native-expo-doctor-pre-push`). Align umbraculum-dev **1.0.0 testing** stack guidance: default one-shot / ci-parity image **`node:22-slim`**; DEVELOPMENT-LOCAL template for compose + Tamagui 3 / Expo 58.
+- **0.0.8** (2026-07) — Bugbot/Loop: TS `docs/templates/BUGBOT.md`, `typescript-bugbot-review` skill; Bugbot/Loop workflow sections in `40-workflow-and-navigation.mdc`. Portable policy in toolset-common v0.0.3+.
+- **0.0.7** (2026-06-11) — Monorepo lockfile agent gate: rule `80-monorepo-lockfile-agent-gate.mdc` + skill `monorepo-lockfile-gate` (agent-owned root lockfile regen in container Node image, forbidden `services/api/package-lock.json`, `npm run check:lockfiles`). umbraculum-dev commits repo-side `.cursor/rules/` copy + `verify-slice` T2 always runs lockfile checks in validate.
 - **0.0.6** (2026-06-10) — Tamagui duplicate-instance gate: rule `79-tamagui-cli-monorepo-gate.mdc` + skill `tamagui-cli-check` (`npx @tamagui/cli check` via consuming-repo `scripts/check-tamagui-cli.sh`). umbraculum-dev commits a repo-side `.cursor/rules/` copy because plugin `alwaysApply` enforcement is unreliable.
 - **0.0.3** (2026-05-27) — Static brochure guardrail: rule `73-website-static-build-before-preview.mdc` (glob-scoped to `apps/website/public/**`); rebuild `dist/` before preview/verification after `public/` edits.
 - **0.0.2** (2026-05-27) — Playwright quick gates: rule `67-playwright-quick-gates-before-run.mdc` (glob-scoped to `apps/web/e2e/**` and `e2e/playwright/**`); `playwright-runner-docs-gate` skill expanded with mandatory stack-health gate block, Umbraculum one-shot Docker template, and MRP/CRP export troubleshooting pointers (repo docs remain canonical SoT).

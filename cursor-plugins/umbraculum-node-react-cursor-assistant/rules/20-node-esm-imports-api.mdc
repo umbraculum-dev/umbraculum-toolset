@@ -11,7 +11,7 @@ globs:
 # Node ESM imports (API): prevent `ERR_MODULE_NOT_FOUND` (e.g. `/dist/artifacts`)
 
 ## Symptom (preprod / container runtime)
-The `e2e_api` service can crash at runtime with errors like:
+A Node ESM API service can crash at runtime with errors like:
 - `Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/dist/artifacts' imported from /app/dist/server.js`
 
 Even when `tsc` succeeds, Node ESM can fail at runtime if the emitted JS contains extensionless relative imports.
@@ -20,7 +20,7 @@ Even when `tsc` succeeds, Node ESM can fail at runtime if the emitted JS contain
 Node ESM requires **explicit file extensions** for relative imports.
 TypeScript can compile code that looks fine but still emits extensionless imports depending on `tsconfig` module settings.
 
-## Rules (must follow for `e2e-app/react-app/apps/api`)
+## Rules (must follow for Node ESM API packages — e.g. `services/api`, `apps/*/api`)
 - **TypeScript config** must be:
   - `"module": "NodeNext"`
   - `"moduleResolution": "NodeNext"`
@@ -37,6 +37,6 @@ Do not rely on:
 Use the proper NodeNext + `.js`-extension approach instead.
 
 ## Quick checklist when debugging preprod API crashes
-- Verify `apps/api/tsconfig.json` is NodeNext/NodeNext
-- Grep `apps/api/src` for `from './` or `from '../` and ensure imports end with `.js`
-- Rebuild + restart `e2e_api`
+- Verify the API package `tsconfig.json` is NodeNext/NodeNext
+- Grep the API package source tree (e.g. `services/api/src`, `apps/api/src`, or the path in `DEVELOPMENT-LOCAL.md`) for `from './` / `from '../` and ensure relative imports end with `.js`
+- Rebuild the API package, then restart its compose service (e.g. `api`, or the service name documented for that repo — do not assume `e2e_api`)

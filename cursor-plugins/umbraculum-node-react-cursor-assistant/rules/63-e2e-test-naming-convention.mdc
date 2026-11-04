@@ -1,26 +1,18 @@
 ---
-description: E2E test naming convention (b2c/b2b + guest/registered + action)
-alwaysApply: true
+description: E2E Playwright spec naming — follow project suite README; kebab-case descriptive filenames
+alwaysApply: false
 globs:
-  - "**/*.ts"
-  - "**/*.tsx"
-  - "**/*.js"
-  - "**/*.jsx"
-  - "**/*.mjs"
-  - "**/*.cjs"
+  - "apps/web/e2e/**/*.ts"
+  - "**/e2e/**/*.spec.ts"
 ---
 
-For new or renamed specs under `e2e/playwright/tests/**`, use this filename convention:
+# E2E test naming (Playwright)
 
-- `b2c-guest-<action>.spec.ts`
-- `b2c-registered-<action>.spec.ts`
-- `b2b-guest-<action>.spec.ts`
-- `b2b-registered-<action>.spec.ts`
+For new or renamed specs, follow the **project suite README** (umbraculum-dev: `apps/web/e2e/README.md`) as source of truth.
 
-Where `<action>` is a short, hyphenated description, for example:
+When the project does not prescribe a scheme, prefer:
 
-- `checkout-place-order-braintree-paypal`
-- `checkout-place-order-braintree-card`
-- `pdp-add-to-cart`
+- Kebab-case descriptive filenames under the suite root (e.g. `smoke/login-and-dashboard.spec.ts`, `smoke/mrp-crp-export-alpha.spec.ts`).
+- Stable action-oriented names; avoid embedding environment-specific hosts or secrets in filenames.
 
-Keep names stable and descriptive; avoid embedding store codes (siteId) in filenames.
+Do not invent filename schemes that the project's E2E docs do not use.

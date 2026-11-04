@@ -14,7 +14,7 @@ globs:
 
 ## Why (project vs host)
 
-- **The project execution surface is Docker** (compose services, `node:20-slim` ci-parity image, manifest-driven one-shots) — same bar as GHA.
+- **The project execution surface is Docker** (compose services, `node:22-slim` ci-parity image, manifest-driven one-shots) — same bar as GHA.
 - **The host is not part of the project.** Node/npm versions, PATH, Cursor AppImage mounts, and global npm differ per machine (e.g. Node 14 + npm 11 → CLI crash or false `npm view` negatives).
 - **Agents must not treat host command output as verification.** If host and container disagree, the container wins.
 
@@ -22,7 +22,7 @@ globs:
 
 - **Default:** never run `node`, `npm`, or `npx` on the **host** for containerized Umbraculum-family repos.
   - Includes: install, build, test, lint, typecheck, registry checks (`npm view`), and repo scripts that call npm (`dogfood-npm-smoke.sh`, etc.) — run them **inside** the stack image or `docker compose exec` service.
-- **Use the project container** (`docker compose exec …`, `docker run node:20-slim`, `./scripts/ci-parity-check.sh`, `./scripts/docker-npm-run.sh`) — not the operator's laptop Node.
+- **Use the project container** (`docker compose exec …`, `docker run node:22-slim`, `./scripts/ci-parity-check.sh`, `./scripts/docker-npm-run.sh`) — not the operator's laptop Node.
 
 ## Host exception (rare — operator consent required)
 

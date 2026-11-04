@@ -1,26 +1,21 @@
 ---
 name: playwright-runner-docs-gate
-description: Use when working on Playwright E2E (apps/web/e2e or e2e/playwright), debugging failures, or running smoke/export suites. Requires quick gates before any playwright test invocation.
+description: Use when working on Playwright E2E (apps/web/e2e), debugging failures, or running smoke/export suites. Requires quick gates before any playwright test invocation.
 ---
 
 # Skill: Playwright runner docs gate + quick gates + trace viewer
 
-Use when working on Playwright E2E tests, helpers, configs, debugging, or running suites.
+Use when working on Playwright E2E tests, helpers, configs, debugging, or running suites in a **TS/JS** monorepo.
 
-**Repo layouts (detect; do not assume):**
+**Canonical layout (umbraculum-class):** suite root `apps/web/e2e/`, primary README `apps/web/e2e/README.md`. Also read when present: `docs/TESTING.md` § L5. MRP/CRP export smoke: `docs/design/mrp-crp-alpha-demo-walkthrough.md` § Quick gates + troubleshooting.
 
-| Layout | Suite root | Primary README |
-|---|---|---|
-| Umbraculum monorepo | `apps/web/e2e/` | `apps/web/e2e/README.md` |
-| Magento / legacy | `e2e/playwright/` | `e2e/playwright/README-maintainers.md` |
-
-Also read when present: `docs/TESTING.md` § L5 (platform test layers). MRP/CRP export smoke: `docs/design/mrp-crp-alpha-demo-walkthrough.md` § Quick gates + troubleshooting.
+If a consumer repo uses a different Playwright root, read that project's E2E README from `DEVELOPMENT.md` / `DEVELOPMENT-LOCAL.md` — do not invent alternate suite paths.
 
 ## Inputs required (do not assume)
 
 - `<E2E_BASE_URL>` — default `http://localhost:18080` unless `DEVELOPMENT-LOCAL.md` says otherwise
 - `<NGINX_HTTP_PORT>` — when health URLs use a port env (example: `18080`)
-- Optional: `<TRACE_ZIP_PATH>` under `test-results/**` or `apps/web/e2e/test-results/**`
+- Optional: `<TRACE_ZIP_PATH>` under `apps/web/e2e/test-results/**` or project-equivalent
 
 ## Output format (return exactly)
 
@@ -69,9 +64,8 @@ Password parity: if api sets `E2E_ADMIN_PASSWORD`, pass the same `-e E2E_ADMIN_P
 
 ## Step 1 — Read project docs
 
-- **Umbraculum:** `apps/web/e2e/README.md` (canonical commands for smoke + export specs).
-- **Magento-style:** `e2e/playwright/README-maintainers.md`, `e2e/playwright/README-captcha-todos.md` when present.
-- If guidance conflicts, those README files win for E2E tasks.
+- `apps/web/e2e/README.md` (canonical commands for smoke + export specs).
+- If guidance conflicts, that README wins for E2E tasks.
 
 ---
 
@@ -94,7 +88,7 @@ MRP/CRP export smoke only: `smoke/mrp-crp-export-alpha.spec.ts` (requires gotenb
 
 ## Step 3 — Trace viewer (failed tests)
 
-If a failed test produced `trace.zip` under `test-results/**`:
+If a failed test produced `trace.zip` under `apps/web/e2e/test-results/**`:
 
 ```bash
 docker run --rm --network host \
@@ -105,13 +99,11 @@ docker run --rm --network host \
 
 Open from host: `http://localhost:9324` (change port if busy).
 
-Magento layout: adjust volume mount to `e2e/playwright` and paths under that tree.
-
 ---
 
 ## Stop conditions
 
 - Any quick gate failed — **do not** run Playwright; fix stack first.
-- Suite README path unknown for this repo layout.
+- Suite README path unknown for this repo.
 - `<E2E_BASE_URL>` / compose service names ambiguous and `DEVELOPMENT-LOCAL.md` missing.
 - Trace path unknown and no failed test output provided.

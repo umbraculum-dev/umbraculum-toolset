@@ -61,7 +61,16 @@ umbraculum-toolset/
 
 ## Versioning
 
-The public repository baseline starts at `v0.0.1`. Each plugin under `cursor-plugins/` carries its own `.cursor-plugin/plugin.json` `version` field, currently aligned to that baseline. Future coordinated releases should use toolset-level tags such as `vX.Y.Z`; plugin-isolated releases may additionally use plugin-prefixed tags when a plugin ships on its own cadence.
+The public repository baseline started at `v0.0.1`. Each plugin under `cursor-plugins/` carries its own `.cursor-plugin/plugin.json` `version` and may advance independently when only that plugin changes. Current HEAD (2026-11):
+
+| Plugin | `plugin.json` version | Marketplace listing |
+|---|---|---|
+| `umbraculum-toolset-common` | 0.0.8 | Yes |
+| `umbraculum-node-react-cursor-assistant` | 0.0.10 | Yes |
+| `umbraculum-platform-tsjs-cursor-assistant` | 0.0.2 | Yes |
+| `umbraculum-openplc-python-cursor-assistant` | 0.0.2 | No (hook-only) |
+
+Coordinated multi-plugin releases may still use toolset-level tags (`vX.Y.Z`); plugin-isolated releases may use plugin-prefixed tags. Sibling npm package `@umbraculum/ci-parity` versions independently (currently 1.x).
 
 ## License
 

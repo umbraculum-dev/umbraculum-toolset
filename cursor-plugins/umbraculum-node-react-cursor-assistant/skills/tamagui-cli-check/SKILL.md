@@ -41,7 +41,7 @@ If FAIL, append up to 5 lines from `@tamagui/cli check` (duplicate paths or vers
 ## Bounds (hard)
 
 - Max **2** commands (full gate + optional quick re-check).
-- Use **`docker run node:20-slim`** with repo bind-mount — not host npm.
+- Use **`docker run node:22-slim`** with repo bind-mount — not host npm.
 - No loops; no “push and see if login works” without running the script first.
 - Read-only w.r.t. tracked tree (does not commit).
 
@@ -55,7 +55,7 @@ If FAIL, append up to 5 lines from `@tamagui/cli check` (duplicate paths or vers
 ### 1. Full gate (preferred — matches `scripts/check-tamagui-cli.sh`)
 
 ```bash
-cd <REPO_ROOT> && docker run --rm -v "$PWD:/repo" -w /repo node:20-slim \
+cd <REPO_ROOT> && docker run --rm -v "$PWD:/repo" -w /repo node:22-slim \
   bash -lc "./scripts/check-tamagui-cli.sh"
 ```
 

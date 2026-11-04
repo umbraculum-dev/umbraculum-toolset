@@ -48,7 +48,7 @@ MONOREPO-LOCKFILE-GATE <commit-or-WIP>: forbidden=OK|FAIL sync=OK|FAIL install-p
 ## Bounds
 
 - Max **6** commands for a full update+commit path.
-- Lock regen / `npm ci` proof: **`node:20-slim`** or **`docker compose exec web`** — not host npm alone for commits.
+- Lock regen / `npm ci` proof: **`node:22-slim`** or **`docker compose exec web`** — not host npm alone for commits.
 - Deleting `services/api/package-lock.json` on host is allowed.
 
 ## Committed lockfiles

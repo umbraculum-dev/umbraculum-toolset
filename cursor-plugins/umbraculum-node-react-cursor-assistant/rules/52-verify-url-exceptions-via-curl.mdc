@@ -1,5 +1,5 @@
 ---
-description: When a URL is provided with a visible exception, verify fix by curling the page from the PHP container
+description: When a URL is provided with a visible exception, verify the fix by curling the page from the app container (or host if that is how the stack is reached)
 alwaysApply: true
 globs:
   - "**/*.ts"
@@ -12,12 +12,13 @@ globs:
 
 # Verify browser exceptions via curl (required)
 
-When the developer provides a **URL** and reports a **clear exception visible in the browser** (PHP fatal, stack trace, error banner), do not claim a fix is working until it is verified.
+When the developer provides a **URL** and reports a **clear exception visible in the browser** (stack trace, error banner, 5xx error page, Next.js/Vite overlay text), do not claim a fix is working until it is verified.
 
 ## Rule (guardrail)
 
-- For non-doc changes, run `setup:di:compile` at the end of the task.
-- Do not claim a fix works until it is verified.
+- Do not claim a fix works until it is verified with a bounded curl of the reported URL(s).
+- Prefer curling from the same network context the app uses (compose service / app container when host curl cannot reach the URL).
+- Pair with `umbraculum-toolset-common` rule `45-public-endpoint-verification` for the wrap-up `Endpoint verification: ...` summary line on non-doc service changes.
 
 ## Runbook
 

@@ -25,7 +25,7 @@ npx @umbraculum/ci-parity validate
 npx @umbraculum/ci-parity explain
 ```
 
-Host prerequisites: `git`, `bash`, Docker. Host Node orchestrates Docker only; jobs run in the manifest `runtime.image` (default `node:20-slim`).
+Host prerequisites: `git`, `bash`, Docker. Host Node orchestrates Docker only; jobs run in the consumer manifest's required `runtime.image`. Umbraculum-dev pins `public.ecr.aws/docker/library/node:22-slim` (Node ≥22.13). Snapshot cleanup helpers in this package also use `node:22-slim`.
 
 ## Manifest
 

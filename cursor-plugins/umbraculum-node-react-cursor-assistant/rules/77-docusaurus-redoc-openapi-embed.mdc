@@ -35,7 +35,7 @@ Scoped rules live in `docs-site/src/css/custom.css` (`.openapi-redoc-host`, `.op
 ## Verification
 
 - `http://127.0.0.1:3001/openapi-platform` and `/openapi-brewery` — toggle theme; full Redoc UI readable in both modes.
-- `npm run typecheck -w @umbraculum/docs-site` in Node 20 container.
+- `npm run typecheck -w @umbraculum/docs-site` in Node 22 container.
 - `npm run build -w @umbraculum/docs-site` before merge when CI surface is touched.
 
 ## Frontier-now / local-subagent fit

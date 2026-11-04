@@ -107,11 +107,11 @@ Cursor's `plugin.json` does NOT support a manifest-level dependency / requires /
 
 ## Update and versioning
 
-- The public repository baseline starts at `v0.0.1`.
+- The public repository baseline started at `v0.0.1`. Plugins now version independently via each `.cursor-plugin/plugin.json` `version` (see root [README.md](../README.md) § Versioning for the current table).
 - One folder per plugin (no per-version folders).
-- Keep each plugin's `.cursor-plugin/plugin.json` `version` aligned with the repository baseline for coordinated releases.
 - For coordinated releases that touch multiple plugins, bump all affected plugin versions in the same commit and tag once at the toolset level (for example, `vX.Y.Z`).
-- If a plugin later ships independently, use a plugin-prefixed Git tag in addition to the plugin manifest version so consumers can identify that plugin-specific release.
+- If a plugin ships independently, use a plugin-prefixed Git tag in addition to the plugin manifest version so consumers can identify that plugin-specific release.
+- umbraculum-dev juniors: install via [`docs/WORKSPACE-PLUGIN-LOADING.md`](docs/WORKSPACE-PLUGIN-LOADING.md) (per-workspace hook). Do not require lockstep `0.0.1` across plugins — presence of the three apparatus plugins + witnesses matters more than matching patch numbers.
 
 ## Rule scoping (`globs`)
 

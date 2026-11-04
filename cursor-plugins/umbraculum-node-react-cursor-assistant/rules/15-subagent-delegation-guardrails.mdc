@@ -45,7 +45,7 @@ When delegation IS appropriate, pick the registered specialist from plugin Agent
 | Subagent | Use for |
 |---|---|
 | `verifier` | Skeptical post-hoc validation of "is the fix really done" claims |
-| `e2e-smoke` | Bounded storefront E2E smoke after risky web changes |
+| `e2e-smoke` | Bounded Playwright smoke after risky web UI changes |
 | `contracts-zod-auditor` | Read-only Zod/contract audit after contract or schema-bound route edits |
 
 Consumer projects may register additional plugin Agents (`agents/*.md`) files; the same preference rule applies — match the work to the specialist's `description` field. Falling back to `generalPurpose` is acceptable **only** when no specialist matches the work shape. If the same `generalPurpose` shape recurs across sessions, that is a signal to add a new specialist under plugin Agents (`agents/`) (per `14-subagent-contract.mdc`), not a signal to keep using `generalPurpose`.
@@ -55,7 +55,7 @@ Consumer projects may register additional plugin Agents (`agents/*.md`) files; t
 Every spawn prompt MUST state:
 
 - **Success condition** — what "done" looks like, in observable terms. NOT a solution path.
-- **Stop trigger** — at least one of: a time budget (e.g. "if not done in 10 min, stop and report"), an output threshold (e.g. "if N retries fail, stop"), or an error class ("if you hit a DI compile error, stop and ask the parent").
+- **Stop trigger** — at least one of: a time budget (e.g. "if not done in 10 min, stop and report"), an output threshold (e.g. "if N retries fail, stop"), or an error class ("if typecheck/ci-parity fails the same way twice, stop and ask the parent").
 - **Output format** — bounded shape (counts, OK/FAIL summaries, one-line-per-failure). Never request full HTML/JSON/stack-trace dumps.
 - **Authorization scope** — explicit statement of what the subagent is and is not allowed to do. By default: no commits, no pushes, no `git --amend`, no edits outside the scoped paths.
 

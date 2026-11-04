@@ -54,7 +54,7 @@ Run skill **`monorepo-lockfile-gate`** when **any** of these apply:
 | Pre-commit gate | `npm run check:lockfiles` |
 | Pre-push | clean tree + `npm run verify:pre-push` |
 
-Use **`node:20-slim`** or compose **`web`** — not host npm for lock commits.
+Use **`node:22-slim`** or compose **`web`** — not host npm for lock commits.
 
 ## Agent anti-patterns
 

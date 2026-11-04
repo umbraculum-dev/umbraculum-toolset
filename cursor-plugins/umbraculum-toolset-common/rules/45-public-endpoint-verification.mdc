@@ -12,7 +12,7 @@ After any non-doc change to a service that has a reachable URL or API endpoint (
 "Tests pass" ≠ "the deployed/running service serves the change." Recurring real-world failure modes that pass tests but fail in vivo:
 
 - Container not restarted after the code change; framework boot cache stale.
-- Compiled-DI / class-map / route table not refreshed (Magento `setup:di:compile`, OPcache, Fastify route registration, FastAPI router include).
+- Compiled-DI / class-map / route table not refreshed (OPcache, Fastify route registration, FastAPI router include, framework DI compile steps).
 - Env var or secret missing in the dev environment but mocked in tests.
 - Migration not applied to the dev DB.
 - API contract drift: server changed shape; the test fixture is the old shape; the consumer is broken.
@@ -93,10 +93,10 @@ If the active plugin set does not include a matching runbook, fall back to a bou
 - `20-tests-must-follow-changes` says "run/update the test layer." This rule says "and after green, hit the URL too."
 - `52-verify-url-exceptions-via-curl` is a narrower special case (URL+exception input). When that rule fires, it runs in addition to this gate (the `Endpoint verification: ...` summary line is still required).
 - `58-curl-not-ui-test-plan-gate` — this rule’s 200/PASSED line is **not** a UI/Admin journey pass; draft a test plan + browser when the surface is user-visible.
-- `66-experimental-agentic-e2e` keeps its `signal-only` framing for the heavyweight agentic stack. The minimum required by this rule is one bounded curl; the agentic stack stays optional unless the team has gated it.
+- Playwright / browser E2E stays optional signal unless the project gates L5 (`playwright-runner-docs-gate`). The minimum required by this rule is one bounded curl.
 - `71-browser-tools-preferred` keeps its preference for browser tools on UI behavior; this rule generalizes the principle to backend/API endpoints.
 
 ## Fits the system
 
-- **Frontier now**: an always-applied gate every umbraculum / magento session sees; the deterministic `Endpoint verification: PASSED|FAILED|SKIPPED ...` summary line makes a missing verification visible to both developer and agent (and to a future post-task audit).
+- **Frontier now**: an always-applied gate every workspace that loads this plugin sees; the deterministic `Endpoint verification: PASSED|FAILED|SKIPPED ...` summary line makes a missing verification visible to both developer and agent (and to a future post-task audit).
 - **Local subagents (future)**: a deterministic post-task hook that an `endpoint-verifier` subagent can execute as a precondition for declaring done; the verdict line is the agent's output contract and is trivially regex-checkable.

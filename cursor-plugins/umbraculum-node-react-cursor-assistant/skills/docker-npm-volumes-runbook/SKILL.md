@@ -1,6 +1,6 @@
 ---
 name: docker-npm-volumes-runbook
-description: Run npm one-shots and dev installs with warm named Docker volumes (umbraculum_npm_cache + node_modules trees) — Composer-vendor-like persistence on Linux and macOS. Use when docker run npm install is slow, when setting up scoped L1 tests, or when authoring scripts that invoke node:20-slim in umbraculum-class monorepos.
+description: Run npm one-shots and dev installs with warm named Docker volumes (umbraculum_npm_cache + node_modules trees) — Composer-vendor-like persistence on Linux and macOS. Use when docker run npm install is slow, when setting up scoped L1 tests, or when authoring scripts that invoke node:22-slim in umbraculum-class monorepos.
 ---
 
 # Skill: Docker npm volumes runbook (warm cache + named node_modules)
@@ -14,7 +14,7 @@ Canonical human doc: umbraculum-dev [`docs/DEVELOPMENT-NPM-VOLUMES.md`](https://
 ## Inputs required (do not assume)
 
 - `<REPO_ROOT>` — absolute monorepo root.
-- `<COMMAND>` — shell command to run inside `node:20-slim` (quoted).
+- `<COMMAND>` — shell command to run inside `node:22-slim` (quoted).
 - `<NEEDS_ROOT_NODE_MODULES>` — `yes` if the command runs `npm install` at repo root (scoped workspace installs); `no` for typecheck-only with existing volume.
 
 ## Output format (return exactly)
@@ -83,7 +83,7 @@ Add `docker compose restart api` if routes 404 after a large git tree mutation (
 ## Stop conditions
 
 - `docker-npm-run.sh` missing → halt; cite `DEVELOPMENT-NPM-VOLUMES.md` for manual `-v umbraculum_npm_cache:/root/.npm` pattern.
-- Install fails with cache corruption → `docker run --rm -v umbraculum_npm_cache:/root/.npm node:20-slim npm cache clean --force` once, retry.
+- Install fails with cache corruption → `docker run --rm -v umbraculum_npm_cache:/root/.npm node:22-slim npm cache clean --force` once, retry.
 - Lockfile changed but tests fail on stale deps → run refresh command (§3), not repeated blind installs.
 
 ## Fits the system

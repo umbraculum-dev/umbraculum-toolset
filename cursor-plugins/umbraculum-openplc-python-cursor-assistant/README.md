@@ -15,7 +15,7 @@ This plugin requires the companion `umbraculum-toolset-common` plugin for the la
 ## When to install
 
 - **Install in**: `/path/to/openplc-brewery-project/` (the canonical motivating project) and any future project that uses the same five surfaces (OpenPLC IEC-61131-3 ladder + ST POUs; `PI_*` Modbus mailbox contract; FastAPI + Jinja + SQLite Pi-sidecar; `[ALARM]/[COOLING]/[HEATING]` hardware-doc taxonomy; `pandoc + xelatex` ASCII-diagram pamphlets).
-- **Do not install in**: pure TS/JS projects, pure Python web apps without PLC integration, the Magento codebase, or umbraculum-platform projects (use the appropriate companion plugin instead).
+- **Do not install in**: pure TS/JS projects, pure Python web apps without PLC integration, or umbraculum-platform projects (use the appropriate companion plugin instead).
 
 ## Contents
 
@@ -44,7 +44,7 @@ This plugin requires the companion `umbraculum-toolset-common` plugin for the la
 
 Install via the `workspaceOpen` hook when the workspace matches the OpenPLC brewery repo path. See [docs/WORKSPACE-PLUGIN-LOADING.md](../docs/WORKSPACE-PLUGIN-LOADING.md). Legacy global rsync: `install-local.sh.legacy`.
 
-### Skills (`skills/`) — 6 skills, one per subagent
+### Skills (`skills/`) — 8 skills (5 paired with subagents + review/verification helpers)
 
 - `openplc-runtime-upload/SKILL.md` — bounded runbook for editor-compile → `prepare_openplc_runtime_upload.py` → OpenPLC Runtime web UI upload → confirm `Running` + `start_modbus() ... port: 502`
 - `pi-modbus-mailbox-debug/SKILL.md` — bounded runbook for reading a `PI_*` coil/holding-register from outside the sidecar (raw `pymodbus`) to triage "the sidecar shows X but the PLC shows Y" mismatches

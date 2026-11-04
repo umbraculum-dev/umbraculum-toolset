@@ -108,7 +108,7 @@ Non-frontier executor fitness is **language- and stack-agnostic**. The
 WRONG-patterns observed on a TypeScript/Node project (gate-skill
 skipping, partial coverage on multi-file plan lines, README structural
 FAILs, cross-agent commit contamination) are the same WRONG-patterns
-that will surface on a Python/PLC project or a PHP/Magento project,
+that will surface on a Python/PLC project or a PHP project,
 because they're properties of the *executor* — not the codebase. This
 rule therefore lives in `umbraculum-toolset-common` alongside the other
 language-agnostic discipline rules (DCO sign-off gate, commit-message

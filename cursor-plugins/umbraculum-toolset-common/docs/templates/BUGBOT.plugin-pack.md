@@ -27,14 +27,14 @@ Feature work merges via PRs to **`master`**. Suggested flow: optional local `plu
 
 ## Portable source of truth (Bugbot / Loop)
 
-- Flag re-adding portable Bugbot/Loop artifacts to domain plugins that now live in **`umbraculum-toolset-common`** (architecture docs, rules 56/57, `ci-watch-loop` skill, generic LOOP template) — post–v0.5.1 Magento dedup pattern.
+- Flag re-adding portable Bugbot/Loop artifacts to domain plugins that now live in **`umbraculum-toolset-common`** (architecture docs, rules 56/57, `ci-watch-loop` skill, generic LOOP template) — keep portable policy here; domain plugins keep only thin `*-bugbot-review` skills + ecosystem `BUGBOT.md` templates.
 - Flag duplicate always-on rules across common and domain plugins without intentional Strategy-C glob scoping documented in README.
 
 ## Rules (`.mdc`)
 
 - Flag rules missing required frontmatter (`description`, appropriate `globs` or `alwaysApply`).
 - Flag unintended `alwaysApply: true` on diagnostic or area-specific wiring that should be glob-scoped.
-- Flag `final` class recommendations in PHP-facing copies where Magento interception applies (domain plugin context).
+- Flag ecosystem-specific PHP/`final`-class guidance that belongs in a PHP domain plugin, not in this portable plugin-pack template.
 
 ## Skills and agents
 

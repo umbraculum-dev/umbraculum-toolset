@@ -40,9 +40,21 @@ In scope (default: add here):
 
 Out of scope (default: add to the relevant domain plugin):
 
-- Anything ecosystem-specific (TS/JS, Python, PLC, OpenPLC, Modbus, Magento, Prisma, Playwright, FastAPI, etc.).
+- Anything ecosystem-specific (TS/JS, Python, PLC, OpenPLC, Modbus, Prisma, Playwright, FastAPI, PHP frameworks, etc.).
 - Anything project-specific (umbraculum-dev's foundation-hardening narrative, the brewery project's vessel IDs, etc.).
 - Templates that prescribe ecosystem-specific values (each plugin ships its own `docs/templates/DEVELOPMENT-LOCAL*.md`).
+
+### Why PHP / Mage-OS / commerce stacks stay out of common
+
+`umbraculum-toolset-common` is intentionally the **only** umbraculum-toolset plugin many maintainers load in non-JS workspaces (git/DCO/co-author, commit ticket prefix, DEVELOPMENT-LOCAL gate, Bugbot/Loop **policy**). That does **not** make common a place for PHP / Mage-OS Admin journey packs, DI compile, reindex, theme tooling, or storefront catalog recipes.
+
+Those concerns are ecosystem-specific: they need domain tone (object manager vs Fastify routes, Admin forms vs SPA screens, Composer vs npm). Strategy C says: if the text is not trivially neutralizable across TS/JS, Python/PLC, **and** PHP stacks, it stays in a **domain** plugin (sibling Mage-OS / PHP plugins live outside this marketplace pack). Putting PHP/Mage-OS-shaped runbooks in common would:
+
+1. Inject wrong guardrails into umbraculum-dev and OpenPLC sessions (context noise).
+2. Duplicate what a PHP domain plugin already owns.
+3. Make “common” stop being common — every stack would start dumping recipes here.
+
+Allowed in common: stack-agnostic principles (“curl 200 ≠ UI done”, “verify the running endpoint”, “domain `*-bugbot-review` skill”). Naming a specific Mage-OS/PHP CLI, Admin skill, or sibling plugin path is **out of scope** here; point at “domain skill / project `flows/`” instead. The multi-workspace hook may *load* common on a Mage-OS path as an example of “not only React” — it must not teach Mage-OS recipes inside this plugin.
 
 If in doubt, prefer the domain plugin — promotion to common is cheap; demotion back is expensive.
 
@@ -54,4 +66,4 @@ Therefore: "install `umbraculum-toolset-common` alongside this plugin" is docume
 
 ## Versioning
 
-This plugin starts its public baseline at `0.0.1` with the rest of the repository. It moves in lockstep with the domain plugins for major versions. Patch releases can be independent when only common-plugin content changes, but the major/minor cadence stays synchronized to keep the install matrix predictable.
+This plugin started its public baseline at `0.0.1` with the rest of the repository. Patch releases are independent when only common-plugin content changes (current HEAD may be ahead of domain plugins). Major-version cadence should stay synchronized across the apparatus trio so the install matrix stays predictable; do not require every plugin to share the same `0.0.x` patch.

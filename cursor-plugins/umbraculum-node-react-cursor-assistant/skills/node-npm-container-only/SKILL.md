@@ -11,7 +11,7 @@ Use this when you need to run Node/npm tasks in a containerized project.
 
 | Surface | Role |
 |--------|------|
-| **Docker** (compose service, `node:20-slim`, ci-parity manifest) | **Canonical** — what GHA and `verify:pre-push` use |
+| **Docker** (compose service, `node:22-slim`, ci-parity manifest) | **Canonical** — what GHA and `verify:pre-push` use |
 | **Host** (`node` / `npm` on the laptop) | **Not part of the project** — varies per user; never the push gate |
 
 Host Node/npm can crash (e.g. Node 14 + global npm 11) or disagree with CI. Running `npm view` or `./scripts/dogfood-npm-smoke.sh` on the host has produced false "not on registry" results while container runs were green.
@@ -19,7 +19,7 @@ Host Node/npm can crash (e.g. Node 14 + global npm 11) or disagree with CI. Runn
 **Default:** all Node/npm in container. **Host only** after operator explicitly approves — state cons (non-reproducible, not CI parity, must re-verify in container before done).
 
 ## Inputs required (do not assume)
-- `<NODE_CONTAINER>` or `<DOCKER_IMAGE>` (e.g. `node:20-slim`, compose `api` / `web`)
+- `<NODE_CONTAINER>` or `<DOCKER_IMAGE>` (e.g. `node:22-slim`, compose `api` / `web`)
 - `<REPO_WORKDIR_IN_CONTAINER>` (example: `/app`, `/repo`)
 - `<NPM_SCRIPT>` or shell command (example: `build`, `npm view @scope/pkg@1.2.3 version`)
 
@@ -39,7 +39,7 @@ Host Node/npm can crash (e.g. Node 14 + global npm 11) or disagree with CI. Runn
 ## Prerequisites
 - Confirm the correct Node container/image for the stack; if ambiguous, ask (do not guess).
 - Verify the working directory exists in the container (common examples: `/app`, `/repo`, `/opt/playwright-suite`).
-- For umbraculum-dev pre-push: prefer `./scripts/ci-parity-check.sh` (orchestrates `node:20-slim`) over ad-hoc host npm.
+- For umbraculum-dev pre-push: prefer `./scripts/ci-parity-check.sh` (orchestrates `node:22-slim`) over ad-hoc host npm.
 
 ## Commands (templates)
 
@@ -50,12 +50,12 @@ docker compose exec -T <NODE_CONTAINER> bash -lc 'cd <REPO_WORKDIR_IN_CONTAINER>
 
 **One-shot CI image (registry check, smoke script, no compose):**
 ```bash
-docker run --rm -v "$PWD:/repo" -w /repo public.ecr.aws/docker/library/node:20-slim \
+docker run --rm -v "$PWD:/repo" -w /repo public.ecr.aws/docker/library/node:22-slim \
   bash -lc 'npm view @umbraculum/api-client@0.0.3 version'
 ```
 
 ```bash
-docker run --rm -v "$PWD:/repo" -w /repo public.ecr.aws/docker/library/node:20-slim \
+docker run --rm -v "$PWD:/repo" -w /repo public.ecr.aws/docker/library/node:22-slim \
   bash -lc './scripts/dogfood-npm-smoke.sh'
 ```
 

@@ -62,3 +62,13 @@ This plugin loads on every workspace via the `workspaceOpen` hook (at minimum). 
 Cursor's `plugin.json` manifest does NOT support a dependency / requires / recommends field (loader-source-verified — see `cursor-plugins/docs/PLUGIN-ROADMAP.md` § 1b and § 2). Inter-plugin "install alongside X" recommendations are therefore README-level only, both today and after marketplace publishing.
 
 If you install `umbraculum-toolset-common` without any of the domain plugins, nothing will break — the rules and skill simply load in isolation. They just won't see the domain-specific examples that make them concretely useful.
+
+## Version history
+
+- **0.0.8** (2026-11) — Scrub Magento-specific recipes/names from rules 45/56/58 and Bugbot docs; rule 43 softens to “PHP projects”; DESIGN-NOTES elaborates why PHP/Mage-OS stacks stay in domain plugins; multi-workspace hook example reframed as “common + any stack (e.g. Mage-OS)” not Magento-product install steps.
+- **0.0.7** (2026-11) — Rule `59-operator-present-command-smoke.mdc` (early allowlist-sensitive smoke while operator is present).
+- **0.0.6** (2026-07) — Rule `58` hygiene pass; pairing docs note toolset-common on non-JS workspace arms when sibling domain plugins are used.
+- **0.0.5** (2026-07) — Rule `58-curl-not-ui-test-plan-gate.mdc` (curl ≠ UI done).
+- **0.0.4** (2026-07) — Adopt plugin-pack Bugbot/Loop templates for toolset repos.
+- **0.0.3** (2026-07) — Portable Bugbot/Loop policy: rules `56`/`57`, `ci-watch-loop`, `plugin-pack-bugbot-review`, LOOP / BUGBOT.plugin-pack templates.
+- **0.0.1** (2026-05-25) — Public baseline after repository history reset.

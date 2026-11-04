@@ -27,7 +27,7 @@ Use this when terminal commands are blocked by an allowlist/approval gate and yo
 
 ## Prerequisites
 - Prefer workspace file edits (editor/apply_patch) over shell-based file writes.
-- Use `docker exec` only when unavoidable (Magento CLI, PHPUnit, curls, cache flush, E2E CLI).
+- Use `docker exec` / compose exec only when unavoidable (curl against the stack, cache flush, Playwright gates, project CLIs).
 
 ## Commands
 1) Switch the plan to workspace edits for any file changes.
