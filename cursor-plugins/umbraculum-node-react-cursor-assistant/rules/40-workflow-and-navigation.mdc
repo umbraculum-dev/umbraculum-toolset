@@ -33,6 +33,7 @@ globs:
 - Show `git status` and `git diff` (or `git diff --staged`) before committing.
 - Follow the project's commit-message convention (see the `umbraculum-toolset-common` plugin's `41-commit-message-ticket-prefix.mdc` rule, and recent `git log`).
 - Stage only the files that are part of the requested change — avoid `git add .` / `git add -A` unless explicitly asked.
+- **Before any `git push` (including feature branches):** if the project uses ci-parity / pre-push verify (e.g. umbraculum-dev `npm run verify:pre-push`, `docs-readmes`, `typecheck`, `lint`), **pause and ask** which gates to run (default: the project's T2-PR / `verify:pre-push`). Do **not** push on a bare “push” when those gates have not been green on the commit being pushed, unless the operator **explicitly waives** a named gate. Consuming-repo `AGENTS.md` / `DEVELOPMENT.md` may tighten this further (umbraculum-dev does).
 - Push to the already-configured upstream; do not change `git config`, do not retarget remotes.
 - Do not amend a commit unless the user explicitly says so (and only when the amend rules in the system prompt's Git Safety Protocol are satisfied).
 - After landing, show `git log -1 --stat`; for pushes also show post-push `git status -sb`. When summarizing a successful push to the user, apply the post-push reporting & PR-creation URL hygiene rules in the next subsection.
