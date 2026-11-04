@@ -16,7 +16,7 @@ When CI fails on a check that the developer ran locally and saw green, the gap i
 - `<REPO_ROOT>` — absolute path to the repo root (e.g. `/path/to/umbraculum-dev`).
 - `<COMMIT_SHA>` — git ref to reproduce. Default: `HEAD`. Use a specific SHA when reproducing a historical CI failure.
 - `<CI_JOB>` — one of: `docs` (README/link checker), `lint` (ESLint), `typecheck` (`tsc --noEmit` across workspaces), `all` (all three).
-- `<NODE_IMAGE>` — the docker image the CI workflow uses. Default: `node:20-slim`. **Do not assume**: read the workflow file to confirm (some workflows pin a specific minor version or use a different base image).
+- `<NODE_IMAGE>` — the docker image the CI workflow uses. Default: `node:22-slim`. **Do not assume**: read the workflow file to confirm (some workflows pin a specific minor version or use a different base image).
 
 ## Output format (return exactly)
 
@@ -125,10 +125,10 @@ If the repo does not yet ship a manifest, read the CI workflow file for the fail
 - `<REPO_ROOT>` is unknown or is not a git repo → halt and ask.
 - `docker` is not on PATH or user lacks docker access → halt and report.
 - `git archive <COMMIT_SHA>` fails (bad ref) → halt and ask for a valid SHA.
-- **Agent was about to recommend host `python3` / host `npm run lint` / `docker compose exec` / live-workspace `docker run` as the pre-push gate** → stop; use Recipe A (`npx @umbraculum/ci-parity`) instead. Those are debug-only per rule `72-ci-parity-local-vs-ci-divergence.mdc` § Agent anti-patterns.
+- **Agent was about to recommend host `python3` / host `npm run lint` / `docker compose exec` / live-workspace `docker run` / bare `npx @umbraculum/ci-parity` as the pre-push gate** → stop; use Recipe A pre-push (`npm run verify:pre-push` / skill **`path-aware-pre-push`**). Those other shapes are debug-only (or WIP-only) per rule `72-ci-parity-local-vs-ci-divergence.mdc` § Agent anti-patterns.
 - The failing CI job is NOT in `{docs, lint, typecheck}` (e.g. an integration test, a Playwright e2e, a real-DNS check, a deploy step) → halt and report; this skill covers static-analysis CI jobs only. For GHA **`api`** (`services/api` vitest + Redis), use skill **`api-integration-tests-pre-push`** instead. Other out-of-scope failures need their own runbook.
 - After Recipe A or B, all three jobs report OK but CI is still failing → likely a CI-side issue (cache, runner image drift, secret leak); escalate rather than rerunning the local recipe.
-- The repo's CI workflow uses a non-`node:20-slim` image and the operator did not provide `<NODE_IMAGE>` → halt and ask.
+- The repo's CI workflow uses a non-`node:22-slim` image and the operator did not provide `<NODE_IMAGE>` → halt and ask.
 
 ## Local-subagent-future readiness
 

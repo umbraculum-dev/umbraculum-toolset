@@ -5,14 +5,14 @@
     "email": "toolset@umbraculum.dev"
   },
   "metadata": {
-    "description": "Three Cursor marketplace plugins for the umbraculum-dev apparatus: common meta-framework rules, generic Node/TypeScript/React assistant, and umbraculum-platform TS/JS foundation-hardening assistant. Install all three together for umbraculum-dev. OpenPLC plugin remains hook-only in this repo until its sister repo is public (not listed here).",
+    "description": "Three Cursor marketplace plugins: portable common meta-framework, generic Node/TypeScript/React assistant, and umbraculum-platform TS/JS foundation-hardening assistant. For umbraculum-dev / umbraculum-platform workspaces install all three together. Common is not umbraculum-specific and may also pair with sibling domain plugins (e.g. Magento/Hyvä) outside this listing. OpenPLC remains hook-only until its sister repo is public (not listed here).",
     "pluginRoot": "cursor-plugins"
   },
   "plugins": [
     {
       "name": "umbraculum-toolset-common",
       "source": "umbraculum-toolset-common",
-      "description": "Common meta-framework rules + skills shared by the umbraculum-toolset Cursor plugins. Install alongside umbraculum-node-react-cursor-assistant and/or umbraculum-platform-tsjs-cursor-assistant for umbraculum-dev (all three required)."
+      "description": "Portable meta-framework rules + skills (not umbraculum-specific). For umbraculum-dev / umbraculum-platform: install with node-react + platform-tsjs (all three required). Elsewhere: pair with the matching domain plugin, or use common alone / with sibling Magento/Hyvä plugins on non-TS/JS arms."
     },
     {
       "name": "umbraculum-node-react-cursor-assistant",

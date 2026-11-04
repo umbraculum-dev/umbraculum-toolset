@@ -1,0 +1,36 @@
+---
+description: Docs-site Cloudflare Workers Builds NODE_VERSION must stay lockstep with monorepo Node engines (GHA docs-site-build / node:22-slim). Agents update runbook pins; only the operator can change the Cloudflare dashboard variable.
+alwaysApply: false
+globs:
+  - "**/docs-site/**"
+  - "**/docs/design/public-alpha-cloudflare-pages-runbook.md"
+  - "**/.nvmrc"
+  - "**/package.json"
+---
+
+# Docs-site — Cloudflare `NODE_VERSION` lockstep with monorepo engines
+
+Umbraculum’s Docusaurus workspace (`docs-site/`) builds on **Workers Builds** (project **`umbraculum-dev-docs-docusaurus`**). Local/GHA use the monorepo Node pin (`engines.node`, typically **`>=22.13.0`**, image `node:22-slim`, workflow `node-version: "22"`). Cloudflare’s build env is a **separate** dashboard variable — it does **not** read `package.json` `engines` or `.nvmrc`.
+
+## Rule (hard)
+
+1. **When bumping monorepo Node** (`package.json` `engines.node`, ci-parity / GHA Node image, root `.nvmrc`), treat **Cloudflare `NODE_VERSION`** for the docs Worker as a **required companion change** — same major/minor floor (prefer exact **`22.13.0`** or the new engines minimum).
+2. **Agents may** update committed SoT: runbook, `docs-site/README.md`, `.nvmrc`, `docs-site` `engines` — then tell the operator the dashboard step is still open.
+3. **Agents must not** claim a docs deploy is fixed after a Node bump until the operator confirms dashboard **`NODE_VERSION`** matches (or a CF build log shows the new Node). Agents cannot set Cloudflare Variables and secrets.
+4. **Do not** assume GHA `docs-site-build` green proves Cloudflare will build — CF can still be on an older `NODE_VERSION` (symptom: `@swc/html` / native binding failures under Node 20 while archive Node 22 passes).
+
+## Operator-only step (pointer — not agent-executable)
+
+Dashboard → **Workers & Pages** → **`umbraculum-dev-docs-docusaurus`** → **Settings** → **Build** → **Variables and secrets** → set **`NODE_VERSION`** → **Retry deployment**.
+
+Canonical values and checklist: consuming-repo [`docs/design/public-alpha-cloudflare-pages-runbook.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs/design/public-alpha-cloudflare-pages-runbook.md) §3–§4 and [`docs-site/README.md`](https://github.com/umbraculum-dev/umbraculum-dev/blob/master/docs-site/README.md) § Deploy.
+
+## Brochure Worker
+
+Brochure (`umbraculum-brochure`) may pin a different `NODE_VERSION` until that repo’s engines require otherwise. **Docs Worker always follows the monorepo engines floor.**
+
+## Fits the system
+
+- **Rule** (guardrail + pointer): no dashboard runbook loops; SoT stays in the consuming repo.
+- **Not a Skill:** one operator UI action; no bounded command sequence for agents.
+- **Local-subagent-future:** glob + “dashboard confirm required” is a deterministic gate on Node-bump PRs that touch `docs-site/**` or engines.

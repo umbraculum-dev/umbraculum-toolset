@@ -12,7 +12,7 @@ Subagents are specialized AI assistants Cursor's main agent can delegate to. Eac
 
 ## Required YAML frontmatter
 
-- `name`: lowercase-hyphenated identifier (e.g. `verifier`, `magento-debugger`).
+- `name`: lowercase-hyphenated identifier (e.g. `verifier`, `contracts-zod-auditor`).
 - `description`: one sentence with a delegation trigger phrase ("use proactively", "use after", "use when …"). This drives Cursor's automatic delegation.
 - `model`: one of `fast`, `inherit`, or a specific model id.
 

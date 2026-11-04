@@ -91,8 +91,8 @@ This skill is enforced by `umbraculum-toolset-common/rules/45-public-endpoint-ve
 
 ## Composition
 
-- This skill is the **minimum** required by `45-public-endpoint-verification`. Heavier verification (deterministic Playwright spec, agentic browser run, agentic-CLI smoke) remains gated behind their own skills (`agentic-browser-web-app`, `agentic-e2e-runbook`); teams free to layer those on top.
-- For URL+exception inputs (developer hands you a stack trace), `curl-exception-verification` skill still applies and adds the framework-specific cache-flush / DI-recompile dance; this skill complements it as the wrap-up gate.
+- This skill is the **minimum** required by `45-public-endpoint-verification`. Heavier verification (deterministic Playwright, agentic browser) remains behind `playwright-runner-docs-gate` / `agentic-browser-web-app`; teams free to layer those on top.
+- For URL+exception inputs (developer hands you a stack trace), `curl-exception-verification` skill still applies (bounded curl for the reported exception string); this skill complements it as the wrap-up gate.
 
 ## Fits the system
 

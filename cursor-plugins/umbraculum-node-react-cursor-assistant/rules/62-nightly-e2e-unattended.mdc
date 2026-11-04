@@ -1,16 +1,12 @@
 ---
-description: Nightly E2E convention: unattended triage (no "please proceed" stalls)
-alwaysApply: true
+description: Nightly E2E convention — unattended triage (no "please proceed" stalls)
+alwaysApply: false
 globs:
-  - "**/*.ts"
-  - "**/*.tsx"
-  - "**/*.js"
-  - "**/*.jsx"
-  - "**/*.mjs"
-  - "**/*.cjs"
+  - "apps/web/e2e/**"
+  - "**/playwright.config.*"
 ---
 
-When working on anything under `e2e/playwright/**`, treat `NIGHTLY_E2E=1` as an explicit signal that the run is **unattended/nightly**.
+When working on Playwright E2E under `apps/web/e2e/**` (or the project’s documented suite root), treat `NIGHTLY_E2E=1` as an explicit signal that the run is **unattended/nightly**.
 
 Behavior in unattended mode:
 
@@ -20,6 +16,6 @@ Behavior in unattended mode:
 
 Safety invariants (still required even in unattended mode):
 
-- Do **not** place real orders unless explicitly enabled by `E2E_ALLOW_PLACE_ORDER=1`.
+- Do **not** run destructive or irreversible side-effect flows unless the project documents an explicit allow env (and that env is set).
 - Do **not** modify `docker-compose*.yml` (or stack-defining Docker files) without explicit approval.
 - Do **not** run destructive deletes on the host OS (outside containers).

@@ -1,17 +1,17 @@
 ---
 name: runtime-commands-containers
-description: Use this when you need to suggest or run runtime commands in a containerized repo (Magento/PHP, Node, E2E).
+description: Use this when you need to suggest or run runtime commands in a containerized Node/TS/JS repo (compose services, docker run one-shots, E2E).
 ---
 
 # Skill: Runtime commands safety (containers)
 
-Use this when you need to suggest or run runtime commands in a containerized repo (Magento/PHP, Node, E2E).
+Use this when you need to suggest or run runtime commands in a **containerized Node/TS/JS** repo (Docker Compose services, `node:*-slim` one-shots, Playwright/E2E).
 
 ## Inputs required (do not assume)
-- `<PHP_CONTAINER>`
-- `<REPO_WORKDIR_IN_CONTAINER>` (example: `/app`)
-- Optional: `<NODE_CONTAINER>` (if frontend builds apply)
-- Optional: `<E2E_API_CONTAINER>` (if E2E applies)
+- `<NODE_CONTAINER>` or `<COMPOSE_SERVICE>` (example: `web`, `api`)
+- `<REPO_WORKDIR_IN_CONTAINER>` (example: `/repo`, `/app`)
+- Optional: `<NODE_IMAGE>` (example: `node:22-slim` — read consumer `.umbraculum/ci-parity.json` / `docs/TYPING.md`)
+- Optional: `<E2E_BASE_URL>` (if E2E applies)
 - Optional: `<COMPOSE_FILE_PATH>` (if relevant)
 
 ## Output format (return exactly)
@@ -30,16 +30,16 @@ Use this when you need to suggest or run runtime commands in a containerized rep
 ## Prerequisites
 - Do not run container-specific commands automatically unless explicitly requested.
 - Do not assume container names, compose file location, or bind mounts.
-- Composer must run **inside** the PHP container (never probe host composer).
+- Prefer project compose services or documented one-shot images over host Node/npm (see `node-npm-container-only`).
 
 ## Commands (templates)
-1) Confirm `<PHP_CONTAINER>` and `<REPO_WORKDIR_IN_CONTAINER>`.
-2) If composer is needed and not found, look for Composer under `/app/bin/` (examples: `/app/bin/composer2`, `/app/bin/composer22`, `/app/bin/composer28`).
-3) If Magento Cloud metapackage is present and composer install/update ran successfully, run `./vendor/bin/ece-patches apply` inside the PHP container.
-4) For `m2-hotfixes/*.patch`, generate patches via real diffs and validate inside the PHP container with `./vendor/bin/ece-patches apply`.
-5) For integration tests, use `INTEGRATION_TESTS_*` env vars and verify DB connectivity (`SELECT 1`) before launching PHPUnit.
+1) Confirm `<NODE_CONTAINER>` / `<COMPOSE_SERVICE>` and `<REPO_WORKDIR_IN_CONTAINER>` from `DEVELOPMENT.md` / `DEVELOPMENT-LOCAL.md`.
+2) Prefer `docker compose exec <service> …` for in-stack work, or `docker run … <NODE_IMAGE>` for one-shots matching CI.
+3) For npm/install/build/test: run inside the container/image — never host npm for verification that must match CI.
+4) For E2E: follow `playwright-runner-docs-gate` (quick gates before Playwright).
+5) For pre-push static analysis (umbraculum-class): prefer `npm run verify:pre-push` / skill **`path-aware-pre-push`**. Use bare `npx @umbraculum/ci-parity` only for WIP/historical job reproduction (skill **`ci-parity-local-reproduction`**), not as the sole push gate.
 
 ## Stop conditions
-- Any of `<PHP_CONTAINER>` / `<REPO_WORKDIR_IN_CONTAINER>` is unknown or ambiguous.
+- Container/service name or workdir is unknown or ambiguous.
 - Command execution requires allowlist/approval and is blocked.
 - A step would require destructive host operations or guessing mounts/compose file selection.

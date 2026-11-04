@@ -18,7 +18,7 @@ When a developer reports "my local check passes but CI failed", do NOT default t
 
 ## Container-only execution (cross-platform)
 
-CI parity checks **must run inside Docker**, using the **same image CI uses** (default `node:20-slim` — read the workflow file; do not assume). The host shell only orchestrates `git archive` + `docker run`; **never** run `npm` / `npx tsc` / `npm run lint` on the host for parity verification.
+CI parity checks **must run inside Docker**, using the **same image CI uses** (default `node:22-slim` — read the workflow file; do not assume). The host shell only orchestrates `git archive` + `docker run`; **never** run `npm` / `npx tsc` / `npm run lint` on the host for parity verification.
 
 - **Why:** Matches GitHub Actions (`ubuntu-latest` + container), eliminates host Node version drift (Linux / macOS / WSL), and avoids bind-mounting the live workspace (mechanism 3).
 - **Prerequisites on the developer machine:** `git`, Docker, and Node.js (to run `npx @umbraculum/ci-parity`). Bash is required only for the optional `scripts/ci-parity-check.sh` wrapper on Unix — **not** for the canonical cross-platform path. Docker Desktop on macOS/Windows; WSL2 is the supported Windows path for compose-heavy debug; native Windows `cmd` without Docker is out of scope.
@@ -64,10 +64,11 @@ Agents **must not** treat any of the following as sufficient pre-push verificati
 | `docker compose exec api npm run …` | Dev-container layout ≠ CI hoisting (mechanism 4); also **not** the GHA `api` vitest job |
 | `docker compose exec api npm test` without checking vitest **Unhandled Errors** | CI fails on unhandled rejections even when all tests pass |
 | "CI will tell us" / push to discover failures | Burns GHA minutes; ci-parity exists to avoid this |
+| Push on bare “push” while T2 is red/unknown without a named waiver | Agent must run default `verify:pre-push` (or pause once to confirm run-now vs waive named jobs) — see rule `40`; do not invent a green push |
 | Push without `--archive` after commit (only `--ci` during WIP) | GHA runs committed code; uncommitted local fixes hide broken `HEAD` |
 | Ending a session with "run verify:pre-push before you push" | Pre-push is **agent-owned** — run T2 yourself per umbraculum-dev `AGENTS.md` |
 | Full sequential manifest on every feature push | Use T2-PR (`verify:pre-push`); reserve T2-release for manifest/pin/SDK tag prep |
-| Host `npm view` / host `./scripts/*-smoke.sh` / host npm polling | Host is not the project; Node/npm skew yields false red/green — use `node:20-slim` or ci-parity (rule `00-shared-node-npm-container-only`) |
+| Host `npm view` / host `./scripts/*-smoke.sh` / host npm polling | Host is not the project; Node/npm skew yields false red/green — use `node:22-slim` or ci-parity (rule `00-shared-node-npm-container-only`) |
 
 **Required before push (umbraculum-dev — agents run this, not the operator):**
 

@@ -56,7 +56,7 @@ export function createSnapshot(repoRoot: string, sha: string): { dir: string; sh
   if (existsSync(dir)) {
     spawnSync(
       "docker",
-      ["run", "--rm", "-v", "/tmp:/host-tmp", "node:20-slim", "rm", "-rf", `/host-tmp/ci-parity-${short}`],
+      ["run", "--rm", "-v", "/tmp:/host-tmp", "node:22-slim", "rm", "-rf", `/host-tmp/ci-parity-${short}`],
       { stdio: "ignore" },
     );
   }
@@ -483,7 +483,7 @@ export async function runCiParity(options: RunOptions): Promise<RunOutput> {
     }
     spawnSync(
       "docker",
-      ["run", "--rm", "-v", "/tmp:/host-tmp", "node:20-slim", "rm", "-rf", ...rmTargets],
+      ["run", "--rm", "-v", "/tmp:/host-tmp", "node:22-slim", "rm", "-rf", ...rmTargets],
       { stdio: "ignore" },
     );
   } else if (options.keep) {

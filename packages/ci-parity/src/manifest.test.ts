@@ -6,7 +6,7 @@ import { buildContainerScript, dockerVolumeArgs } from "./runner.js";
 const sampleManifest = parseManifest({
   schemaVersion: 1,
   profile: "ts-npm-monorepo",
-  runtime: { image: "node:20-slim", nodeOptions: "--max-old-space-size=6144" },
+  runtime: { image: "node:22-slim", nodeOptions: "--max-old-space-size=6144" },
   snapshot: { local: "git-archive", ci: "checkout" },
   install: {
     root: "npm ci --no-audit --no-fund --workspaces --include-workspace-root",
@@ -92,7 +92,7 @@ describe("parseManifest", () => {
       parseManifest({
         schemaVersion: 2,
         profile: "ts-npm-monorepo",
-        runtime: { image: "node:20-slim" },
+        runtime: { image: "node:22-slim" },
         snapshot: { local: "git-archive", ci: "checkout" },
         install: { root: "npm ci", nested: [] },
         jobs: [],
@@ -104,7 +104,7 @@ describe("parseManifest", () => {
     const manifest = parseManifest({
       schemaVersion: 1,
       profile: "ts-npm-monorepo",
-      runtime: { image: "node:20-slim" },
+      runtime: { image: "node:22-slim" },
       snapshot: { local: "git-archive", ci: "checkout" },
       install: { root: "npm ci", nested: [] },
       jobs: [
@@ -123,7 +123,7 @@ describe("parseManifest", () => {
     const manifest = parseManifest({
       schemaVersion: 1,
       profile: "ts-npm-monorepo",
-      runtime: { image: "node:20-slim" },
+      runtime: { image: "node:22-slim" },
       docker: {
         volumes: [
           { name: "umbraculum_npm_cache", containerPath: "/root/.npm" },

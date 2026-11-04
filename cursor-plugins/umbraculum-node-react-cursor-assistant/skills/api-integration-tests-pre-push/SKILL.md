@@ -1,25 +1,25 @@
 ---
 name: api-integration-tests-pre-push
-description: Reproduce the GHA api workflow (vitest + REDIS_URL + BullMQ) before pushing changes under services/api or API boot paths. Use proactively when editing services/api/**, services/api/src/tests/**, buildApp(), or packages consumed by the api vitest suite — ci-parity typecheck alone does NOT run this job. See rule 75-api-integration-pre-push-gate.mdc.
+description: Reproduce the GHA api workflow (vitest + REDIS_URL + BullMQ) before pushing changes under services/api or API boot paths. Use proactively when editing services/api/**, services/api/src/tests/**, buildApp(), or packages consumed by the api vitest suite — verify:pre-push / ci-parity typecheck alone does NOT run this job. See rule 75-api-integration-pre-push-gate.mdc.
 ---
 
 # Skill: API integration tests — pre-push parity (umbraculum-class monorepos)
 
 ## Why this skill exists
 
-`npx @umbraculum/ci-parity` covers **static analysis only** (docs, lint, typecheck). The separate GHA **`api`** workflow runs **`npm test`** in `services/api` with **Postgres, Redis, and Gotenberg** service containers and `REDIS_URL` set (BullMQ / rendering queue boots via ioredis).
+`npm run verify:pre-push` (T2-PR / skill **`path-aware-pre-push`**) covers **static analysis** (path-resolved ci-parity jobs: docs, lint, typecheck, …) and may start this skill as a native companion when `api.yml` paths match. The separate GHA **`api`** workflow runs **`npm test`** in `services/api` with **Postgres, Redis, and Gotenberg** service containers and `REDIS_URL` set (BullMQ / rendering queue boots via ioredis).
 
 Local gaps this skill closes:
 
 | Missed locally | CI symptom | Example (F-mod 2026-05) |
 |---|---|---|
-| TS errors in test files | `typecheck` FAIL | `RegisteredModuleSnapshot` has no `aiPrompts` — caught by ci-parity **if run** |
+| TS errors in test files | `typecheck` FAIL | `RegisteredModuleSnapshot` has no `aiPrompts` — caught by T2-PR / ci-parity **if run** |
 | Vitest **unhandled rejections** after all tests pass | `api-integration-tests` FAIL, exit 1, "Tests passed" + "Errors: 1" | ioredis `Connection is closed` on `app.close()` when `REDIS_URL` set |
 | Stale bind-mounted `node_modules` | intermittent | compose exec green, CI red |
 
-**T2 API gate:** this skill is the **T2** complement to ci-parity (T2 static). **T1** scoped vitest (`verify-slice-runbook`, `npm run verify:openapi`) does **not** substitute for this skill before push. See [`docs/VERIFICATION-TIERS.md`](../../umbraculum-dev/docs/VERIFICATION-TIERS.md) in umbraculum-dev.
+**T2 API gate:** this skill is the **API integration** complement to T2-PR static analysis. **T1** scoped vitest (`verify-slice-runbook`, `npm run verify:openapi`) does **not** substitute for this skill before push. See [`docs/VERIFICATION-TIERS.md`](../../umbraculum-dev/docs/VERIFICATION-TIERS.md) in umbraculum-dev.
 
-**Both T2 gates:** run **ci-parity** (or `npm run verify:pre-push`) **and** this skill when the change set touches API behavior or API tests.
+**Both T2 gates:** run **`npm run verify:pre-push`** (skill **`path-aware-pre-push`**) **and** this skill when the change set touches API behavior or API tests and T2 did not already run the api companion.
 
 ## Inputs required (do not assume)
 
@@ -64,15 +64,15 @@ If FAIL, append up to 3 lines from vitest output (include **Unhandled Errors** s
 
 ## Commands
 
-### 1. Static analysis first (typecheck — same class of error as CI typecheck job)
+### 1. Static analysis first (T2-PR — path-aware)
 
-If `<REPO_ROOT>/.umbraculum/ci-parity.json` exists:
+If `<REPO_ROOT>/.umbraculum/ci-parity.json` exists and T2-PR has not already been green on this commit:
 
 ```bash
-cd <REPO_ROOT> && npx @umbraculum/ci-parity@^1 run --jobs typecheck
+cd <REPO_ROOT> && npm run verify:pre-push
 ```
 
-Skip only for docs-only pushes with zero TS surface.
+Prefer skill **`path-aware-pre-push`**. Do **not** treat bare `npx @umbraculum/ci-parity … --jobs typecheck` as the sole tier‑1 push gate. Skip only for docs-only pushes with zero TS surface.
 
 ### 2. Integration suite (mirrors `.github/workflows/api.yml` `api-integration-tests`)
 
@@ -95,10 +95,10 @@ Still require step 2 green before push unless only that file changed.
 
 ## Stop conditions
 
-- Change set is docs-only / no API path → skip step 2; ci-parity docs job may suffice.
+- Change set is docs-only / no API path → skip step 2; T2-PR docs job may suffice.
 - `docker compose exec api` unavailable → halt; do not run host `npm test`.
 - Vitest reports **Tests passed** but **Errors: 1+ unhandled** → treat as **FAIL** (same as CI); fix teardown (e.g. unset `REDIS_URL` in profile-only tests, await queue `close()` on `app.close()`).
-- ci-parity typecheck FAIL → fix before step 2.
+- `verify:pre-push` / T2-PR FAIL → fix before step 2.
 
 ## Test-authoring notes (API boot / module profile)
 

@@ -6,7 +6,7 @@ Why we integrated Cursor Bugbot this way across umbraculum and sibling ecosystem
 
 Generic PR review misses high-cost traps that domain plugins and `AGENTS.md` already encode at coding time. Cloud Bugbot on GitHub **does not read** plugin install paths. It reads **git-committed** `.cursor/BUGBOT.md` and optional Cursor dashboard rules.
 
-**Language-specific review rows** live in each domain plugin's `docs/templates/BUGBOT.md` (Magento PHP, TS/JS monorepo, OpenPLC/Python, etc.). **Plugin-pack / meta repos** (rules, skills, agents, manifests) use `docs/templates/BUGBOT.plugin-pack.md` in **toolset-common** — not a domain plugin.
+**Language-specific review rows** live in each domain plugin's `docs/templates/BUGBOT.md` (TS/JS monorepo, OpenPLC/Python, PHP domain plugins outside this repo, etc.). **Plugin-pack / meta repos** (rules, skills, agents, manifests) use `docs/templates/BUGBOT.plugin-pack.md` in **toolset-common** — not a domain plugin.
 
 ## Design goals
 
@@ -73,7 +73,7 @@ Local review can dedupe cloud review (same diff patch ID). GHA remains the merge
 | BUGBOT.md present, wrong base | Local skill skips; `SKIPPED (reason: not-<base>-pr)` |
 | Findings reported | Triage in foreground; not a done gate; not auto-fixed |
 
-Common rule: [`rules/56-bugbot-checks-only.mdc`](../rules/56-bugbot-checks-only.mdc). Domain skills: e.g. `magento-bugbot-review`, `typescript-bugbot-review`, `openplc-bugbot-review`, `plugin-pack-bugbot-review`.
+Common rule: [`rules/56-bugbot-checks-only.mdc`](../rules/56-bugbot-checks-only.mdc). Domain skills: the consuming plugin's `*-bugbot-review` skill (e.g. `typescript-bugbot-review`, `openplc-bugbot-review`, `plugin-pack-bugbot-review`).
 
 ## Relationship to `AGENTS.md`
 

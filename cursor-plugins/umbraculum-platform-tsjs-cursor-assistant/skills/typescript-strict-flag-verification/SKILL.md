@@ -13,7 +13,7 @@ Some Umbraculum monorepos document a workspace-specific fallback in `docs/TYPING
 
 - `<WORKSPACE_PATH>` (absolute path to the workspace, e.g. `/path/to/umbraculum-dev/services/api`)
 - `<REPO_ROOT>` (absolute path to the monorepo root, e.g. `/path/to/umbraculum-dev`)
-- `<NODE_IMAGE>` (the canonical Node image; default `node:20-slim` if `docs/TYPING.md` doesn't override)
+- `<NODE_IMAGE>` (the canonical Node image; default `node:22-slim` if `docs/TYPING.md` doesn't override)
 
 ## Output format (return exactly)
 

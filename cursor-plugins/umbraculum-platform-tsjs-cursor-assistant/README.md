@@ -7,7 +7,7 @@ This plugin **assumes** `umbraculum-node-react-cursor-assistant` is also install
 ## When to install
 
 - **Install in**: umbraculum-dev (the canonical platform repo) and any future project that adopts the same conventions (four-slice foundation hardening + multi-tenant workspace-scoped routes).
-- **Do not install in**: generic TS/JS projects, the Magento codebase, or any project without `docs/FOUNDATION-HARDENING.md` and the umbraculum monorepo layout (`apps/*`, `services/*`, `packages/*` with workspace-scoped routing).
+- **Do not install in**: generic TS/JS projects (use node-react + common only), or any project without `docs/FOUNDATION-HARDENING.md` and the umbraculum monorepo layout (`apps/*`, `services/*`, `packages/*` with workspace-scoped routing).
 
 ## Contents
 
@@ -46,6 +46,7 @@ These artifacts are the §8 plugin-pack handoff manifest from umbraculum-dev's `
 
 ## Version history
 
+- **0.0.2** (2026-11) — Align one-shot / typecheck defaults with umbraculum-dev **1.0.0** stack: `node:22-slim` in `types-baseline-verifier`, `typescript-strict-flag-verification`, and `package-scope-migration-preflight`. Drop Magento from “do not install” phrasing (Magento never loads this plugin).
 - **0.0.1** (2026-05-25) — public baseline after the repository history reset. Includes the current umbraculum-platform TS/JS rules, skills, and verifier agents, including the web-route-shape and module-README disciplines.
 
 ## Install

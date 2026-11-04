@@ -17,7 +17,7 @@ globs:
   - `rm -rf ...`
   - `rm -r ...`
   - `rm ...` on directories or wildcard paths
-- If deletion is required, perform it **inside the appropriate container** (example: `<PHP_CONTAINER>`) via `docker exec ...`.
+- If deletion is required, perform it **inside the appropriate app/API container** (example: compose service `api` / `<APP_CONTAINER>` from `DEVELOPMENT-LOCAL.md`) via `docker compose exec` / `docker exec ...`.
 
 ## Allowed alternatives (preferred)
 - Prefer non-destructive approaches on host:

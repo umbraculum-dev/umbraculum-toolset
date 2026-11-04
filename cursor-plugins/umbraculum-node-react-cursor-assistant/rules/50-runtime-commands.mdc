@@ -1,5 +1,5 @@
 ---
-description: Runtime command safety (containers)
+description: Runtime command safety (containers) — Node/TS/JS only
 alwaysApply: true
 globs:
   - "**/*.ts"
@@ -13,15 +13,15 @@ globs:
 
 ## Rule (guardrail)
 
-This repo is containerized and many runtime commands are environment-specific.
+This plugin targets **containerized Node/TS/JS** repos. Many runtime commands are environment-specific.
 
-- Do NOT run Node/npm commands automatically (e.g. `node`, `npm`, `npx`).
-- Do NOT run PHP/Composer commands automatically (e.g. `php`, `composer`, `php bin/magento`, `vendor/bin/phpunit`).
-- Do NOT run Docker commands automatically (e.g. `docker`, `docker compose`).
+- Do NOT run Node/npm commands automatically on the **host** (e.g. `node`, `npm`, `npx`) when the project uses container-only npm — see `00-shared-node-npm-container-only.mdc`.
+- Do NOT run Docker / compose commands automatically without confirming the service/workdir (e.g. `docker`, `docker compose`).
+- Do NOT invent PHP/Composer/PHPUnit command recipes — this plugin is Node/TS/JS only.
 
 Instead:
-- Ask which container/service to use and the working directory.
-- Prefer stable, repeatable command shapes.
+- Ask which container/service to use and the working directory (or read `DEVELOPMENT-LOCAL.md`).
+- Prefer stable, repeatable command shapes from `runtime-commands-containers` / `node-npm-container-only`.
 
 ## Runbook
 

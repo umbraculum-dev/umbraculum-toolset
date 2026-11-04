@@ -15,7 +15,7 @@ This plugin requires the companion `umbraculum-toolset-common` plugin for the la
 ## When to install
 
 - **Install in**: `/path/to/openplc-brewery-project/` (the canonical motivating project) and any future project that uses the same five surfaces (OpenPLC IEC-61131-3 ladder + ST POUs; `PI_*` Modbus mailbox contract; FastAPI + Jinja + SQLite Pi-sidecar; `[ALARM]/[COOLING]/[HEATING]` hardware-doc taxonomy; `pandoc + xelatex` ASCII-diagram pamphlets).
-- **Do not install in**: pure TS/JS projects, pure Python web apps without PLC integration, the Magento codebase, or umbraculum-platform projects (use the appropriate companion plugin instead).
+- **Do not install in**: pure TS/JS projects, pure Python web apps without PLC integration, or umbraculum-platform projects (use the appropriate companion plugin instead).
 
 ## Contents
 
@@ -44,7 +44,7 @@ This plugin requires the companion `umbraculum-toolset-common` plugin for the la
 
 Install via the `workspaceOpen` hook when the workspace matches the OpenPLC brewery repo path. See [docs/WORKSPACE-PLUGIN-LOADING.md](../docs/WORKSPACE-PLUGIN-LOADING.md). Legacy global rsync: `install-local.sh.legacy`.
 
-### Skills (`skills/`) — 6 skills, one per subagent
+### Skills (`skills/`) — 8 skills (5 paired with subagents + review/verification helpers)
 
 - `openplc-runtime-upload/SKILL.md` — bounded runbook for editor-compile → `prepare_openplc_runtime_upload.py` → OpenPLC Runtime web UI upload → confirm `Running` + `start_modbus() ... port: 502`
 - `pi-modbus-mailbox-debug/SKILL.md` — bounded runbook for reading a `PI_*` coil/holding-register from outside the sidecar (raw `pymodbus`) to triage "the sidecar shows X but the PLC shows Y" mismatches
@@ -52,6 +52,7 @@ Install via the `workspaceOpen` hook when the workspace matches the OpenPLC brew
 - `hardware-doc-consistency-check/SKILL.md` — bounded runbook for `make check-connections` + the `tools/check_connections_consistency.py` SoT checker; what to do when it fails
 - `em-fields-pamphlet-pdf-build/SKILL.md` — bounded runbook for `make reference-pdfs` (and the diagram-only `--skip-figures` variant); the two visual checks (no page-split, no margin-clip) required after every pamphlet edit
 - `plc-variable-prefix-verification/SKILL.md` — bounded static-scan runbook (ripgrep) for variable identifiers in `pous/**` and `project.json` that violate the `I_/Q_/M_/AI_/AI_RAW_/CFG_/SVC_/P_/PI_` prefix convention (rule `04`); max 10 violation lines per run
+- `public-endpoint-verification/SKILL.md` — bounded Pi-sidecar / FastAPI endpoint verification wrap-up (pairs with toolset-common rule `45`)
 - `openplc-bugbot-review/SKILL.md` — opt-in local pre-push Bugbot (main-gated, readonly)
 
 ### Agents (`agents/`) — 5 subagents

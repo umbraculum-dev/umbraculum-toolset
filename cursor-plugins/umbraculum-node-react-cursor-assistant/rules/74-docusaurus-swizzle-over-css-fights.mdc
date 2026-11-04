@@ -47,7 +47,7 @@ After swizzle or config changes: `docker compose restart docs-site` (swizzles ar
 
 - Desktop width (≥997px) and mobile — announcement text must not clip top/bottom.
 - Hard refresh when validating CSS (`Ctrl+Shift+R`) — dev HMR can mask bundle-order issues.
-- `npm run build -w @umbraculum/docs-site` in Node 20 container before declaring done.
+- `npm run build -w @umbraculum/docs-site` in Node 22 container before declaring done.
 
 ## Frontier-now / local-subagent fit
 

@@ -1,5 +1,5 @@
 ---
-description: Workflow — always verify/update tests when changing code (Magento + TS/JS monorepos)
+description: Workflow — always verify/update tests when changing code (TS/JS monorepos)
 alwaysApply: true
 globs:
   - "**/*.ts"
@@ -12,15 +12,7 @@ globs:
 
 # Tests must follow code changes (mandatory)
 
-This rule applies to both stack families covered by this package:
-- **Magento / PHP** projects (`app/code/*/*`, `vendor/*/*/Test/**`, etc.).
-- **TS/JS monorepos** (typically `apps/**`, `services/**`, `packages/**`, but the same idea applies to any layout).
-
-## When implementing/fixing features in `app/code/*/*`
-- Always consider whether existing unit tests should be **updated** (or new ones added) to reflect the change.
-- If a change affects observable behavior (return values, exceptions, logging, payload shape, DI wiring), update tests accordingly.
-- Prefer **unit tests** (fast, mocked-only) for pure logic and small plugins.
-- Use **integration tests** only when validating Magento wiring/DI/area configs or DB behavior is the purpose.
+This rule targets **TS/JS monorepos** (typically `apps/**`, `services/**`, `packages/**`, but the same idea applies to any Node/TS layout).
 
 ## When implementing/fixing features in a TS/JS monorepo
 Map each non-trivial change to the cheapest test layer that catches its regression.
@@ -41,8 +33,7 @@ Recommended layer map (consumers tune the right column to their actual paths and
 Each adopting project SHOULD keep its concrete mapping (exact package names, `npm` scripts, fixture identities) in a project-local `docs/TESTING.md` (or equivalent single source of truth). This rule enforces the **principle**; the project's `docs/TESTING.md` fills in the **specifics**.
 
 ## Acceptance criteria
-- After a Magento change: run the relevant PHPUnit suite(s) and keep them green.
 - After a TS/JS change: run the matching layer(s) and keep them green; see the project's `docs/TESTING.md` (or equivalent) for exact commands.
-- **Umbraculum-class monorepos with `.umbraculum/ci-parity.json`:** before push, run **`npx @umbraculum/ci-parity`** (static analysis). When **`services/api/**`** (or api workflow path filters) change, also run skill **`api-integration-tests-pre-push`** — ci-parity does not substitute for the GHA `api` vitest job.
-- For containerized Node/npm execution, follow `node-npm-container-only` skill.
+- **Umbraculum-class monorepos with `.umbraculum/ci-parity.json`:** before push, agents run **`npm run verify:pre-push`** (T2-PR / skill **`path-aware-pre-push`**) — not bare `npx @umbraculum/ci-parity` as the sole gate. When **`services/api/**`** (or api workflow path filters) change outside the path resolver, also run skill **`api-integration-tests-pre-push`**. See rules `72` / `76`.
+- For containerized Node/npm execution, follow `node-npm-container-only` skill (umbraculum-dev: **`node:22-slim`** / engines ≥22.13 — read the consumer manifest; do not assume Node 20).
 - If tests are skipped because the code is too legacy/entangled to test cheaply, explicitly document which module/class/path was skipped and why.

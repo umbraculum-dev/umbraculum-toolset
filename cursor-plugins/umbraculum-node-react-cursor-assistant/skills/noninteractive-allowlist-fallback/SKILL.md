@@ -8,8 +8,8 @@ description: Use this when terminal commands are blocked by an allowlist/approva
 Use this when terminal commands are blocked by an allowlist/approval gate and you need to keep unattended work moving.
 
 ## Inputs required (do not assume)
-- Optional: `<PHP_CONTAINER>` (if container commands are required)
-- Optional: `<E2E_API_CONTAINER>` (if E2E CLI is required)
+- Optional: `<APP_CONTAINER>` (if container commands are required)
+- Optional: `<E2E_RUNNER>` (if Playwright / E2E CLI is required)
 - The exact blocked command(s), if already known
 
 ## Output format (return exactly)
@@ -27,7 +27,7 @@ Use this when terminal commands are blocked by an allowlist/approval gate and yo
 
 ## Prerequisites
 - Prefer workspace file edits (editor/apply_patch) over shell-based file writes.
-- Use `docker exec` only when unavoidable (Magento CLI, PHPUnit, curls, cache flush, E2E CLI).
+- Use `docker compose exec` / `docker exec` only when unavoidable (curl against the stack, Playwright gates, project CLIs).
 
 ## Commands
 1) Switch the plan to workspace edits for any file changes.

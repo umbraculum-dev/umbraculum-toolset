@@ -4,15 +4,14 @@
 # register-workspace-plugins.umbraculum-dev.example.sh instead.
 # Canonical install doc: cursor-plugins/docs/WORKSPACE-PLUGIN-LOADING.md §0
 #
-# Magento + Hyvä (optional sibling plugins from rf-cursor-assistant-plugins monorepo):
-# When you also maintain Magento shops, extend this example like the live machine hook:
-#   MAGENTO_PLUGIN=.../cursor-plugins/rf-magento-cursor-assistant
-#   HYVA_PLUGIN=.../cursor-plugins/rf-hyva-cursor-assistant
-# On Magento path match: always add umbraculum-toolset-common FIRST (a dedicated Magento
-# case/elif replaces the default `*)` arm, so common is not inherited automatically),
-# then Magento; add Hyvä only if workspace_has_hyva (composer.json/lock under root or
-# html/ contains hyva-themes/, or vendor/hyva-themes exists).
-# Do not install those plugins into ~/.cursor/plugins/local/ (double-load risk).
+# Extending beyond React/TS: umbraculum-toolset-common is safe to load in *every*
+# workspace (git/DCO/commit discipline). Domain plugins are not interchangeable —
+# this hook can register very different application stacks per path, not only
+# React/TS. Example pattern (sibling domain plugins outside this repo):
+#   On a Mage-OS / PHP shop path → add umbraculum-toolset-common FIRST, then that
+#   stack's domain plugin(s) from their source folder. Same idea for any other
+#   non-JS monorepo that adopts the common meta-framework.
+# Do not rsync domain plugins into ~/.cursor/plugins/local/ (global load / double-load).
 #
 # workspaceOpen hook — register Cursor plugins from source paths per workspace.
 # Reads workspace_roots (JSON) from stdin; returns pluginPaths (JSON) on stdout.

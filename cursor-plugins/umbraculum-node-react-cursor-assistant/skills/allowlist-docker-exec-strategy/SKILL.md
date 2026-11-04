@@ -1,6 +1,6 @@
 ---
 name: allowlist-docker-exec-strategy
-description: Use this when Cursor/agent command approvals (allowlisting) are slowing down container workflows.
+description: Use this when Cursor/agent command approvals (allowlisting) are slowing down container workflows in TS/JS compose stacks.
 ---
 
 # Skill: Allowlist prompts + `docker exec` strategy (non-interactive)
@@ -8,8 +8,8 @@ description: Use this when Cursor/agent command approvals (allowlisting) are slo
 Use this when Cursor/agent command approvals (allowlisting) are slowing down container workflows.
 
 ## Inputs required (do not assume)
-- Optional: `<PHP_CONTAINER>`
-- Optional: `<E2E_API_CONTAINER>`
+- Optional: `<APP_CONTAINER>` (compose service needing exec, e.g. `api`, `web`)
+- Optional: `<E2E_RUNNER>` (Playwright one-shot image / host `docker run` shape, if E2E is in scope)
 - The exact blocked command(s), if already known
 
 ## Output format (return exactly)
@@ -31,7 +31,7 @@ Use this when Cursor/agent command approvals (allowlisting) are slowing down con
 
 ## Commands
 1) Identify the minimal set of stable command “shapes” needed for the workflow.
-2) Suggest narrow allowlisting for those shapes only (example: `docker exec -i <PHP_CONTAINER> bash -lc 'php ...'`).
+2) Suggest narrow allowlisting for those shapes only (examples: `docker compose exec -T <APP_CONTAINER> …`, `docker run --rm --network host … playwright …`).
 3) Batch commands to reduce prompts.
 
 ## Stop conditions

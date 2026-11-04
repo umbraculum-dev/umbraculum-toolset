@@ -7,9 +7,7 @@ description: Use this when you need to drive an integrated browser (e.g. Cursor'
 
 Use this when you need to drive an integrated browser (e.g. Cursor's browser tools / `use_browser`) against a running TS/JS web app for **exploratory** or **on-demand** E2E checks — separate from the deterministic Playwright (or equivalent) suite.
 
-This skill is the **sibling** of `agentic-e2e-runbook` skill:
-- `agentic-e2e-runbook` skill: control-panel CLI-driven E2E (`run agentic ...`).
-- **this skill**: agent-driven integrated browser jobs against a TS/JS web app.
+This skill is for **agent-driven integrated browser** jobs against a TS/JS web app. For deterministic Playwright suites, use `playwright-runner-docs-gate` instead.
 
 Treat agentic browser runs as **signal-only** unless your team explicitly makes them gating. Gate them behind deterministic L1–L5 layers (see `20-tests-must-follow-changes.mdc` and the project's `docs/TESTING.md`).
 

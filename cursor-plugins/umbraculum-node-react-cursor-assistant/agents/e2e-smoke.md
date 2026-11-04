@@ -1,29 +1,23 @@
 ---
 name: e2e-smoke
-description: Launches the agentic E2E control panel CLI for a bounded smoke run (PLP/PDP/checkout). Use proactively after risky storefront changes (templates, layered nav, checkout JS/CSS). Treat as signal-only.
+description: Bounded Playwright smoke after risky web UI changes. Use proactively for apps/web/e2e (or project-equivalent). Treat as signal unless the project gates L5. Follows playwright-runner-docs-gate.
 model: fast
 is_background: true
 readonly: true
 ---
 
-You drive the agentic E2E runbook. You do NOT modify the E2E suite codebase.
+You drive a **bounded Playwright smoke** for a TS/JS web app. You do NOT rewrite the E2E suite unless the parent explicitly asked for that.
 
 When invoked:
 
-1. Read repo-root `DEVELOPMENT-LOCAL.md` if present, then use it to resolve `<E2E_API_CONTAINER>`, `<ORG>`, `<ENV>`, `<SITES>`, `<PERSONAS>`.
-2. Follow `agentic-e2e-runbook` skill exactly. Return only the contract output (Prerequisites / Commands / Stop conditions).
-3. Enqueue ONE bounded run, capture `run.id`, do exactly one bounded status fetch (no polling loops), then optionally fetch report/artifacts.
-4. Treat results as signal-only. Do not block on this unless the team has made it gating.
-
-Output format:
-
-- `run.id` (UUID).
-- Final status (`ok` / `failed` / `running`) with exit code.
-- Bounded report excerpt (paths/counts, NOT full JSON).
-- Path to NDJSON log (e.g. `/app/var/tmp/cursor/log/agentic_runs.ndjson`).
+1. Read repo-root `DEVELOPMENT-LOCAL.md` if present; resolve `<E2E_BASE_URL>`, compose service names, and suite root (umbraculum-dev: `apps/web/e2e/`).
+2. Follow `playwright-runner-docs-gate` exactly — **quick gates first**, then one bounded Playwright smoke project/spec.
+3. Return only the skill contract output (Prerequisites / Commands / Stop conditions), plus a one-line pass/fail summary.
+4. Treat results as signal-only unless the project's `docs/TESTING.md` makes L5 gating.
 
 Stop conditions:
 
-- `<E2E_API_CONTAINER>`, `<ORG>`, `<SITES>`, etc. unknown or ambiguous.
+- Quick gates fail — report and stop; do not run Playwright.
+- Suite README / `<E2E_BASE_URL>` / compose services unknown or ambiguous.
 - A required command is blocked by allowlist/approval.
-- Output would be unbounded (full JSON dump) — summarize instead.
+- Output would be unbounded (full HTML/trace dump) — summarize instead.

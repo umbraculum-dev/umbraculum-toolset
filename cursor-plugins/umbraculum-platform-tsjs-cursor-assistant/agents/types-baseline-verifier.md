@@ -33,6 +33,6 @@ One line per check. If FAIL: include up to 3 representative `<file>:<line> <erro
 ## Stop conditions
 
 - Affected workspace cannot be detected from the input (ask).
-- Project lacks the canonical `node:20-slim` + `/repo/node_modules` setup and does not document a workspace-specific fallback in `docs/TYPING.md` (ask whether to fall back to in-container `tsc` and disclose the methodology mismatch).
+- Project lacks the canonical `node:22-slim` + `/repo/node_modules` setup and does not document a workspace-specific fallback in `docs/TYPING.md` (ask whether to fall back to in-container `tsc` and disclose the methodology mismatch).
 - Canonical one-off typecheck fails with unresolved local workspace package imports (for example `TS2307 Cannot find module '@umbraculum/...'`) and the project documents no fallback command for that workspace.
 - More than 5 commands would be needed (likely a misuse of this verifier; escalate).

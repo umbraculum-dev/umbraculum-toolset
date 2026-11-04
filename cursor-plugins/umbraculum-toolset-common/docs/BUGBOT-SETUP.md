@@ -7,7 +7,7 @@ Operational runbook for enabling Bugbot on any adopting project. Rationale: [`BU
 - `<REPO_ROOT>` — repository root (or application root if monorepo sub-root)
 - `<GITHUB_REPO>` — repository where PRs are opened (for dashboard enablement)
 - `<BASE_BRANCH>` — expected merge target (from `DEVELOPMENT-LOCAL.md`; examples: `staging`, `master`, `main`)
-- `<BUGBOT_REVIEW_SKILL>` — domain plugin skill name (examples: `magento-bugbot-review`, `typescript-bugbot-review`, `openplc-bugbot-review`, `plugin-pack-bugbot-review`)
+- `<BUGBOT_REVIEW_SKILL>` — domain plugin skill name (the consuming plugin's `*-bugbot-review`; examples: `typescript-bugbot-review`, `openplc-bugbot-review`, `plugin-pack-bugbot-review`)
 - Whether the project has committed `.cursor/BUGBOT.md` at `<REPO_ROOT>/.cursor/BUGBOT.md`
 
 ## Prerequisites
@@ -30,10 +30,10 @@ Operational runbook for enabling Bugbot on any adopting project. Rationale: [`BU
 ## Bootstrap project rules (git)
 
 1. Copy **domain** review template from the ecosystem plugin (or plugin-pack template from common):
-   - Magento: `rf-magento-cursor-assistant/docs/templates/BUGBOT.md`
    - TS/JS: `umbraculum-node-react-cursor-assistant/docs/templates/BUGBOT.md`
    - OpenPLC: `umbraculum-openplc-python-cursor-assistant/docs/templates/BUGBOT.md`
    - Plugin-pack / meta: `umbraculum-toolset-common/docs/templates/BUGBOT.plugin-pack.md` (e.g. umbraculum-toolset repo)
+   - Other stacks (PHP, etc.): that stack's domain plugin `docs/templates/BUGBOT.md` (sibling repo; not shipped here)
    - Target: `<REPO_ROOT>/.cursor/BUGBOT.md`
 2. Update `.gitignore` if needed to allow committed `.cursor/BUGBOT.md`.
 3. Add optional pointers in project `DEVELOPMENT.md` and `AGENTS.md`.

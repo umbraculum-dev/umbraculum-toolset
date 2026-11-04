@@ -1,6 +1,6 @@
 ---
 name: cursor-tmp-scripts-and-logs
-description: Use this when generating small helper scripts (one-off transforms, inspection scripts) and you want a robust workflow in containerized repos.
+description: Use this when generating small helper scripts (one-off transforms, inspection scripts) and you want a robust workflow in containerized TS/JS repos.
 ---
 
 # Skill: Cursor temp scripts + ad-hoc logs (container-friendly)
@@ -8,8 +8,8 @@ description: Use this when generating small helper scripts (one-off transforms, 
 Use this when generating small helper scripts (one-off transforms, inspection scripts) and you want a robust workflow in containerized repos.
 
 ## Inputs required (do not assume)
-- `<PHP_CONTAINER>`
-- `<REPO_WORKDIR_IN_CONTAINER>` (example: `/app`)
+- `<APP_CONTAINER>` — compose service / container that can run the script (e.g. `api`, `web`)
+- `<REPO_WORKDIR_IN_CONTAINER>` (example: `/repo`, `/app`)
 - `<PURPOSE>` (short identifier for the script/log)
 
 ## Output format (return exactly)
@@ -30,11 +30,11 @@ Use this when generating small helper scripts (one-off transforms, inspection sc
 - Prefer container execution for runtime scripts; workspace writes are ok if bind-mounted.
 
 ## Commands (templates)
-1) Write the script under a temp scripts folder (example host: `html/var/tmp/cursor/`; example container: `/app/var/tmp/cursor/`).
-2) Create both a stable “latest” file and a timestamped copy (examples: `/app/var/tmp/cursor/<PURPOSE>_latest.py`, `/app/var/tmp/cursor/<PURPOSE>_<YYYYmmdd_HHMMSS>.py`).
-3) Run inside `<PHP_CONTAINER>` with a timeout (example: `timeout 30m ...`).
-4) Write ad-hoc logs under an ad-hoc log folder (example host: `html/var/tmp/cursor/log/`; example container: `/app/var/tmp/cursor/log/`).
+1) Write the script under a temp scripts folder under the repo (example host: `.tmp/cursor/`; example container: `<REPO_WORKDIR_IN_CONTAINER>/.tmp/cursor/` — do not invent Magento `var/tmp` layouts).
+2) Create both a stable “latest” file and a timestamped copy (examples: `.tmp/cursor/<PURPOSE>_latest.mjs`, `.tmp/cursor/<PURPOSE>_<YYYYmmdd_HHMMSS>.mjs`).
+3) Run inside `<APP_CONTAINER>` with a timeout (example: `timeout 30m ...`).
+4) Write ad-hoc logs under `.tmp/cursor/log/` (host and bind-mounted container path).
 
 ## Stop conditions
-- `<PHP_CONTAINER>` is unknown/ambiguous.
+- `<APP_CONTAINER>` is unknown/ambiguous.
 - Any required runtime command is blocked by allowlist/approval.

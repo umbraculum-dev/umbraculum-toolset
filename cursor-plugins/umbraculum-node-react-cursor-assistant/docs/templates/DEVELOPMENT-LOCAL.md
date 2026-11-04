@@ -12,49 +12,53 @@ Keep this file short and high-signal. Put reusable procedures in plugin Skills i
 
 ## Project summary
 
-- Project type: `<fill_me>`
-- Main stack: `<fill_me>`
+- Project type: `<fill_me — e.g. umbraculum-dev platform monorepo>`
+- Main stack: `<fill_me — e.g. Next.js + Fastify + Prisma + Tamagui 3 + Expo SDK 58; Node ≥22.13 in node:22-slim>`
 - Important docs:
-  - `<path/to/project-doc.md>`
+  - `DEVELOPMENT.md`
+  - `docs/CURSOR-PLUGINS.md`
+  - `docs/TESTING.md`
+  - `docs/CI-PARITY.md`
 
 ## Canonical locations (examples only)
 
-- Canonical repo root: `/path/to/project`
+- Canonical repo root: `/path/to/umbraculum-dev`
 - Cursor worktree root (if applicable): `/path/to/cursor-worktree`
-- Runtime/container workdir (if applicable): `/app`
+- Runtime/container workdir (if applicable): `/repo` (ci-parity / one-shot) or compose service workdir
 
 ## Containers / services (fill in; do not assume)
 
-- `<PHP_CONTAINER>`: `<fill_me>`
-- `<NODE_CONTAINER>`: `<fill_me>`
-- `<E2E_API_CONTAINER>`: `<fill_me>`
-- `<DB_CONTAINER>`: `<fill_me>`
+Compose service names and one-shot image come from the project's `DEVELOPMENT.md` / `.umbraculum/ci-parity.json`. Typical umbraculum-dev shape:
+
+- `<WEB_CONTAINER>` / compose `web`: `<fill_me>`
+- `<API_CONTAINER>` / compose `api`: `<fill_me>`
+- `<NODE_IMAGE>` (ci-parity / one-shots): `<fill_me — umbraculum-dev: public.ecr.aws/docker/library/node:22-slim>`
+- `<DB_CONTAINER>` / Postgres: `<fill_me>`
+- `<E2E_TARGET_CONTAINER>` (if E2E runs against a service distinct from api): `<fill_me>`
 
 ## Local stack notes
 
-- Local base URL: `<fill_me>`
+- Local base URL: `<fill_me — e.g. http://localhost>`
+- Health check: `<fill_me — e.g. http://localhost/healthz>`
 - Known slow commands / expected timeouts:
-  - `<fill_me>`
+  - `<fill_me — e.g. first npm ci in node:22-slim, verify:pre-push>`
 - Commands that require confirmation before running:
   - `<fill_me>`
 - Commands that are forbidden in this project:
-  - `<fill_me>`
+  - `<fill_me — e.g. host npm for lockfile/CI parity; global plugin rsync>`
 
 ## E2E defaults (only if stable for this project)
 
-- `<E2E_BASE_URL>`: `<fill_me>` (example: `http://localhost:18080`)
-- `<ORG>`: `<fill_me>`
-- `<ENV>`: `<fill_me>`
-- `<SITES>`: `<fill_me>`
-- `<PERSONAS>`: `<fill_me>`
+- `<E2E_BASE_URL>`: `<fill_me>` (umbraculum-dev example: gateway URL from `apps/web/e2e/README.md`)
+- Seed / fixture notes: `<fill_me — point at apps/web/e2e/README.md + docs/TESTING.md § L5>`
 
-Playwright: before any suite run, agents must execute the **quick gates** in `playwright-runner-docs-gate` skill (stack up, `./scripts/smoke.sh`, `/api/health`, login page 200, `seed:e2e`). Umbraculum-dev canonical copy: `apps/web/e2e/README.md` + `docs/TESTING.md` § L5.
+Playwright: before any suite run, agents must execute the **quick gates** in `playwright-runner-docs-gate` skill (stack up, smoke/health, login page). Umbraculum-dev canonical copy: `apps/web/e2e/README.md` + `docs/TESTING.md` § L5.
 
 ## Protected branches / Git conventions
 
-- Protected branches: `<fill_me>`
-- Default PR base branch: `<fill_me>`
-- Commit message convention: `<fill_me>`
+- Protected branches: `<fill_me — e.g. master>`
+- Default PR base branch: `<fill_me — e.g. master>`
+- Commit message convention: `<fill_me — Conventional Commits + DCO Signed-off-by>`
 
 ## Useful plugin Skills
 
@@ -62,6 +66,9 @@ Playwright: before any suite run, agents must execute the **quick gates** in `pl
 - `node-npm-container-only` skill
 - `verify-slice-runbook` skill
 - `playwright-runner-docs-gate` skill
+- `native-expo-doctor-pre-push` skill (native hoist surface)
+- `tamagui-cli-check` skill
+- `monorepo-lockfile-gate` skill
 - `typescript-bugbot-review` skill (when `.cursor/BUGBOT.md` adopted)
 - `ci-watch-loop` skill (umbraculum-toolset-common; when `.cursor/LOOP.md` adopted)
 
