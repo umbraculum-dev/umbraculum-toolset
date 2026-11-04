@@ -14,17 +14,17 @@ globs:
 
 | Tier | Tool | Catches | Does **not** catch |
 |------|------|---------|---------------------|
-| **1 — Static analysis** | `npx @umbraculum/ci-parity` (jobs from `.umbraculum/ci-parity.json`) | TS errors in tests (`tsc --noEmit`), lint, docs | Vitest runtime, Redis/BullMQ teardown, DB integration |
-| **2 — API integration** | **`api-integration-tests-pre-push`** skill | GHA `api` workflow failures (`npm test`, unhandled vitest rejections with `REDIS_URL`) | Playwright e2e, deploy, DNS |
+| **1 — Static analysis** | `npm run verify:pre-push` (T2-PR / skill **`path-aware-pre-push`**) | Path-resolved ci-parity jobs (TS, lint, docs, …) | Vitest runtime, Redis/BullMQ teardown, DB integration (unless T2 also starts api companion) |
+| **2 — API integration** | **`api-integration-tests-pre-push`** skill (or T2 companion when `api.yml` paths match) | GHA `api` workflow failures (`npm test`, unhandled vitest rejections with `REDIS_URL`) | Playwright e2e, deploy, DNS |
 
-When editing **`services/api/**`**, API test files, **`buildApp()`** boot paths, or shared packages in `.github/workflows/api.yml` path filters: run **both tiers** before push.
+When editing **`services/api/**`**, API test files, **`buildApp()`** boot paths, or shared packages in `.github/workflows/api.yml` path filters: run **both tiers** before push (T2-PR may already start the api companion — still treat vitest Unhandled Errors as FAIL).
 
 ## Rule (hard)
 
 1. **Do not treat `docker compose exec api npm run typecheck` or a green dev UI as sufficient** for API changes.
-2. **Do not treat ci-parity alone as sufficient** for API changes — it does not execute `services/api` vitest with Redis.
+2. **Do not treat bare `npx @umbraculum/ci-parity` alone as sufficient** for API changes — use T2-PR; it still does not replace Redis vitest when the companion did not run.
 3. **Treat vitest "Tests passed" + "Unhandled Errors" / `Errors: 1` as FAIL** — CI exits non-zero the same way.
-4. Procedure: skill **`api-integration-tests-pre-push`** (this plugin). Static analysis: skill **`ci-parity-local-reproduction`** + rule **`72-ci-parity-local-vs-ci-divergence`**.
+4. Procedure: skill **`path-aware-pre-push`** / `npm run verify:pre-push` for tier 1; skill **`api-integration-tests-pre-push`** when api paths are in scope and T2 did not already cover them. Rules **`72`** / **`76`**.
 
 ## Agent anti-patterns
 
