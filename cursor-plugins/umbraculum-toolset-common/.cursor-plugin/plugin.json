@@ -2,7 +2,7 @@
   "name": "umbraculum-toolset-common",
   "displayName": "Umbraculum Toolset Common",
   "version": "0.0.9",
-  "description": "Common meta-framework rules + skills shared by the umbraculum-toolset Cursor plugins. Pair with domain plugins for umbraculum-dev (common + node-react + platform-tsjs). Safe alone or with sibling Magento/Hyvä plugins on non-TS/JS workspaces.",
+  "description": "Portable meta-framework rules + skills (not umbraculum-specific). Umbraculum-dev requires common + node-react + platform-tsjs together. Elsewhere: pair with the matching domain plugin, or use alone / with sibling Magento/Hyvä plugins on non-TS/JS arms.",
   "author": {
     "name": "umbraculum-toolset"
   },

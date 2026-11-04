@@ -81,6 +81,7 @@ Install via the `workspaceOpen` hook + source paths (see toolset [cursor-plugins
 
 ## Version history
 
+- **0.0.13** (2026-11) — Rule `67` globs match rule `60` (`apps/web/e2e/**` + `playwright.config.*`); drop stray `e2e/playwright/**`.
 - **0.0.12** (2026-11) — Rule `67-playwright-quick-gates-before-run`: hard stops resolve from project E2E docs (umbraculum-class probes as examples only); align with `playwright-runner-docs-gate`.
 - **0.0.11** (2026-11) — Finish Magento scrub: `05-host-no-rm`, `cursor-tmp-scripts-and-logs`, `allowlist-docker-exec-strategy`, `noninteractive-allowlist-fallback` use `<APP_CONTAINER>` / TS paths; `playwright-runner-docs-gate` Step 0 is project-doc-driven with umbraculum-class examples only.
 - **0.0.10** (2026-11) — **TS/JS only:** delete Magento residue (`21-preferences…`, `30-e2e-no-hardcoded-paths`, `66-experimental-agentic-e2e`, skill `agentic-e2e-runbook`). Rewrite `runtime-commands-containers`, `playwright-runner-docs-gate`, `e2e-smoke` agent for Node/compose/Playwright. Rewrite rule `52-verify-url-exceptions-via-curl` + skill `curl-exception-verification` (no PHP/`setup:di:compile`). Magento workspaces use `umbraculum-toolset-common` + Magento plugins — never this plugin.

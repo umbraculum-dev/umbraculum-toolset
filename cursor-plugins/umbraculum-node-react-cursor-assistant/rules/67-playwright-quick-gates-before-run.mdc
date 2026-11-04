@@ -2,8 +2,7 @@
 description: Playwright — run project-documented stack health gates before any suite invocation; stop when those gates fail
 alwaysApply: false
 globs:
-  - "**/apps/web/e2e/**"
-  - "**/e2e/playwright/**"
+  - "apps/web/e2e/**"
   - "**/playwright.config.*"
 ---
 
@@ -13,12 +12,12 @@ Before proposing or running **any** Playwright command (`npx playwright test`, e
 
 ## Layout
 
-Resolve suite root + README from `DEVELOPMENT.md` / `DEVELOPMENT-LOCAL.md` / `docs/TESTING.md` when present.
+Primary activation: umbraculum-class `apps/web/e2e/**` (same globs as rule `60-e2e-playwright-readmes`). Also fires on any `playwright.config.*` edit — then resolve suite root + README from `DEVELOPMENT.md` / `DEVELOPMENT-LOCAL.md` / `docs/TESTING.md` (do not invent paths).
 
 | When this layout applies | Suite README (read first) |
 |---|---|
 | umbraculum-class `apps/web/e2e/**` | `apps/web/e2e/README.md` |
-| other TS/JS consumers | path named in project docs — do not invent |
+| other TS/JS consumers (config-only match) | path named in project docs — do not invent |
 
 Platform test map (when present): `docs/TESTING.md` § L5.
 

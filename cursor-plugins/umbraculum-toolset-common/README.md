@@ -2,7 +2,7 @@
 
 Common meta-framework rules + skills shared by the umbraculum-toolset Cursor plugins.
 
-This plugin carries language- and domain-agnostic discipline shared by the umbraculum-toolset domain plugins (`umbraculum-node-react-cursor-assistant`, `umbraculum-platform-tsjs-cursor-assistant`, `umbraculum-openplc-python-cursor-assistant`) and by sibling stacks that only need the common layer (e.g. Mage-OS / PHP workspaces: **common + Magento/Hyvä domain plugins**, not node-react). Prefer pairing it with the matching domain plugin when one exists; loading **common alone** is safe and intentional for those non-TS/JS arms.
+This plugin carries **portable** (not umbraculum-specific) meta-framework discipline. **Umbraculum-dev / umbraculum-platform workspaces require all three marketplace plugins together:** common + `umbraculum-node-react-cursor-assistant` + `umbraculum-platform-tsjs-cursor-assistant`. Elsewhere, pair common with the matching domain plugin when one exists (OpenPLC, Magento/Hyvä siblings, etc.); loading **common alone** is safe and intentional on non-TS/JS arms that only need the shared layer.
 
 ## What's in it
 
@@ -65,7 +65,7 @@ If you install `umbraculum-toolset-common` without any of the domain plugins, no
 
 ## Version history
 
-- **0.0.9** (2026-11) — README / `plugin.json`: common may load alone on non-TS/JS arms (e.g. Mage-OS + sibling Magento plugins); drop absolute “never stand-alone” wording that contradicted Dependencies + DESIGN-NOTES.
+- **0.0.9** (2026-11) — README / `plugin.json` / marketplace: umbraculum-dev still requires the trio (common + node-react + platform-tsjs); common itself is portable and may load alone or with sibling Magento/Hyvä plugins on non-TS/JS arms. Drop absolute “never stand-alone” wording that contradicted Dependencies + DESIGN-NOTES.
 - **0.0.8** (2026-11) — Scrub Magento-specific recipes/names from rules 45/56/58 and Bugbot docs; rule 43 softens to “PHP projects”; DESIGN-NOTES elaborates why PHP/Mage-OS stacks stay in domain plugins; multi-workspace hook example reframed as “common + any stack (e.g. Mage-OS)” not Magento-product install steps.
 - **0.0.7** (2026-11) — Rule `59-operator-present-command-smoke.mdc` (early allowlist-sensitive smoke while operator is present).
 - **0.0.6** (2026-07) — Rule `58` hygiene pass; pairing docs note toolset-common on non-JS workspace arms when sibling domain plugins are used.
