@@ -67,6 +67,8 @@ Runs path-aware **parallel** ci-parity (`--parallel --isolated-install`) with na
 
 **Lockfile:** T2 validate always runs **`npm run check:lockfiles`** (forbidden `services/api/package-lock.json` + root + web sync in `node:22-slim`) before any ci-parity job. When any committed **`package-lock.json`** changes, agents must run skill **`monorepo-lockfile-gate`**, test, and commit lock + `package.json` together (rule **`80-monorepo-lockfile-agent-gate`**).
 
+**Lint memory floor:** keep Docker cgroup **≥ `7168m` / `7g`** (manifest default). Do **not** set `CI_PARITY_DOCKER_MEMORY=6g` — lint dies with `exit: 137`. Human SoT: consuming-repo `docs/CI-PARITY.md` § Lint job memory floor.
+
 ### 4. T2-release (manifest / pin / SDK tag prep only)
 
 ```bash
@@ -83,6 +85,7 @@ Only after step 3 (or 4) is green.
 - `validate:gha-triggers` FAIL → sync `.umbraculum/gha-trigger-map.json` with workflow YAML.
 - API vitest FAIL with unhandled errors → fix before push even if tests "passed".
 - `expo-doctor=FAIL` → run skill **`native-expo-doctor-pre-push`**; do not loosen peers or split web/native React.
+- `lint` `exit: 137` / `lint=FAIL` under a custom `CI_PARITY_DOCKER_MEMORY` → raise to **`7g`/`7168m`** (or unset override); do not treat as eslint regressions.
 
 ## Local-subagent-future readiness
 
