@@ -81,6 +81,7 @@ Install via the `workspaceOpen` hook + source paths (see toolset [cursor-plugins
 
 ## Version history
 
+- **0.0.14** (2026-11) — Rule `81-docs-site-cloudflare-node-lockstep` (CF `NODE_VERSION` ↔ monorepo engines; scoped globs, no `**/package.json`). Pre-push: rules `40`/`72`/`20`/`75` + skills prefer agent-owned `verify:pre-push`; `api-integration-tests-pre-push` skips vitest when T2 already reports `api=OK`.
 - **0.0.13** (2026-11) — Rule `67` globs match rule `60` (`apps/web/e2e/**` + `playwright.config.*`); drop stray `e2e/playwright/**`.
 - **0.0.12** (2026-11) — Rule `67-playwright-quick-gates-before-run`: hard stops resolve from project E2E docs (umbraculum-class probes as examples only); align with `playwright-runner-docs-gate`.
 - **0.0.11** (2026-11) — Finish Magento scrub: `05-host-no-rm`, `cursor-tmp-scripts-and-logs`, `allowlist-docker-exec-strategy`, `noninteractive-allowlist-fallback` use `<APP_CONTAINER>` / TS paths; `playwright-runner-docs-gate` Step 0 is project-doc-driven with umbraculum-class examples only.
