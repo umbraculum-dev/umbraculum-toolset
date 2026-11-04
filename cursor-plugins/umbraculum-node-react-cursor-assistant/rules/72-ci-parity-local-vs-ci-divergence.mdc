@@ -64,7 +64,7 @@ Agents **must not** treat any of the following as sufficient pre-push verificati
 | `docker compose exec api npm run …` | Dev-container layout ≠ CI hoisting (mechanism 4); also **not** the GHA `api` vitest job |
 | `docker compose exec api npm test` without checking vitest **Unhandled Errors** | CI fails on unhandled rejections even when all tests pass |
 | "CI will tell us" / push to discover failures | Burns GHA minutes; ci-parity exists to avoid this |
-| Push on bare “push” without asking which T2 gates to run | Operator must confirm `verify:pre-push` / typecheck / lint / docs-readmes (or waive named jobs) before push — see rule `40` + umbraculum-dev `AGENTS.md` |
+| Push on bare “push” while T2 is red/unknown without a named waiver | Agent must run default `verify:pre-push` (or pause once to confirm run-now vs waive named jobs) — see rule `40`; do not invent a green push |
 | Push without `--archive` after commit (only `--ci` during WIP) | GHA runs committed code; uncommitted local fixes hide broken `HEAD` |
 | Ending a session with "run verify:pre-push before you push" | Pre-push is **agent-owned** — run T2 yourself per umbraculum-dev `AGENTS.md` |
 | Full sequential manifest on every feature push | Use T2-PR (`verify:pre-push`); reserve T2-release for manifest/pin/SDK tag prep |
