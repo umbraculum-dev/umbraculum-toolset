@@ -4,8 +4,9 @@ alwaysApply: false
 globs:
   - "**/docs-site/**"
   - "**/docs/design/public-alpha-cloudflare-pages-runbook.md"
+  - "**/docs/WEBSITE.md"
   - "**/.nvmrc"
-  - "**/package.json"
+  - "**/.github/workflows/docs-site-build.yml"
 ---
 
 # Docs-site — Cloudflare `NODE_VERSION` lockstep with monorepo engines
@@ -14,7 +15,7 @@ Umbraculum’s Docusaurus workspace (`docs-site/`) builds on **Workers Builds** 
 
 ## Rule (hard)
 
-1. **When bumping monorepo Node** (`package.json` `engines.node`, ci-parity / GHA Node image, root `.nvmrc`), treat **Cloudflare `NODE_VERSION`** for the docs Worker as a **required companion change** — same major/minor floor (prefer exact **`22.13.0`** or the new engines minimum).
+1. **When bumping monorepo Node** (root or `docs-site` `engines.node`, ci-parity / GHA Node image, root `.nvmrc`, `docs-site-build.yml` `node-version`), treat **Cloudflare `NODE_VERSION`** for the docs Worker as a **required companion change** — same major/minor floor (prefer exact **`22.13.0`** or the new engines minimum). Apply this even if the edit was only root `package.json` `engines` (that path is intentionally **not** in `globs:` — too noisy).
 2. **Agents may** update committed SoT: runbook, `docs-site/README.md`, `.nvmrc`, `docs-site` `engines` — then tell the operator the dashboard step is still open.
 3. **Agents must not** claim a docs deploy is fixed after a Node bump until the operator confirms dashboard **`NODE_VERSION`** matches (or a CF build log shows the new Node). Agents cannot set Cloudflare Variables and secrets.
 4. **Do not** assume GHA `docs-site-build` green proves Cloudflare will build — CF can still be on an older `NODE_VERSION` (symptom: `@swc/html` / native binding failures under Node 20 while archive Node 22 passes).
@@ -33,4 +34,4 @@ Brochure (`umbraculum-brochure`) may pin a different `NODE_VERSION` until that r
 
 - **Rule** (guardrail + pointer): no dashboard runbook loops; SoT stays in the consuming repo.
 - **Not a Skill:** one operator UI action; no bounded command sequence for agents.
-- **Local-subagent-future:** glob + “dashboard confirm required” is a deterministic gate on Node-bump PRs that touch `docs-site/**` or engines.
+- **Local-subagent-future:** scoped globs (docs-site / runbook / `.nvmrc` / docs-site-build workflow — **not** every `package.json`) + “dashboard confirm required” is a deterministic gate on Node-bump docs deploys.

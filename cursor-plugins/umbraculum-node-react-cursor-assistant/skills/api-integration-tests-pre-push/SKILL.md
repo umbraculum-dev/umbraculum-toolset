@@ -19,7 +19,7 @@ Local gaps this skill closes:
 
 **T2 API gate:** this skill is the **API integration** complement to T2-PR static analysis. **T1** scoped vitest (`verify-slice-runbook`, `npm run verify:openapi`) does **not** substitute for this skill before push. See [`docs/VERIFICATION-TIERS.md`](../../umbraculum-dev/docs/VERIFICATION-TIERS.md) in umbraculum-dev.
 
-**Both T2 gates:** run **`npm run verify:pre-push`** (skill **`path-aware-pre-push`**) **and** this skill when the change set touches API behavior or API tests and T2 did not already run the api companion.
+**Do not double-run vitest:** when the latest `npm run verify:pre-push` / VERIFY-SLICE line for this commit already shows **`api=OK`**, the T2 native companion already ran the same suite — **skip** step 2 and emit `vitest=SKIPPED (reason: t2-api-companion-ok)`. Run step 2 only when API paths are in scope **and** T2 did not run (or did not report) the api companion.
 
 ## Inputs required (do not assume)
 
@@ -44,10 +44,10 @@ Local gaps this skill closes:
 ### Result
 
 ```
-API-INTEGRATION-PRE-PUSH <commit-sha>: vitest=<OK|FAIL> unhandled_errors=<0|N>
+API-INTEGRATION-PRE-PUSH <commit-sha>: vitest=<OK|FAIL|SKIPPED> unhandled_errors=<0|N|n/a>
 ```
 
-If FAIL, append up to 3 lines from vitest output (include **Unhandled Errors** section if present).
+If SKIPPED, append `(reason: t2-api-companion-ok)` or `(reason: docs-only)`. If FAIL, append up to 3 lines from vitest output (include **Unhandled Errors** section if present).
 
 ## Bounds (hard)
 
@@ -72,11 +72,19 @@ If `<REPO_ROOT>/.umbraculum/ci-parity.json` exists and T2-PR has not already bee
 cd <REPO_ROOT> && npm run verify:pre-push
 ```
 
-Prefer skill **`path-aware-pre-push`**. Do **not** treat bare `npx @umbraculum/ci-parity … --jobs typecheck` as the sole tier‑1 push gate. Skip only for docs-only pushes with zero TS surface.
+Prefer skill **`path-aware-pre-push`**. Do **not** treat bare `npx @umbraculum/ci-parity … --jobs typecheck` as the sole tier‑1 push gate. Skip step 1 when VERIFY-SLICE / `verify:pre-push` is already green on this commit (including when you are only filling the API gap after a T2 run that reported `api=SKIPPED` / no api companion).
 
 ### 2. Integration suite (mirrors `.github/workflows/api.yml` `api-integration-tests`)
 
-Ensure backing services are up, then run the full vitest suite **with Redis** (matches CI `REDIS_URL`):
+**Skip when** the latest VERIFY-SLICE / `verify:pre-push` summary for this commit already includes **`api=OK`**. Emit:
+
+```
+API-INTEGRATION-PRE-PUSH <commit-sha>: vitest=SKIPPED unhandled_errors=n/a (reason: t2-api-companion-ok)
+```
+
+and stop (do not re-run compose vitest).
+
+Otherwise ensure backing services are up, then run the full vitest suite **with Redis** (matches CI `REDIS_URL`):
 
 ```bash
 cd <REPO_ROOT> && docker compose up -d postgres redis gotenberg
@@ -91,11 +99,12 @@ cd <REPO_ROOT> && docker compose exec -T api sh -c 'cd /app && npm install --no-
 cd <REPO_ROOT> && docker compose exec -T api sh -c 'cd /app && ./node_modules/.bin/vitest run src/tests/<file>.test.ts'
 ```
 
-Still require step 2 green before push unless only that file changed.
+Still require step 2 green (or skipped via `t2-api-companion-ok`) before push unless only that file changed.
 
 ## Stop conditions
 
 - Change set is docs-only / no API path → skip step 2; T2-PR docs job may suffice.
+- Latest T2-PR on this commit already reports **`api=OK`** → skip step 2 (`t2-api-companion-ok`); do not duplicate vitest.
 - `docker compose exec api` unavailable → halt; do not run host `npm test`.
 - Vitest reports **Tests passed** but **Errors: 1+ unhandled** → treat as **FAIL** (same as CI); fix teardown (e.g. unset `REDIS_URL` in profile-only tests, await queue `close()` on `app.close()`).
 - `verify:pre-push` / T2-PR FAIL → fix before step 2.
