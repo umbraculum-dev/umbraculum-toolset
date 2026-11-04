@@ -13,9 +13,11 @@ If a consumer repo uses a different Playwright root, read that project's E2E REA
 
 ## Inputs required (do not assume)
 
-- `<E2E_BASE_URL>` — default `http://localhost:18080` unless `DEVELOPMENT-LOCAL.md` says otherwise
-- `<NGINX_HTTP_PORT>` — when health URLs use a port env (example: `18080`)
-- Optional: `<TRACE_ZIP_PATH>` under `apps/web/e2e/test-results/**` or project-equivalent
+- `<E2E_BASE_URL>` — from `DEVELOPMENT-LOCAL.md` / project E2E README (umbraculum-class default often `http://localhost:18080`)
+- `<COMPOSE_SERVICES>` — services required before E2E (from project docs; do not invent)
+- `<HEALTH_URL>` / `<LOGIN_URL>` — stack health + login (or equivalent) probes from project docs
+- Optional: `<SEED_CMD>` — seed/fixture command from project E2E README
+- Optional: `<TRACE_ZIP_PATH>` under the suite `test-results/**`
 
 ## Output format (return exactly)
 
@@ -29,13 +31,23 @@ If a consumer repo uses a different Playwright root, read that project's E2E REA
 
 - Max **6** commands (gates count as one grouped block).
 - No Playwright test invocation until gates pass.
-- Do not assume container name for the one-shot Playwright image workflow (host `docker run --network host` is the Umbraculum default).
+- Do not assume container name for the one-shot Playwright image workflow (host `docker run --network host` is a common pattern).
 
 ---
 
 ## Step 0 — Quick gates before Playwright (mandatory)
 
 Run from **repo root** in order. **Stop on first failure.** Do not run `npx playwright test` until all pass.
+
+**Resolve gate commands from project docs** (`DEVELOPMENT-LOCAL.md`, E2E README, `docs/TESTING.md`). Typical shape:
+
+1. Bring up required compose services (`<COMPOSE_SERVICES>`).
+2. Run the project smoke script if one exists (e.g. `./scripts/smoke.sh`).
+3. Curl `<HEALTH_URL>` and `<LOGIN_URL>` (or project equivalents) for expected status/body.
+4. Run `<SEED_CMD>` when the suite requires seeded personas/fixtures.
+5. After stack recovery, clear stale Playwright storage only at the path the project documents.
+
+### Umbraculum-class example (only when that layout applies)
 
 ```bash
 docker compose up -d api web gotenberg redis   # omit gotenberg/redis if spec has no render jobs
@@ -49,7 +61,7 @@ docker compose exec api npm run seed:e2e
 # rm -f apps/web/e2e/.auth/e2e-admin.json
 ```
 
-**Symptom → fix (common):**
+**Symptom → fix (umbraculum-class):**
 
 | Symptom | Likely cause | Fix |
 |---------|----------------|-----|
@@ -64,14 +76,16 @@ Password parity: if api sets `E2E_ADMIN_PASSWORD`, pass the same `-e E2E_ADMIN_P
 
 ## Step 1 — Read project docs
 
-- `apps/web/e2e/README.md` (canonical commands for smoke + export specs).
+- Project E2E README (umbraculum-class: `apps/web/e2e/README.md`).
 - If guidance conflicts, that README wins for E2E tasks.
 
 ---
 
-## Step 2 — Run Playwright (Umbraculum one-shot container template)
+## Step 2 — Run Playwright (one-shot container template)
 
-After gates pass, from repo root (not inside api/web containers):
+After gates pass, from repo root (not inside api/web containers). Adjust mount/`-w` to the suite root from project docs.
+
+Umbraculum-class example:
 
 ```bash
 docker run --rm --network host \
@@ -82,13 +96,13 @@ docker run --rm --network host \
   bash -lc "npm install --no-audit --no-fund && npx playwright test --project=smoke <optional-spec-path> --workers=1"
 ```
 
-MRP/CRP export smoke only: `smoke/mrp-crp-export-alpha.spec.ts` (requires gotenberg + redis).
+MRP/CRP export smoke only (umbraculum-class): `smoke/mrp-crp-export-alpha.spec.ts` (requires gotenberg + redis).
 
 ---
 
 ## Step 3 — Trace viewer (failed tests)
 
-If a failed test produced `trace.zip` under `apps/web/e2e/test-results/**`:
+If a failed test produced `trace.zip` under the suite `test-results/**` (umbraculum-class: `apps/web/e2e/test-results/**`):
 
 ```bash
 docker run --rm --network host \
@@ -97,13 +111,13 @@ docker run --rm --network host \
   npx playwright show-trace --host 0.0.0.0 --port 9324 test-results/<...>/trace.zip
 ```
 
-Open from host: `http://localhost:9324` (change port if busy).
+Open from host: `http://localhost:9324` (change port if busy). Adapt the volume mount when the suite root differs.
 
 ---
 
 ## Stop conditions
 
 - Any quick gate failed — **do not** run Playwright; fix stack first.
-- Suite README path unknown for this repo.
+- Suite README path / gate commands unknown for this repo.
 - `<E2E_BASE_URL>` / compose service names ambiguous and `DEVELOPMENT-LOCAL.md` missing.
 - Trace path unknown and no failed test output provided.

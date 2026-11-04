@@ -65,8 +65,8 @@ The public repository baseline started at `v0.0.1`. Each plugin under `cursor-pl
 
 | Plugin | `plugin.json` version | Marketplace listing |
 |---|---|---|
-| `umbraculum-toolset-common` | 0.0.8 | Yes |
-| `umbraculum-node-react-cursor-assistant` | 0.0.10 | Yes |
+| `umbraculum-toolset-common` | 0.0.9 | Yes |
+| `umbraculum-node-react-cursor-assistant` | 0.0.11 | Yes |
 | `umbraculum-platform-tsjs-cursor-assistant` | 0.0.2 | Yes |
 | `umbraculum-openplc-python-cursor-assistant` | 0.0.2 | No (hook-only) |
 

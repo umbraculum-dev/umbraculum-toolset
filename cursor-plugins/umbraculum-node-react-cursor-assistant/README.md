@@ -81,6 +81,7 @@ Install via the `workspaceOpen` hook + source paths (see toolset [cursor-plugins
 
 ## Version history
 
+- **0.0.11** (2026-11) — Finish Magento scrub: `05-host-no-rm`, `cursor-tmp-scripts-and-logs`, `allowlist-docker-exec-strategy`, `noninteractive-allowlist-fallback` use `<APP_CONTAINER>` / TS paths; `playwright-runner-docs-gate` Step 0 is project-doc-driven with umbraculum-class examples only.
 - **0.0.10** (2026-11) — **TS/JS only:** delete Magento residue (`21-preferences…`, `30-e2e-no-hardcoded-paths`, `66-experimental-agentic-e2e`, skill `agentic-e2e-runbook`). Rewrite `runtime-commands-containers`, `playwright-runner-docs-gate`, `e2e-smoke` agent for Node/compose/Playwright. Rewrite rule `52-verify-url-exceptions-via-curl` + skill `curl-exception-verification` (no PHP/`setup:di:compile`). Magento workspaces use `umbraculum-toolset-common` + Magento plugins — never this plugin.
 - **0.0.9** (2026-11) — Path B expo-doctor / Expo SDK **58** + React **19.3.0** (rule `78` + skill `native-expo-doctor-pre-push`). Align umbraculum-dev **1.0.0 testing** stack guidance: default one-shot / ci-parity image **`node:22-slim`**; DEVELOPMENT-LOCAL template for compose + Tamagui 3 / Expo 58.
 - **0.0.8** (2026-07) — Bugbot/Loop: TS `docs/templates/BUGBOT.md`, `typescript-bugbot-review` skill; Bugbot/Loop workflow sections in `40-workflow-and-navigation.mdc`. Portable policy in toolset-common v0.0.3+.

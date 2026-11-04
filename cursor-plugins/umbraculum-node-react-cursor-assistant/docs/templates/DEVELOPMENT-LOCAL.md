@@ -34,7 +34,7 @@ Compose service names and one-shot image come from the project's `DEVELOPMENT.md
 - `<API_CONTAINER>` / compose `api`: `<fill_me>`
 - `<NODE_IMAGE>` (ci-parity / one-shots): `<fill_me — umbraculum-dev: public.ecr.aws/docker/library/node:22-slim>`
 - `<DB_CONTAINER>` / Postgres: `<fill_me>`
-- `<E2E_API_CONTAINER>` (if distinct from api): `<fill_me>`
+- `<E2E_TARGET_CONTAINER>` (if E2E runs against a service distinct from api): `<fill_me>`
 
 ## Local stack notes
 

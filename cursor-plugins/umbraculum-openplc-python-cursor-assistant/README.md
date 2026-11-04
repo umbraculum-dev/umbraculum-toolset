@@ -52,6 +52,7 @@ Install via the `workspaceOpen` hook when the workspace matches the OpenPLC brew
 - `hardware-doc-consistency-check/SKILL.md` — bounded runbook for `make check-connections` + the `tools/check_connections_consistency.py` SoT checker; what to do when it fails
 - `em-fields-pamphlet-pdf-build/SKILL.md` — bounded runbook for `make reference-pdfs` (and the diagram-only `--skip-figures` variant); the two visual checks (no page-split, no margin-clip) required after every pamphlet edit
 - `plc-variable-prefix-verification/SKILL.md` — bounded static-scan runbook (ripgrep) for variable identifiers in `pous/**` and `project.json` that violate the `I_/Q_/M_/AI_/AI_RAW_/CFG_/SVC_/P_/PI_` prefix convention (rule `04`); max 10 violation lines per run
+- `public-endpoint-verification/SKILL.md` — bounded Pi-sidecar / FastAPI endpoint verification wrap-up (pairs with toolset-common rule `45`)
 - `openplc-bugbot-review/SKILL.md` — opt-in local pre-push Bugbot (main-gated, readonly)
 
 ### Agents (`agents/`) — 5 subagents
